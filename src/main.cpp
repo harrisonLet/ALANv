@@ -27,7 +27,7 @@ void setup() {
   }
 
   // Sane defaults for short-range use
-  LoRa.setSpreadingFactor(7);      // SF7 = fastest, lowest range
+  LoRa.setSpreadingFactor(8);      // SF7 = fastest, lowest range
   LoRa.setSignalBandwidth(125E3);  // 125 kHz bandwidth
   LoRa.setCodingRate4(5);          // 4/5 coding rate
   LoRa.setTxPower(17);             // dBm, 2–20 valid
