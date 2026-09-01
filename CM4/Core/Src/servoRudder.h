@@ -4,6 +4,6 @@
 #include <stdint.h>
 
 void servoRudder_init(void);
-void servoRudder_setAngle(int8_t angle);
+void servoRudder_setAngle(int16_t angle);
 
 #endif

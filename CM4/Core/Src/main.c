@@ -20,6 +20,7 @@
 #include "main.h"
 #include "lora.h"
 #include "servoRudder.h"
+#include "servoSail.h"
 #include <stdint.h>
 #include <string.h>
 
@@ -46,6 +47,7 @@ typedef struct __attribute__((packed)) {
     uint8_t  battery;
     int16_t  wind_speed;
     int16_t  wind_dir;
+    int16_t  sail_angle;
 } TelemetryPacket_t;
 
 /* USER CODE END PTD */
@@ -162,6 +164,7 @@ int main(void)
   Debug_LED_Init();
 
   servoRudder_init();
+  servoSail_init();
 
 
 
@@ -174,7 +177,8 @@ int main(void)
   }
   LoRa_StartRX();
 
-  static int8_t  rudder_angle = 0;
+  static int16_t rudder_angle = 0;
+  static int16_t sail_angle   = 0;
   /* LoRa_init() toggles yellow LED once for version check, so yellow starts ON */
   static uint8_t led_status   = 0x04;  /* bitmask: bit0=green, bit1=red, bit2=yellow */
   static uint8_t tx_seq       = 0;
@@ -198,8 +202,8 @@ int main(void)
 
       if (tx_flag) {
           tx_flag = 0;
-          char payload[32];
-          uint8_t plen = snprintf(payload, sizeof(payload), "STATUS,%d,%d", rudder_angle, led_status);
+          char payload[40];
+          uint8_t plen = snprintf(payload, sizeof(payload), "STATUS,%d,%d,%d", rudder_angle, sail_angle, led_status);
           uint8_t pkt[36];
           pkt[0] = ADDR_SAMD21;   /* dest */
           pkt[1] = ADDR_STM32;    /* src */
@@ -225,7 +229,7 @@ int main(void)
               else if (cmd[0] == 'y') { led_status ^= 0x04; Debug_LED_Toggle('y'); }
 
               /* Rudder steps */
-              int8_t delta = 0;
+              int16_t delta = 0;
               if      (cmd[0] == 'q') delta = +20;
               else if (cmd[0] == 'e') delta = -20;
               else if (cmd[0] == 'a') delta = +10;
@@ -235,9 +239,25 @@ int main(void)
 
               if (delta != 0) {
                 rudder_angle += delta;
-                if (rudder_angle >  45) rudder_angle =  45;
-                if (rudder_angle < -45) rudder_angle = -45;
+                if (rudder_angle >  135) rudder_angle =  135;
+                if (rudder_angle < -135) rudder_angle = -135;
                 servoRudder_setAngle(rudder_angle);
+              }
+
+              /* Sail steps */
+              delta = 0;
+              if      (cmd[0] == 'w') delta = +20;
+              else if (cmd[0] == 'r') delta = -20;
+              else if (cmd[0] == 's') delta = +10;
+              else if (cmd[0] == 'f') delta = -10;
+              else if (cmd[0] == 'x') delta = +5;
+              else if (cmd[0] == 'v') delta = -5;
+
+              if (delta != 0) {
+                sail_angle += delta;
+                if (sail_angle >  135) sail_angle =  135;
+                if (sail_angle < -135) sail_angle = -135;
+                servoSail_setAngle(sail_angle);
               }
           }
       }

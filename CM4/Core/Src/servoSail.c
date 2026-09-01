@@ -1,7 +1,7 @@
-#include "servoRudder.h"
+#include "servoSail.h"
 #include "main.h"
 
-/* PWM output: PB9, TIM4 Channel 4, CN7 morpho connector
+/* PWM output: PB8, TIM4 Channel 3, CN7 morpho connector
  * 64 MHz HSI -> prescaler 63 -> 1 MHz tick -> period 19999 -> 50 Hz
  * Pulse range: 1000-2000 us maps to -135..+135 degrees */
 
@@ -13,13 +13,13 @@
 
 static TIM_HandleTypeDef htim4;
 
-void servoRudder_init(void)
+void servoSail_init(void)
 {
     __HAL_RCC_GPIOB_CLK_ENABLE();
     __HAL_RCC_TIM4_CLK_ENABLE();
 
     GPIO_InitTypeDef gpio = {0};
-    gpio.Pin       = GPIO_PIN_9;
+    gpio.Pin       = GPIO_PIN_8;
     gpio.Mode      = GPIO_MODE_AF_PP;
     gpio.Pull      = GPIO_NOPULL;
     gpio.Speed     = GPIO_SPEED_FREQ_LOW;
@@ -42,21 +42,21 @@ void servoRudder_init(void)
     oc.OCFastMode    = TIM_OCFAST_DISABLE;
     oc.OCIdleState   = TIM_OCIDLESTATE_RESET;
     oc.OCNIdleState  = TIM_OCNIDLESTATE_RESET;
-    if (HAL_TIM_PWM_ConfigChannel(&htim4, &oc, TIM_CHANNEL_4) != HAL_OK) { Error_Handler(); }
+    if (HAL_TIM_PWM_ConfigChannel(&htim4, &oc, TIM_CHANNEL_3) != HAL_OK) { Error_Handler(); }
 
-    HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
+    HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
 
     /* Sweep to extremes on startup so you can see if servo responds */
-    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, SERVO_MIN_PULSE);
+    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_3, SERVO_MIN_PULSE);
     HAL_Delay(1000);
-    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, SERVO_MAX_PULSE);
+    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_3, SERVO_MAX_PULSE);
     HAL_Delay(1000);
-    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, SERVO_CENTER_PULSE);
+    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_3, SERVO_CENTER_PULSE);
 
-    printf("[SERVO] Rudder init OK, centered at %d us\r\n", SERVO_CENTER_PULSE);
+    printf("[SERVO] Sail init OK, centered at %d us\r\n", SERVO_CENTER_PULSE);
 }
 
-void servoRudder_setAngle(int16_t angle)
+void servoSail_setAngle(int16_t angle)
 {
     if (angle < SERVO_MIN_ANGLE) angle = SERVO_MIN_ANGLE;
     if (angle > SERVO_MAX_ANGLE) angle = SERVO_MAX_ANGLE;
@@ -65,6 +65,6 @@ void servoRudder_setAngle(int16_t angle)
         ((uint32_t)(angle - SERVO_MIN_ANGLE) * (SERVO_MAX_PULSE - SERVO_MIN_PULSE))
         / (SERVO_MAX_ANGLE - SERVO_MIN_ANGLE);
 
-    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, pulse);
-    printf("[SERVO] Rudder -> %d deg (%lu us)\r\n", angle, pulse);
+    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_3, pulse);
+    printf("[SERVO] Sail -> %d deg (%lu us)\r\n", angle, pulse);
 }
