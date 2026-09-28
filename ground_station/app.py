@@ -149,14 +149,16 @@ def stream():
             except queue.Empty:
                 yield ": keep-alive\n\n"
 
-    def cleanup(r):
-        with sse_lock:
-            if q in sse_queues:
-                sse_queues.remove(q)
-        return r
+    def generate_with_cleanup():
+        try:
+            yield from generate()
+        finally:
+            with sse_lock:
+                if q in sse_queues:
+                    sse_queues.remove(q)
 
-    return cleanup(Response(generate(), mimetype="text/event-stream",
-                            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}))
+    return Response(generate_with_cleanup(), mimetype="text/event-stream",
+                    headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 @app.route("/cmd", methods=["POST"])
 def cmd():
@@ -361,10 +363,10 @@ button.sail:hover   { background: #f0fdf4; border-color: #22c55e; }
     <div class="ctrl-title">LEDs</div>
     <div class="btn-grid-leds">
       <button class="ctrl" style="border-color:#86efac;color:#16a34a" onclick="send('g')">G</button>
-      <button class="ctrl" style="border-color:#fca5a5;color:#dc2626" onclick="send('r')">R</button>
+      <button class="ctrl" style="border-color:#fca5a5;color:#dc2626" onclick="send('b')">R</button>
       <button class="ctrl" style="border-color:#fde68a;color:#ca8a04" onclick="send('y')">Y</button>
     </div>
-    <div class="hint">g &nbsp;·&nbsp; r &nbsp;·&nbsp; y</div>
+    <div class="hint">g &nbsp;·&nbsp; b &nbsp;·&nbsp; y</div>
   </div>
 </div>
 
@@ -482,7 +484,7 @@ async function send(key) {
   }
 }
 
-const KEYS = new Set(['q','e','a','d','z','c','w','r','s','f','x','v','g','y']);
+const KEYS = new Set(['q','e','a','d','z','c','w','r','s','f','x','v','g','b','y']);
 document.addEventListener('keydown', ev => {
   if (['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)) return;
   if (KEYS.has(ev.key)) { ev.preventDefault(); send(ev.key); }
