@@ -1,0 +1,19 @@
+__pycache__
+venv/
+.venv/
+docs/Literature_Review_Presentation.pptx
+
+CM4/build/
+CM7/build/
+build/
+.cache/
+.vscode/c_cpp_properties.json
+.clangd
+
+~*
+
+# KiCAD Ignores
+Autonomous_Sailboat-backups/
+\#auto_saved_files\#
+_autosave-Autonomous_Sailboat.*
+*.lck
