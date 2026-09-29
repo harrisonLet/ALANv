@@ -1,0 +1,21 @@
+% ---------------------------------------------------
+
+\section{Safety, Global, Societal, Ethical Considerations}
+\label{sec:impact}
+
+% Public Health, Safety and Welfare
+The ALAN vessel operates autonomously on open water, presenting potential hazards to other watercraft, swimmers, and marine wildlife. To mitigate collision risk, the vessel will be limited to small, controlled bodies of water during testing and will transmit its GPS position continuously via LoRa for ground station monitoring. The vessel's low speed (sail-powered) and small size reduce the severity of any potential impact. Emergency recovery procedures allow the ground station operator to override autonomous control at any time.
+
+% Environmental Factors
+An autonomous sailboat is inherently environmentally friendly compared to motor-driven alternatives. Wind propulsion produces zero emissions and zero noise pollution underwater. The vessel uses a lithium-ion battery only for electronics, not propulsion, minimizing energy consumption. Materials selection (fiberglass, stainless steel, PLA) avoids toxic substances that could leach into water. 
+
+% Global and Cultural Factors
+Autonomous ocean monitoring platforms could democratize marine research by reducing the cost of data collection expeditions. Developing nations with extensive coastlines but limited research budgets could benefit significantly from low-cost autonomous sailing platforms. However, care must be taken to ensure that such technology is not misused for illicit activities (e.g., smuggling) or deployed in protected marine areas without proper authorization.
+
+% Economic Factors
+The project demonstrates that autonomous sailing vessels can be constructed at a fraction of the cost of commercial alternatives. Currently the only custom part is the hull and its associated components. By using off-the-shelf components (STM32 dev boards, commodity sensors, etc.), the total bill of materials remains accessible to other university teams and hobbyist developers.
+
+% Professional Ethical Obligations
+As engineers, the team has an obligation to ensure the vessel cannot cause harm to people or the environment. This includes implementing fail-safe behaviors (return-to-home on communication loss), clearly marking the vessel as unmanned, and operating only in permitted waterways. Data collected by onboard sensors will be handled responsibly, and the communication protocol will not interfere with other ISM band users beyond regulatory limits.
+
+% ---------------------------------------------------

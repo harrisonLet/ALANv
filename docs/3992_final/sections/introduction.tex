@@ -1,0 +1,30 @@
+% ---------------------------------------------------
+
+\section{Introduction}
+\label{sec:introduction}
+
+% Problem Statement
+Autonomous marine vessels have the potential to revolutionize environmental monitoring, oceanographic data collection, and maritime logistics by eliminating the need for crewed expeditions. However, existing solutions are often prohibitively expensive, reliant on motor-driven propulsion with limited range, or lack the robustness required for extended blue water operation. A low-cost, sail-powered autonomous vessel would enable persistent ocean presence for data collection without the fuel constraints and maintenance overhead of motorized platforms.
+
+% Solution Space
+Several approaches to autonomous sailing have been explored in both academic and commercial domains. The SailBot competition community has produced numerous small-scale autonomous sailboats, typically using cloth sails with servo-actuated sheets. Commercial efforts such as Saildrone employ rigid wingsails on large platforms for ocean research. University projects have explored various hull configurations, sail types, and control algorithms ranging from simple reactive controllers to machine learning approaches.
+
+% Related Work
+Prior autonomous sailboat projects have demonstrated the viability of GPS waypoint navigation combined with wind-aware path planning. The self-trimming wingsail concept, where a tail vane provides passive torque to rotate the main sail element, has been shown to minimize power consumption compared to motor-actuated sail systems. Trimaran hull designs offer superior stability over monohulls, which is critical for sensor platforms that must remain upright in varying sea states.
+
+% Solution / Contribution
+ALAN (Autonomous Long-Range Aquatic Navigation) is a semi-autonomous trimaran sailboat that navigates between user-defined waypoints without human intervention. The vessel employs a self-trimming rigid wingsail for propulsion, minimizing power draw while maximizing aerodynamic efficiency. A dual-core STM32H755 microcontroller running FreeRTOS manages real-time sensor fusion (GPS, IMU, magnetometer, wind vane) and control loops for rudder actuation. Long-range communication is achieved via LoRa radio at 915~MHz, enabling telemetry uplink and route update downlink from a ground station.
+
+% Proposed Work
+The scope of this project includes:
+\begin{itemize}
+    \item Hull design and fabrication
+    \item Keel and rudder construction
+    \item Rigid wingsail with self-trimming mechanism
+    \item Sensor integration for navigation and orientation
+    \item Long-range wireless communication
+    \item Embedded firmware for autonomous waypoint navigation
+\end{itemize}
+Considering stretch goals, excluded from scope are solar charging, full blue-water endurance testing, different sets of environmental sensors, and machine-learning-based control. At Demo Day, the vessel will demonstrate autonomous navigation between a series of waypoints on open water (This will be done before hand and displayed using video).
+
+% ---------------------------------------------------

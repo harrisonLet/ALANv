@@ -1,0 +1,82 @@
+% ---------------------------------------------------
+
+\subsection{LoRa}
+% March 2026 - September 2026
+
+Long-range communication between the vessel and ground station uses LoRa (Long Range) radio operating at 915~MHz in the ISM band (North America). LoRa's sub-GHz frequency provides significantly greater range than WiFi or Bluetooth due to reduced free-space path loss and better diffraction around obstacles.
+
+\textbf{Hardware:} The vessel carries an Adafruit RFM95W LoRa transceiver breakout board. The ground station uses an Adafruit Feather RP2040 with integrated RFM95 LoRa radio. Both endpoints use 10~dBi whip antennas connected via SMA-to-uFL adapter cables for maximum range. A 5~ft SMA extension cable is used to place the antenna on the top of the vessel's sail for improved line-of-sight.
+
+\textbf{Protocol:} Uplink (vessel to ground) transmits servo positions, sensor readings, battery state, and GPS coordinates. Downlink (ground to vessel) sends manual control overrides or route/waypoint updates.
+
+\textbf{Responsible:} LoRa Team.
+
+\textbf{Completed Tasks:} LoRa hardware procured; basic communication established.
+
+\textbf{Pending Tasks:} Implement robust packet structure with error checking; integrate LoRa communication into main firmware; test range and reliability in open water conditions.
+
+% ---------------------------------------------------
+
+\subsection{Servos}
+% February 2026 - August 2026
+
+Two servo motors (DS3218 MG Digital Servo, waterproof, high-torque) actuate the vessel's control surfaces. The rudder servo controls heading via the rudder shaft coupler. The wingsail servo is housed inside the wingsail to drive tail rotation for self-trimming.
+
+Both servos are powered from the power distribution board at appropriate voltage levels and controlled via PWM signals from the STM32H7.
+
+\textbf{Responsible:} Sensor Team.
+
+\textbf{Completed Tasks:} Servos procured; basic PWM control tested.
+
+\textbf{Pending Tasks:} Implement closed-loop control for rudder and sail angle; test servo response under load conditions.
+
+% ---------------------------------------------------
+
+\subsection{Sensors}
+% March 2026 - September 2026
+
+The vessel integrates the following sensors for navigation and state awareness:
+
+\begin{itemize}
+    \item \textbf{GPS (NEO-6 module):} Provides latitude/longitude for waypoint navigation. Communicates via UART.
+    \item \textbf{9-DoF IMU \& Magnetometer (BNO055):} Provides spatial orientation (roll, pitch, yaw) and magnetic heading. Used for attitude estimation and heading hold between GPS fixes.
+    \item \textbf{Wind Vane Direction Sensor (DFRobot):} Measures apparent wind direction relative to the vessel. Critical for sail angle optimization and tacking decisions. Communicates via RS485 (adapted to UART via RS485-to-UART converter).
+\end{itemize}
+
+\textbf{Responsible:} Sensor Team.
+
+\textbf{Completed Tasks:} Sensors procured; basic communication established; sensors calibrated on the bench.
+
+\textbf{Pending Tasks:} Integrate sensor readings into main firmware; implement sensor fusion for accurate state estimation; test sensor performance in marine environment.
+
+% ---------------------------------------------------
+
+\subsection{MCU}
+% March 2026 - October 2026
+
+The central processor is the STM32H755ZIT6, a dual-core microcontroller featuring a Cortex-M7 core (480~MHz) and a Cortex-M4 core (240~MHz). Two development boards are available for development and a spare.
+
+\textbf{Architecture:} The CM7 core handles real-time control loops (sensor fusion, PID control, servo actuation) and will run on FreeRTOS. The CM4 core handles communication (LoRa packet assembly/parsing, telemetry logging) and runs on bare metal. The two cores communicate via shared memory and inter-core interrupts.
+
+\textbf{Firmware:} Written in C using STM32 HAL drivers. The project uses CMake for build management.
+
+\textbf{Responsible:} Embedded Team.
+
+\textbf{Completed Tasks:} Basic FreeRTOS setup on CM7; CM7 sensor reading and control loop tested; CM4 LoRa communication tested.
+
+\textbf{Pending Tasks:} Optimize task scheduling and inter-core communication.
+
+% ---------------------------------------------------
+
+\subsection{RC Boat}
+% April 2026 - September 2026
+
+To prove the functionality of the mechanical and electrical subsystems before autonomous integration, we will build and equip the boat with a manual override and RC system. This will allow us to test the hull, keel, rudder, and sail in real-world conditions while manually controlling the vessel via LoRa communication. The RC system will be integrated with the existing servos and power distribution, allowing us to switch between manual and autonomous control modes for testing and demonstration purposes at a later stage.
+
+\textbf{Responsible:} ALAN Team.
+
+\textbf{Completed Tasks:} RC components procured; basic manual control tested outside of the boat.
+
+\textbf{Pending Tasks:} Integrate RC control with existing servos and power system in the boat; test manual control in open water conditions.
+
+% ---------------------------------------------------

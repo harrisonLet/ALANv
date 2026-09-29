@@ -1,0 +1,64 @@
+% ---------------------------------------------------
+
+\documentclass[11pt, journal]{IEEEtran}
+\input{packages}
+
+% ---------------------------------------------------
+
+\begin{document}
+
+    % ---------------------------------------------------
+
+    \title{
+        ALAN: Autonomous Long-Range Aquatic Navigation Vessel \\ 
+        {\normalsize (The V is silent.)}
+    }
+    \author{
+        Charbel Salloum, 
+        Connor Stevens, 
+        Corbin Barney, 
+        Harrison LeTourneau, 
+        Jared Pratt
+    }
+
+    \maketitle
+
+    % ---------------------------------------------------
+
+    \begin{abstract}
+    This paper describes the design and implementation of ALAN (Autonomous Long-Range Aquatic Navigation), a semi-autonomous sailboat intended for long-duration operation in open water environments. The vessel navigates between user-defined waypoints using wind-powered propulsion, requiring no human intervention during transit. This work addresses the challenge of building a low-cost autonomous sailing platform suitable for environmental monitoring and oceanographic data collection, where conventional motorized vessels are limited by fuel capacity and operational cost. The mechanical, electrical, and software subsystems are presented, along with an analysis of associated risks and mitigation strategies.
+    \end{abstract}
+
+    % ---------------------------------------------------
+
+    \input{sections/introduction.tex}
+    \input{sections/relatedWork}
+    \input{sections/impact.tex}
+    \input{sections/tasks.tex}
+    \input{sections/risks.tex}
+    \input{sections/schedule.tex}
+    \input{sections/conclusion.tex}
+
+    % ---------------------------------------------------
+
+    \appendices
+    \input{appendicies/sailboat_anatomy.tex}
+    \input{appendicies/sailboat_physics.tex}
+    \input{appendicies/teams.tex}
+    \input{appendicies/acknowledgements.tex}
+
+    % ---------------------------------------------------
+
+    % Special figures
+    \input{figures/bom.tex}
+    \input{figures/gantt.tex}
+
+    % ---------------------------------------------------
+
+    \bibliographystyle{IEEEtran}
+    \bibliography{bibtex/bib/IEEEexample, bibtex/bib/neal}
+    \input{references.tex}
+
+\end{document}
+
+% ---------------------------------------------------

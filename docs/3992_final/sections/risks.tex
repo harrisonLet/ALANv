@@ -1,0 +1,42 @@
+% ---------------------------------------------------
+
+\section{Risks}
+\label{sec:risks}
+
+% ---------------------------------------------------
+
+\subsection{Mechanical Risks}
+
+\textcolor{riskgreen}{\textbf{Hull Integrity Failure:}} The fiberglass hull may develop cracks or delamination during operation, leading to water ingress and sinking. Mitigation: apply multiple layers of fiberglass (7 sheets, approximately 1~mm thickness) with additional reinforcement at stress points (keel mount, stern). Perform water submersion tests before open-water deployment.
+
+\textcolor{riskgreen}{\textbf{Keel Detachment:}} The fin keel with steel-filled bulb experiences significant lateral forces during sailing. If the mounting bracket fails, the vessel loses stability and capsizes. Mitigation: use 304 stainless steel plate for mounting brackets with three 1/4-in bolts and lock nuts; reinforce the hull keel mount area with extra fiberglass layers and an embedded metal plate inside the boat.
+
+\textcolor{riskgreen}{\textbf{Rudder Bearing Seizure:}} Salt water and debris may cause the rudder shaft bearings to seize, resulting in loss of steering. Mitigation: use ceramic ball bearings (R188) rated for marine environments; apply marine silicone grease; design for easy field replacement.
+
+\textcolor{riskyellow}{\textbf{Mast/Sail Damage:}} High winds could overload the wingsail structure, snapping the mast or cracking the foam panels. Mitigation: design for expected wind conditions with safety margin; the self-trimming mechanism naturally feathers the sail in excessive wind.
+
+% ---------------------------------------------------
+
+\subsection{Electrical Risks}
+
+\textcolor{riskgreen}{\textbf{Water Ingress to Electronics:}} Despite the sealed enclosure (Pelican M60), wave action or submersion during capsize could introduce water to the electronics bay. Mitigation: use IP-rated connectors for all cable pass-throughs; apply conformal coating to PCBs; include moisture-indicating desiccant packs. For any electronics that must be mounted externally (e.g., servos and antennas), use waterproof components and housings.
+
+\textcolor{riskyellow}{\textbf{Battery Failure:}} The 3S LiPo battery (11.1~V nominal) poses fire and explosion risk if overcharged, over-discharged, or punctured. Mitigation: integrate a dedicated BMS (Battery Management System) that prevents overcharge and deep discharge; house battery in a fire-resistant compartment within the Pelican case.
+
+\textcolor{riskyellow}{\textbf{LoRa Communication Loss:}} Environmental interference or antenna damage could sever the communication link. Mitigation: use high-gain 10~dBi antennas; implement autonomous return-to-home behavior on communication timeout; store mission parameters locally so the vessel can continue operation without uplink.
+
+\textcolor{riskgreen}{\textbf{Servo Failure:}} The rudder or sail servo may burn out under sustained load. Mitigation: select waterproof, high-torque servos (20~kg-cm) rated for continuous duty; implement current monitoring to detect stall conditions.
+
+% ---------------------------------------------------
+
+\subsection{Software Risks}
+
+\textcolor{riskgreen}{\textbf{Sensor Fusion Divergence:}} GPS, IMU, and magnetometer readings may conflict due to electromagnetic interference or sensor drift, causing incorrect heading calculations. Mitigation: implement complementary filtering; validate sensor readings against expected ranges; fall back to GPS-only navigation if IMU data is unreliable.
+
+\textcolor{riskgreen}{\textbf{Real-Time Deadline Miss:}} FreeRTOS task scheduling may fail to meet control loop deadlines under heavy sensor polling load, causing unstable rudder behavior. Mitigation: assign appropriate task priorities; profile worst-case execution times; use the dual-core STM32H755 to distribute workload across CM7 (control) and CM4 (communication/telemetry) cores.
+
+\textcolor{riskyellow}{\textbf{Path Planning Edge Cases:}} The navigation algorithm may fail to handle situations such as sailing directly into the no-sail zone ($\pm45^{\circ}$ into the wind), requiring tacking maneuvers that the path planner must handle correctly. Mitigation: implement a state machine with explicit tacking/jibing states; test extensively in simulation before on-water trials.
+
+\textcolor{riskgreen}{\textbf{Path Planning Impossible:}} The path planner may fail to find a viable route to the waypoint due to obstacles or unfavorable wind conditions. Mitigation: implement a timeout for path planning; if no solution is found, switch to a safe loitering behavior until conditions improve, if conditions do not improve after a set length of time, return to home.
+
+% ---------------------------------------------------

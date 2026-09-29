@@ -1,0 +1,91 @@
+% ---------------------------------------------------
+
+\subsection{Positioning}
+% August 2026 - October 2026
+
+The positioning subsystem fuses GPS and IMU data to determine the vessel's position and heading at all times. GPS provides absolute position at low update rates, while the IMU and magnetometer provide high-rate heading and attitude information between GPS fixes.
+
+\textbf{Implementation:} A complementary filter combines GPS position with integrated IMU acceleration and magnetometer heading to produce a smooth, accurate state estimate. The system must handle GPS dropouts gracefully by dead-reckoning from IMU data until GPS lock is reacquired.
+
+\textbf{Responsible:} Corbin Barney, Harrison LeTourneau.
+
+\textbf{Completed Tasks:} None.
+
+\textbf{Pending Tasks:} Implement sensor fusion algorithm; test positioning accuracy in static and dynamic conditions; optimize for low-latency updates.
+
+% ---------------------------------------------------
+
+\subsection{Self Trimming Wingsail}
+% August 2026 - October 2026
+
+The software component of the self-trimming wingsail manages the servo that controls the tail angle. The tail angle is adjusted based on the apparent wind direction to maintain an optimal angle of attack for the main sail, maximizing propulsion efficiency while minimizing power consumption. The control loop runs continuously using a PID, adjusting the tail angle in response to changes in wind direction and vessel heading.
+
+\textbf{Implementation:} The wind vane sensor reading is compared with the current sail angle (estimated from servo position and IMU yaw) to determine if the tail servo requires adjustment. The control loop runs on the CM7 core as a FreeRTOS task.
+
+\textbf{Responsible:} Connor Stevens, Charbel Salloum.
+
+\textbf{Completed Tasks:} None.
+
+\textbf{Pending Tasks:} Implement PID control loop for tail servo; test response to changing wind conditions; optimize for stability and responsiveness.
+
+% ---------------------------------------------------
+
+\subsection{Path Planning}
+% September 2026 - November 2026
+
+The path planning subsystem computes a route between the current position and the next waypoint, accounting for wind direction and the no-sail zone ($\pm45^{\circ}$ into the wind).
+
+\textbf{Implementation:} When the direct path to a waypoint falls within the no-sail zone, the planner generates a tacking sequence---a series of close-hauled legs alternating between port and starboard tack. A state machine manages transitions between sailing states: close-hauled, beam reach, broad reach, running, tacking, and jibing. Waypoint arrival is determined by a configurable radius threshold around the target GPS coordinate.
+
+\textbf{Responsible:} Charbel Salloum, Jared Pratt.
+
+\textbf{Completed Tasks:} None.
+
+\textbf{Pending Tasks:} Implement path planning algorithm; test route generation under various wind conditions; optimize for efficiency and safety.
+
+% ---------------------------------------------------
+
+\subsection{Emergency Recovery}
+% October 2026 - November 2026
+
+The emergency recovery subsystem provides fail-safe behavior when anomalous conditions are detected, including communication loss, low battery, sensor failure, or geofence violation.
+
+\textbf{Implementation:} On communication timeout (configurable threshold), the vessel enters return-to-home mode, navigating back to its launch waypoint. On critically low battery, the vessel furls the sail (luffs into the wind) to minimize drift and transmits distress telemetry at increased frequency. GPS coordinates are continuously logged to non-volatile storage for post-incident recovery.
+
+\textbf{Responsible:} Corbin Barney.
+
+\textbf{Completed Tasks:} None.
+
+\textbf{Pending Tasks:} Implement emergency state machine; test return-to-home behavior; validate low-battery response.
+
+% ---------------------------------------------------
+
+\subsection{Ground Station Interface}
+% August 2026 - October 2026
+
+The ground station interface allows remote monitoring and control of the vessel via LoRa communication. The operator can view real-time telemetry, update waypoints, or trigger manual control overrides.
+
+\textbf{Implementation:} A comprehensive GUI displays vessel status, including GPS position on a map, heading, speed, battery level, and sensor readings. The operator can input new waypoints or commands that are transmitted to the vessel via LoRa downlink. The operator will be able to interact with the vessel using GUI inputs or CLI commands sent through a terminal interface in the ground station program.
+
+\textbf{Responsible:} Harrision LeTourneau, Jared Pratt.
+
+\textbf{Completed Tasks:} Preliminary LoRa communication established.
+
+\textbf{Pending Tasks:} Implement ground station interface; test GUI and CLI interactions; validate LoRa communication.
+
+% ---------------------------------------------------
+
+\subsection{Autonomous Sailboat}
+% October 2026 - December 2026
+
+The top-level autonomous control integrates all software subsystems: positioning, self-trimming wingsail control, path planning, and emergency recovery into a cohesive mission execution framework.
+
+\textbf{Implementation:} The mission controller accepts a sequence of GPS waypoints (uploaded via LoRa or pre-loaded) and sequences through them, invoking the path planner for each leg. Telemetry is continuously streamed to the ground station. The operator can inject new waypoints, trigger return-to-home, or assume manual control at any time via the LoRa downlink.
+
+\textbf{Responsible:} ALAN Team.
+
+\textbf{Completed Tasks:} None.
+
+\textbf{Pending Tasks:} Implement mission controller; test integration of all subsystems; validate overall autonomous behavior.
+
+% ---------------------------------------------------
