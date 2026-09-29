@@ -24,7 +24,23 @@ if [[ $startup -eq 1 ]]; then
     printf "\n===========================================================================\n"
     printf "Installing dependencies...\n"
     sudo apt-get install -y gcc-arm-none-eabi ninja-build cmake openocd
+fi
 
+if [[ $build_cm4 -eq 1 || $startup -eq 1 ]]; then
+    printf "\n===========================================================================\n"
+    printf "Configuring CM4...\n"
+    cmake --no-warn-unused-cli -B CM4/build \
+        -DCMAKE_BUILD_TYPE=Debug \
+        -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN" \
+        -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+        CM4
+
+    printf "\n===========================================================================\n"
+    printf "Building CM4...\n"
+    cmake --build CM4/build
+fi
+
+if [[ $build_cm7 -eq 1 || $startup -eq 1 ]]; then
     printf "\n===========================================================================\n"
     printf "Configuring CM7...\n"
     cmake --no-warn-unused-cli -B CM7/build \
@@ -33,22 +49,6 @@ if [[ $startup -eq 1 ]]; then
         -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
         CM7
 
-    printf "\n===========================================================================\n"
-    printf "Configuring CM4...\n"
-    cmake --no-warn-unused-cli -B CM4/build \
-        -DCMAKE_BUILD_TYPE=Debug \
-        -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN" \
-        -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-        CM4
-fi
-
-if [[ $build_cm4 -eq 1 || $startup -eq 1 ]]; then
-    printf "\n===========================================================================\n"
-    printf "Building CM4...\n"
-    cmake --build CM4/build
-fi
-
-if [[ $build_cm7 -eq 1 || $startup -eq 1 ]]; then
     printf "\n===========================================================================\n"
     printf "Building CM7...\n"
     cmake --build CM7/build
