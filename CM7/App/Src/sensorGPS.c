@@ -1,11 +1,7 @@
-#include "main.h"
-#include "stm32h7xx_hal_i2c.h"
+#include "system.h"
+
 #include "sensorGPS.h"
 #include "gps_parser.h"
-#include <stdint.h> // Need this for a struct. If we are low on memory feel free to remove.
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 
 TaskHandle_t task_sensorGPS;
 UART_HandleTypeDef  UART7_Handler = {0};
@@ -20,6 +16,9 @@ GPS_Data_t myGPS; // The actual data storage for NMEA06
   * Initialize the hardware. CFG_COM1 and CFG_COM0 configuration pins
   */
 void sensorGPS_hardwareInit() {
+    __HAL_RCC_GPIOF_CLK_ENABLE();
+    __HAL_RCC_UART7_CLK_ENABLE();
+
     // Will have to rewrite this part, we wrote code for the incorrect gps chip, we use m6, m6 uses UART
     // M9N is capable of I2c but not m6
     /* PF6 — UART7 RX */

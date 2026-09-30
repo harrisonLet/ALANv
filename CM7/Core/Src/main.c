@@ -1,13 +1,18 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "main.h"
-#include "cmsis_os2.h"
+
 #include "portmacro.h"
+
 #include "stm32h7xx_hal_conf.h"
 #include "stm32h7xx_hal_gpio.h"
 #include "stm32h7xx_hal_rcc.h"
-#include <stdint.h>
+#include "stm32h7xx_hal.h"
+#include "stm32h7xx_nucleo.h"
+
 #include "controller.h"
+
+#include <stdint.h>
 
 /* Private includes ----------------------------------------------------------*/
 

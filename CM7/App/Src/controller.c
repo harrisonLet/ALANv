@@ -1,3 +1,4 @@
+#include "system.h"
 #include "controller.h"
 
 #include "servoSail.h"
@@ -7,13 +8,16 @@
 #include "sensorEncoder.h"
 #include "sensorGPS.h"
 
+#include "FreeRTOS.h"
+#include "cmsis_os2.h"
+
 #define LIVE_ENABLE
-// #define SERVO_SAIL_ENABLE
-// #define SERVO_RUDDER_ENABLE
-// #define SENSOR_WIND_ENABLE
-// #define SENSOR_MAGNETOMETER_ENABLE
-// #define SENSOR_ENCODER_ENABLE
-// #define SENSOR_GPS_ENABLE
+#define SERVO_SAIL_ENABLE
+#define SERVO_RUDDER_ENABLE
+#define SENSOR_WIND_ENABLE
+#define SENSOR_MAGNETOMETER_ENABLE
+#define SENSOR_ENCODER_ENABLE
+#define SENSOR_GPS_ENABLE
 
 TaskHandle_t task_live;
 TaskHandle_t task_button;

@@ -1,6 +1,5 @@
-#include "main.h"
-#include "stm32h7xx_hal_i2c.h"
-#include <stdint.h>
+#include "system.h"
+
 #include "sensorEncoder.h"
 #include <math.h>
 
@@ -80,6 +79,9 @@ I2C_HandleTypeDef I2C_AS5600_Handle;
   */
 void sensorEncoder_hardwareInit()
 {
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    __HAL_RCC_I2C1_CLK_ENABLE();
+    
     // Using PB6 I2C1_SCL and PB7 I2C1_SDA
     // added __HAL_RCC_I2C1_CLK_ENABLE(); to the main.c
     GPIO_InitTypeDef GPIO_InitStruct = {0};

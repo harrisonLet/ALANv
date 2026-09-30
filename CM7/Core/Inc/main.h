@@ -27,15 +27,7 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32h7xx_hal.h"
 
-#include "stm32h7xx_nucleo.h"
-#include <stdio.h>
-
-#include "FreeRTOS.h"
-#include "task.h"
-#include "semphr.h"
-#include "cmsis_os2.h"
 
 /* Private includes ----------------------------------------------------------*/
 
@@ -50,7 +42,6 @@ extern "C" {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-#define STM32H755_CLOCK_RATE 64000000
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/

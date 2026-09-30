@@ -1,4 +1,3 @@
-
 extern TaskHandle_t task_servoSail;
 
 void servoSail_hardwareInit();

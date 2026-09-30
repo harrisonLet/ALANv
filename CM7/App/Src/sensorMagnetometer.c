@@ -1,6 +1,5 @@
-#include "main.h"
-#include "stm32h7xx_hal_i2c.h"
-#include <stdint.h>
+#include "system.h"
+
 #include "sensorMagnetometer.h"
 #include <math.h>
 
@@ -112,6 +111,9 @@ static uint8_t savedOffsets[CALIB_OFFSET_SIZE] = {
   */
 void sensorMagnetometer_hardwareInit()
 {
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    __HAL_RCC_I2C2_CLK_ENABLE();
+
     // Page 65 of the chip datasheet says pf0 and pf1 are I2c_SDA and I2c_SCL
     // added  __HAL_RCC_GPIOF_CLK_ENABLE(); to the main.c
     // added __HAL_RCC_I2C2_CLK_ENABLE(); to the main.c

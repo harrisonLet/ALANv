@@ -1,14 +1,9 @@
-#include "cmsis_os2.h"
-#include "main.h"
+#include "system.h"
+
 #include "sensorWind.h"
-#include "stm32h755xx.h"
-#include "stm32h7xx_hal_def.h"
-#include "stm32h7xx_hal_gpio_ex.h"
-#include "stm32h7xx_hal_uart.h"
-#include <stdint.h>
-#include <stdbool.h>
-#include <stdio.h>
 #include "servoSail.h"
+
+#include "stm32h7xx_hal_gpio_ex.h"
 
 /* ------------------------------------------------------------------ */
 /* Config                                                               */
@@ -25,7 +20,6 @@ UART_HandleTypeDef  UART4_Handler = {0};
 /* ------------------------------------------------------------------ */
 /* Forward declarations                                                 */
 /* ------------------------------------------------------------------ */
-static void     sensorWind_uart4Init(void);
 
 static uint16_t crc16(const uint8_t *buf, int len);
 static void     append_crc(uint8_t *buf, int len);
@@ -40,11 +34,9 @@ static const char* direction_name(int val);
 // Hardware init                                                       
 void sensorWind_hardwareInit(void)
 {
-    sensorWind_uart4Init();
-}
+    __HAL_RCC_GPIOC_CLK_ENABLE();
+    __HAL_RCC_UART4_CLK_ENABLE();
 
-static void sensorWind_uart4Init(void)
-{
     /* PC10 — UART4 TX */
     GPIO_InitTypeDef GPIO_InitStruct = {0};
     GPIO_InitStruct.Pin       = GPIO_PIN_10;

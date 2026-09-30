@@ -1,5 +1,5 @@
+#include "system.h"
 
-#include "main.h"
 #include "servoSail.h"
 
 #define SERVO_CLOCK_FREQUENCY_HZ 1000000
@@ -18,6 +18,9 @@ TIM_HandleTypeDef servo_tim1;
   */
 void servoSail_hardwareInit()
 {
+  __HAL_RCC_GPIOE_CLK_ENABLE();
+  __HAL_RCC_TIM1_CLK_ENABLE();
+
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   GPIO_InitStruct.Pin = GPIO_PIN_9; 

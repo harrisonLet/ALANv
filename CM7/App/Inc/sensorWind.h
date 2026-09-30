@@ -1,4 +1,3 @@
-
 extern TaskHandle_t task_sensorWind;
 
 void sensorWind_hardwareInit();
