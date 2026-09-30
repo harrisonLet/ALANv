@@ -12,7 +12,6 @@
 
 #include "controller.h"
 
-#include <stdint.h>
 
 /* Private includes ----------------------------------------------------------*/
 

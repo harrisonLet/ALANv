@@ -27,7 +27,18 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
+#include "FreeRTOS.h"
+#include "task.h"
+#include "cmsis_os2.h"
 
+#include "stm32h7xx_hal.h"
+#include "stm32h7xx_nucleo.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
 
 /* Private includes ----------------------------------------------------------*/
 

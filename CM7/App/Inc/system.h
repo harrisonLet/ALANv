@@ -1,3 +1,5 @@
+#include "main.h"
+
 #include "stm32h7xx.h"
 #include "stm32h755xx.h"
 #include "stm32h7xx_hal.h"
@@ -7,7 +9,9 @@
 #include "stm32h7xx_hal_uart.h"
 #include "stm32h7xx_nucleo.h"
 
+#include "FreeRTOS.h"
 #include "task.h"
+#include "cmsis_os2.h"
 
 #include <stdlib.h>
 #include <stdio.h>

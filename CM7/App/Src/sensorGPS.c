@@ -1,7 +1,6 @@
 #include "system.h"
 
 #include "sensorGPS.h"
-#include "gps_parser.h"
 
 TaskHandle_t task_sensorGPS;
 UART_HandleTypeDef  UART7_Handler = {0};

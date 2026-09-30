@@ -8,8 +8,7 @@
 #include "sensorEncoder.h"
 #include "sensorGPS.h"
 
-#include "FreeRTOS.h"
-#include "cmsis_os2.h"
+#include "semphr.h"
 
 #define LIVE_ENABLE
 #define SERVO_SAIL_ENABLE
