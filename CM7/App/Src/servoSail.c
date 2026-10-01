@@ -5,17 +5,14 @@
 
 
 
-#define SERVO_MIN_ANGLE -135
-#define SERVO_MAX_ANGLE 135
+#define SERVO_MIN_ANGLE -90
+#define SERVO_MAX_ANGLE 90
 #define SERVO_MIN_PULSE 500
 #define SERVO_MAX_PULSE 2500
 #define SERVO_CENTER_PULSE ((SERVO_MIN_PULSE + SERVO_MAX_PULSE) / 2)
 
 
 
-/**
-  * Initialize the hardware.
-  */
 void servoSail_hardwareInit()
 {
   __HAL_RCC_GPIOE_CLK_ENABLE();
@@ -41,6 +38,8 @@ void servoSail_hardwareInit()
 
   if (HAL_TIM_PWM_Start(&servo_tim, TIM_CHANNEL_1) != HAL_OK) { Error_Handler(); }
 
+  printf("%s Starting motion sweep\r\n", SERVO_SAIL_TASK);
+
   /* Sweep to extremes on startup so you can see if servo responds */
   __HAL_TIM_SET_COMPARE(&servo_tim, TIM_CHANNEL_1, SERVO_MIN_PULSE);
   HAL_Delay(1000);
@@ -48,16 +47,10 @@ void servoSail_hardwareInit()
   HAL_Delay(1000);
   __HAL_TIM_SET_COMPARE(&servo_tim, TIM_CHANNEL_1, SERVO_CENTER_PULSE);
 
-  printf("[SERVO] Sail init OK, centered at %d us\r\n", SERVO_CENTER_PULSE);
+  printf("%s Initialized, centered at %d us\r\n", SERVO_SAIL_TASK, SERVO_CENTER_PULSE);
 }
 
-void servoSail_handler(void *argument)
-{
-    for(;;)
-    {
-        vTaskDelay(pdMS_TO_TICKS(1000)); // Delay for demonstration purposes
-    }
-}
+
 
 void servoSail_setAngle(int16_t angle)
 {
@@ -65,5 +58,5 @@ void servoSail_setAngle(int16_t angle)
     if (angle > SERVO_MAX_ANGLE) angle = SERVO_MAX_ANGLE;
     uint16_t pulse_length = SERVO_MIN_PULSE + ((SERVO_MAX_PULSE - SERVO_MIN_PULSE) * (angle - SERVO_MIN_ANGLE)) / (SERVO_MAX_ANGLE - SERVO_MIN_ANGLE);
     __HAL_TIM_SET_COMPARE(&servo_tim, TIM_CHANNEL_1, pulse_length);
-    printf("Setting Servo Angle To: %d\r\n", angle);
+    printf("%s Setting Servo Angle To: %d\r\n", SERVO_SAIL_TASK, angle);
 }

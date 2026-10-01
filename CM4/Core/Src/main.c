@@ -59,7 +59,7 @@ typedef struct __attribute__((packed)) {
 /*                             demonstration code based on hardware semaphore */
 /* This define is present in both CM7/CM4 projects                            */
 /* To comment when developping/debugging on a single core                     */
-// #define DUAL_CORE_BOOT_SYNC_SEQUENCE
+#define DUAL_CORE_BOOT_SYNC_SEQUENCE
 
 #if defined(DUAL_CORE_BOOT_SYNC_SEQUENCE)
 #ifndef HSEM_ID_0
@@ -131,7 +131,6 @@ int main(void)
 #endif /* DUAL_CORE_BOOT_SYNC_SEQUENCE */
 /* USER CODE END Boot_Mode_Sequence_1 */
   /* MCU Configuration--------------------------------------------------------*/
-
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
   SystemClock_Config();
@@ -146,15 +145,16 @@ int main(void)
 
   /* Initialize all configured peripherals */
   /* USER CODE BEGIN 2 */
-  COM_InitTypeDef com = {
-      .BaudRate   = 115200,
-      .WordLength = COM_WORDLENGTH_8B,
-      .StopBits   = COM_STOPBITS_1,
-      .Parity     = COM_PARITY_NONE,
-      .HwFlowCtl  = COM_HWCONTROL_NONE,
-  };
-  BSP_COM_Init(COM1, &com);
+#if !defined(DUAL_CORE_BOOT_SYNC_SEQUENCE)
+  /* Initialize COM1 port (115200, 8 bits (7-bit data + 1 stop bit), no parity */
+  BspCOMInit.BaudRate   = 115200;
+  BspCOMInit.WordLength = COM_WORDLENGTH_8B;
+  BspCOMInit.StopBits   = COM_STOPBITS_1;
+  BspCOMInit.Parity     = COM_PARITY_NONE;
+  BspCOMInit.HwFlowCtl  = COM_HWCONTROL_NONE;
+  if (BSP_COM_Init(COM1, &BspCOMInit) != BSP_ERROR_NONE) { Error_Handler(); }
   setvbuf(stdout, NULL, _IONBF, 0);
+#endif
   
   
   

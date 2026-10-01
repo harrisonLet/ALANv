@@ -84,6 +84,7 @@ if [[ $cm4 -eq 1 || $startup -eq 1 ]]; then
         printf "\n===========================================================================\n"
         printf "Flashing CM4...\n"
         openocd -f interface/stlink.cfg \
+                -c "set DUAL_BANK 1" \
                 -f target/stm32h7x.cfg \
                 -c "program CM4/build/Autonomaus_Sailboat_CM4.elf verify reset exit"
     fi
@@ -109,6 +110,7 @@ if [[ $cm7 -eq 1 || $startup -eq 1 ]]; then
         printf "\n===========================================================================\n"
         printf "Flashing CM7...\n"
         openocd -f interface/stlink.cfg \
+                -c "set DUAL_BANK 1" \
                 -f target/stm32h7x.cfg \
                 -c "program CM7/build/Autonomaus_Sailboat_CM7.elf verify reset exit"
     fi

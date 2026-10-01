@@ -27,13 +27,11 @@
 /*                             demonstration code based on hardware semaphore */
 /* This define is present in both CM7/CM4 projects                            */
 /* To comment when developping/debugging on a single core                     */
-#define DUAL_CORE_BOOT_SYNC_SEQUENCE
+// #define DUAL_CORE_BOOT_SYNC_SEQUENCE
 
-#if defined(DUAL_CORE_BOOT_SYNC_SEQUENCE)
 #ifndef HSEM_ID_0
 #define HSEM_ID_0 (0U) /* HW semaphore 0*/
 #endif
-#endif /* DUAL_CORE_BOOT_SYNC_SEQUENCE */
 
 /* Private macro -------------------------------------------------------------*/
 
@@ -69,10 +67,10 @@ int main(void)
 
   uint16_t timeout = 0xFFFF;
 
-  #if defined(DUAL_CORE_BOOT_SYNC_SEQUENCE)
-    while((__HAL_RCC_GET_FLAG(RCC_FLAG_D2CKRDY) != RESET) && (timeout-- > 0));
-    if ( timeout < 0 ) { Error_Handler(); }
-  #endif
+  __HAL_RCC_HSEM_CLK_ENABLE();
+  HAL_HSEM_FastTake(HSEM_ID_0);
+  while((__HAL_RCC_GET_FLAG(RCC_FLAG_D2CKRDY) != RESET) && (timeout-- > 0));
+  if ( timeout < 0 ) { Error_Handler(); }
   
   HAL_Init();
   SystemClock_Config();
@@ -83,10 +81,8 @@ int main(void)
   BspCOMInit.StopBits   = COM_STOPBITS_1;
   BspCOMInit.Parity     = COM_PARITY_NONE;
   BspCOMInit.HwFlowCtl  = COM_HWCONTROL_NONE;
-  if (BSP_COM_Init(COM1, &BspCOMInit) != BSP_ERROR_NONE)
-  {
-    Error_Handler();
-  }
+  if (BSP_COM_Init(COM1, &BspCOMInit) != BSP_ERROR_NONE) { Error_Handler(); }
+  setvbuf(stdout, NULL, _IONBF, 0);
 
   // Should already be in your STM32H7 HAL init but verify:
   SCB->CPACR |= ((3UL << 10*2) | (3UL << 11*2));  // enable FPU
@@ -94,8 +90,6 @@ int main(void)
   hardware_init();
 
   #if defined(DUAL_CORE_BOOT_SYNC_SEQUENCE)
-    __HAL_RCC_HSEM_CLK_ENABLE();
-    HAL_HSEM_FastTake(HSEM_ID_0);
     HAL_HSEM_Release(HSEM_ID_0,0);
     while((__HAL_RCC_GET_FLAG(RCC_FLAG_D2CKRDY) == RESET) && (timeout-- > 0));
     if ( timeout < 0 ) { Error_Handler(); }
