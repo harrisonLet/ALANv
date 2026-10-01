@@ -72,6 +72,7 @@ if [[ $cm4 -eq 1 || $startup -eq 1 ]]; then
         -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN" \
         -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
         CM4
+    cmake -E copy_if_different CM4/build/compile_commands.json CM4/compile_commands.json
 
     if [[ $build -eq 1 ]]; then
         printf "\n===========================================================================\n"
@@ -96,6 +97,7 @@ if [[ $cm7 -eq 1 || $startup -eq 1 ]]; then
         -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN" \
         -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
         CM7
+    cmake -E copy_if_different CM7/build/compile_commands.json CM7/compile_commands.json
 
     if [[ $build -eq 1 ]]; then
         printf "\n===========================================================================\n"
