@@ -64,29 +64,29 @@ if [[ $startup -eq 1 ]]; then
     sudo apt-get install -y gcc-arm-none-eabi ninja-build cmake openocd
 fi
 
-# if [[ $cm4 -eq 1 || $startup -eq 1 ]]; then
-#     printf "\n===========================================================================\n"
-#     printf "Configuring CM4...\n"
-#     cmake --no-warn-unused-cli -B CM4/build \
-#         -DCMAKE_BUILD_TYPE=Debug \
-#         -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN" \
-#         -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-#         CM4
+if [[ $cm4 -eq 1 || $startup -eq 1 ]]; then
+    printf "\n===========================================================================\n"
+    printf "Configuring CM4...\n"
+    cmake --no-warn-unused-cli -B CM4/build \
+        -DCMAKE_BUILD_TYPE=Debug \
+        -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN" \
+        -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+        CM4
 
-#     if [[ $build -eq 1 ]]; then
-#         printf "\n===========================================================================\n"
-#         printf "Building CM4...\n"
-#         cmake --build CM4/build
-#     fi
+    if [[ $build -eq 1 ]]; then
+        printf "\n===========================================================================\n"
+        printf "Building CM4...\n"
+        cmake --build CM4/build
+    fi
 
-#     if [[ $flash -eq 1 ]]; then
-#         printf "\n===========================================================================\n"
-#         printf "Flashing CM4...\n"
-#         openocd -f interface/stlink.cfg \
-#                 -f target/stm32h7x.cfg \
-#                 -c "program CM4/build/Autonomaus_Sailboat_CM4.elf verify reset exit"
-#     fi
-# fi
+    if [[ $flash -eq 1 ]]; then
+        printf "\n===========================================================================\n"
+        printf "Flashing CM4...\n"
+        openocd -f interface/stlink.cfg \
+                -f target/stm32h7x.cfg \
+                -c "program CM4/build/Autonomaus_Sailboat_CM4.elf verify reset exit"
+    fi
+fi
 
 if [[ $cm7 -eq 1 || $startup -eq 1 ]]; then
     printf "\n===========================================================================\n"

@@ -3,6 +3,6 @@
 
 extern TIM_HandleTypeDef servo_tim;
 
-void servoShared_init(void);
+void servoShared_hardwareInit(void);
 
 #endif

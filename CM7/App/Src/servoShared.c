@@ -7,7 +7,7 @@
 
 TIM_HandleTypeDef servo_tim;
 
-void servoShared_init(void)
+void servoShared_hardwareInit(void)
 {
     __HAL_RCC_TIM1_CLK_ENABLE();
 

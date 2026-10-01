@@ -12,7 +12,7 @@
 
 
 
-void servoRudder_init(void)
+void servoRudder_hardwareInit(void)
 {
   __HAL_RCC_GPIOE_CLK_ENABLE();
 

@@ -39,7 +39,7 @@ void hardware_init(void) {
     #endif
 
     #if defined(SERVO_SAIL_ENABLE) || defined(SERVO_RUDDER_ENABLE)
-    servoShared_init();
+    servoShared_hardwareInit();
     #endif
 
     #ifdef SERVO_SAIL_ENABLE
