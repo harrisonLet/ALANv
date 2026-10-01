@@ -1,4 +1,7 @@
-extern TaskHandle_t task_servoRudder;
+#ifndef SERVO_RUDDER_H
+#define SERVO_RUDDER_H
 
-void servoRudder_hardwareInit();
-void servoRudder_handler(void *argument);
+void servoRudder_init(void);
+void servoRudder_setAngle(int16_t angle);
+
+#endif

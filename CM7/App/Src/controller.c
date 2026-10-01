@@ -1,6 +1,7 @@
 #include "system.h"
 #include "controller.h"
 
+#include "servoShared.h"
 #include "servoSail.h"
 #include "servoRudder.h"
 #include "sensorWind.h"
@@ -35,6 +36,10 @@ void hardware_init(void) {
     #ifdef LIVE_ENABLE
     live_hardwareInit();
     button_hardwareInit();
+    #endif
+
+    #if defined(SERVO_SAIL_ENABLE) || defined(SERVO_RUDDER_ENABLE)
+    servoShared_init();
     #endif
 
     #ifdef SERVO_SAIL_ENABLE
@@ -72,14 +77,6 @@ void rtos_init()
     if ((semphr_button = xSemaphoreCreateBinary()) == NULL) { Error_Handler(); }
     if (xTaskCreate(live_handler,               "liveTask",               64,  NULL, osPriorityNormal,      &task_live)               != pdPASS) { Error_Handler(); }
     if (xTaskCreate(button_handler,             "buttonTask",             64,  NULL, osPriorityNormal,      &task_button)             != pdPASS) { Error_Handler(); }
-    #endif
-    
-    #ifdef SERVO_SAIL_ENABLE 
-    if (xTaskCreate(servoSail_handler,          "servoSailTask",          128, NULL, osPriorityNormal,      &task_servoSail)          != pdPASS) { Error_Handler(); }
-    #endif
-    
-    #ifdef SERVO_RUDDER_ENABLE
-    if (xTaskCreate(servoRudder_handler,        "servoRudderTask",        128, NULL, osPriorityNormal,      &task_servoRudder)        != pdPASS) { Error_Handler(); }
     #endif
 
     #ifdef SENSOR_WIND_ENABLE
