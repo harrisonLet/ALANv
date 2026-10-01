@@ -1,5 +1,6 @@
 #include "system.h"
 #include "controller.h"
+#include "shared_configuration.h"
 
 #include "servoShared.h"
 #include "servoSail.h"
@@ -10,14 +11,6 @@
 #include "sensorGPS.h"
 
 #include "semphr.h"
-
-#define LIVE_ENABLE
-#define SERVO_SAIL_ENABLE
-#define SERVO_RUDDER_ENABLE
-// #define SENSOR_WIND_ENABLE
-// #define SENSOR_MAGNETOMETER_ENABLE
-// #define SENSOR_ENCODER_ENABLE
-// #define SENSOR_GPS_ENABLE
 
 TaskHandle_t task_live;
 TaskHandle_t task_button;
@@ -33,36 +26,36 @@ void button_handler(void *argument);
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void hardware_init(void) {
-    #ifdef LIVE_ENABLE
+    #ifdef CM7_LIVE_ENABLE
     live_hardwareInit();
     button_hardwareInit();
     #endif
 
-    #if defined(SERVO_SAIL_ENABLE) || defined(SERVO_RUDDER_ENABLE)
+    #if defined(CM7_SERVO_SAIL_ENABLE) || defined(CM7_SERVO_RUDDER_ENABLE)
     servoShared_hardwareInit();
     #endif
 
-    #ifdef SERVO_SAIL_ENABLE
+    #ifdef CM7_SERVO_SAIL_ENABLE
     servoSail_hardwareInit();
     #endif
     
-    #ifdef SERVO_RUDDER_ENABLE
+    #ifdef CM7_SERVO_RUDDER_ENABLE
     servoRudder_hardwareInit();
     #endif
 
-    #ifdef SENSOR_WIND_ENABLE
+    #ifdef CM7_SENSOR_WIND_ENABLE
     sensorWind_hardwareInit();
     #endif
 
-    #ifdef SENSOR_MAGNETOMETER_ENABLE
+    #ifdef CM7_SENSOR_MAGNETOMETER_ENABLE
     sensorMagnetometer_hardwareInit();
     #endif
 
-    #ifdef SENSOR_ENCODER_ENABLE
+    #ifdef CM7_SENSOR_ENCODER_ENABLE
     sensorEncoder_hardwareInit();
     #endif
 
-    #ifdef SENSOR_GPS_ENABLE
+    #ifdef CM7_SENSOR_GPS_ENABLE
     sensorGPS_hardwareInit();
     #endif
 }
@@ -73,25 +66,25 @@ void hardware_init(void) {
   */
 void rtos_init()
 {
-    #ifdef LIVE_ENABLE
+    #ifdef CM7_LIVE_ENABLE
     if ((semphr_button = xSemaphoreCreateBinary()) == NULL) { Error_Handler(); }
     if (xTaskCreate(live_handler,               "liveTask",               64,  NULL, osPriorityNormal,      &task_live)               != pdPASS) { Error_Handler(); }
     if (xTaskCreate(button_handler,             "buttonTask",             64,  NULL, osPriorityNormal,      &task_button)             != pdPASS) { Error_Handler(); }
     #endif
 
-    #ifdef SENSOR_WIND_ENABLE
+    #ifdef CM7_SENSOR_WIND_ENABLE
     if (xTaskCreate(sensorWind_handler,         "sensorWindTask",         512, NULL, osPriorityAboveNormal, &task_sensorWind)         != pdPASS) { Error_Handler(); }
     #endif
 
-    #ifdef SENSOR_MAGNETOMETER_ENABLE
+    #ifdef CM7_SENSOR_MAGNETOMETER_ENABLE
     if (xTaskCreate(sensorMagnetometer_handler, "sensorMagnetometerTask", 128, NULL, osPriorityAboveNormal, &task_sensorMagnetometer) != pdPASS) { Error_Handler(); }
     #endif
 
-    #ifdef SENSOR_ENCODER_ENABLE
+    #ifdef CM7_SENSOR_ENCODER_ENABLE
     if (xTaskCreate(sensorEncoder_handler,      "sensorEncoderTask",      256, NULL, osPriorityAboveNormal, &task_sensorEncoder)      != pdPASS) { Error_Handler(); }
     #endif
 
-    #ifdef SENSOR_GPS_ENABLE
+    #ifdef CM7_SENSOR_GPS_ENABLE
     if (xTaskCreate(sensorGPS_handler,          "sensorGPSTask",          512, NULL, osPriorityAboveNormal, &task_sensorGPS)          != pdPASS) { Error_Handler(); }
     #endif
 }

@@ -18,6 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "shared_configuration.h"
+
 #include "lora.h"
 #include "servoRudder.h"
 #include "servoSail.h"
@@ -55,17 +57,11 @@ typedef struct __attribute__((packed)) {
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-/* DUAL_CORE_BOOT_SYNC_SEQUENCE: Define for dual core boot synchronization    */
-/*                             demonstration code based on hardware semaphore */
-/* This define is present in both CM7/CM4 projects                            */
-/* To comment when developping/debugging on a single core                     */
-#define DUAL_CORE_BOOT_SYNC_SEQUENCE
-
 #if defined(DUAL_CORE_BOOT_SYNC_SEQUENCE)
 #ifndef HSEM_ID_0
 #define HSEM_ID_0 (0U) /* HW semaphore 0*/
 #endif
-#endif /* DUAL_CORE_BOOT_SYNC_SEQUENCE */
+#endif
 
 #define ADDR_SAMD21  0xAA
 #define ADDR_STM32   0xBB
@@ -80,6 +76,7 @@ typedef struct __attribute__((packed)) {
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+COM_InitTypeDef BspCOMInit;
 SPI_HandleTypeDef hspi1;
 TIM_HandleTypeDef htim6;
 volatile uint8_t  tx_flag  = 0;  /* set by TIM6 ISR every 1 s */
@@ -127,8 +124,7 @@ int main(void)
   HAL_PWREx_EnterSTOPMode(PWR_MAINREGULATOR_ON, PWR_STOPENTRY_WFE, PWR_D2_DOMAIN);
   /* Clear HSEM flag */
   __HAL_HSEM_CLEAR_FLAG(__HAL_HSEM_SEMID_TO_MASK(HSEM_ID_0));
-
-#endif /* DUAL_CORE_BOOT_SYNC_SEQUENCE */
+#endif
 /* USER CODE END Boot_Mode_Sequence_1 */
   /* MCU Configuration--------------------------------------------------------*/
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
@@ -145,7 +141,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   /* USER CODE BEGIN 2 */
-#if !defined(DUAL_CORE_BOOT_SYNC_SEQUENCE)
+#if defined(CM4_ENABLE) && !defined(CM7_ENABLE)
   /* Initialize COM1 port (115200, 8 bits (7-bit data + 1 stop bit), no parity */
   BspCOMInit.BaudRate   = 115200;
   BspCOMInit.WordLength = COM_WORDLENGTH_8B;
@@ -157,16 +153,16 @@ int main(void)
 #endif
   
   
-  
+#if defined(CM4_ENABLE)
   MX_SPI1_Init();
   MX_TIM6_Init();
 
   Debug_LED_Init();
 
+  #if defined(CM4_SERVOS_ENABLE)
   servoRudder_init();
   servoSail_init();
-
-
+  #endif
 
   // Debug_LED_Toggle('y');  // toggle yellow LED to indicate SPI initialized
 
@@ -228,6 +224,7 @@ int main(void)
               else if (cmd[0] == 'r') { led_status ^= 0x02; Debug_LED_Toggle('r'); }
               else if (cmd[0] == 'y') { led_status ^= 0x04; Debug_LED_Toggle('y'); }
 
+              #if defined(CM4_SERVOS_ENABLE)
               /* Rudder steps */
               int16_t delta = 0;
               if      (cmd[0] == 'q') delta = +20;
@@ -259,10 +256,11 @@ int main(void)
                 if (sail_angle < -135) sail_angle = -135;
                 servoSail_setAngle(sail_angle);
               }
+              #endif
           }
       }
   }
-
+#endif
 
   /* USER CODE END 3 */
 }
