@@ -7,8 +7,8 @@
 
 
 
-#define CM7_ENABLE
-#define CM7_LIVE_ENABLE
+// #define CM7_ENABLE
+// #define CM7_LIVE_ENABLE
 // #define CM7_SERVO_SAIL_ENABLE
 // #define CM7_SERVO_RUDDER_ENABLE
 // #define CM7_SENSOR_WIND_ENABLE
