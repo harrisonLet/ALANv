@@ -2,14 +2,20 @@
 
 #include "servoSail.h"
 #include "servoShared.h"
+#include <stdint.h>
 
 
 
 #define SERVO_MIN_ANGLE -90
 #define SERVO_MAX_ANGLE 90
-#define SERVO_MIN_PULSE 1000
-#define SERVO_MAX_PULSE 2000
+#define SERVO_MIN_PULSE 500
+#define SERVO_MAX_PULSE 2500
 #define SERVO_CENTER_PULSE ((SERVO_MIN_PULSE + SERVO_MAX_PULSE) / 2)
+
+
+
+uint16_t servoSail_angleToPulse(int16_t angle);
+int16_t servoSail_pulseToAngle(uint16_t pulse);
 
 
 
@@ -38,25 +44,35 @@ void servoSail_hardwareInit()
 
   if (HAL_TIM_PWM_Start(&servo_tim, TIM_CHANNEL_1) != HAL_OK) { Error_Handler(); }
 
-  printf("%s Starting motion sweep\r\n", SERVO_SAIL_TASK);
 
   /* Sweep to extremes on startup so you can see if servo responds */
-  __HAL_TIM_SET_COMPARE(&servo_tim, TIM_CHANNEL_1, SERVO_CENTER_PULSE-100);
-  HAL_Delay(1000);
-  __HAL_TIM_SET_COMPARE(&servo_tim, TIM_CHANNEL_1, SERVO_CENTER_PULSE+100);
-  HAL_Delay(1000);
-  __HAL_TIM_SET_COMPARE(&servo_tim, TIM_CHANNEL_1, SERVO_CENTER_PULSE);
+  printf("%s Starting motion sweep\r\n", SERVO_SAIL_TASK);
+  int16_t test_angles[] = {-5, 5, 0};
+  for (int i = 0; i < 3; i++) {
+    servoSail_setAngle(test_angles[i]);
+    HAL_Delay(1000);
+  }
 
-  printf("%s Initialized, centered at %d us\r\n", SERVO_SAIL_TASK, SERVO_CENTER_PULSE);
+  printf("%s Initialized, centered at %d degrees\r\n", SERVO_SAIL_TASK, servoSail_pulseToAngle(SERVO_CENTER_PULSE));
 }
 
 
 
 void servoSail_setAngle(int16_t angle)
 {
-    if (angle < SERVO_MIN_ANGLE) angle = SERVO_MIN_ANGLE;
-    if (angle > SERVO_MAX_ANGLE) angle = SERVO_MAX_ANGLE;
-    uint16_t pulse_length = SERVO_MIN_PULSE + ((SERVO_MAX_PULSE - SERVO_MIN_PULSE) * (angle - SERVO_MIN_ANGLE)) / (SERVO_MAX_ANGLE - SERVO_MIN_ANGLE);
+    uint16_t pulse_length = servoSail_angleToPulse(angle);
     __HAL_TIM_SET_COMPARE(&servo_tim, TIM_CHANNEL_1, pulse_length);
     printf("%s Setting Servo Angle To: %d\r\n", SERVO_SAIL_TASK, angle);
+}
+
+uint16_t servoSail_angleToPulse(int16_t angle) {
+  if (angle < SERVO_MIN_ANGLE) angle = SERVO_MIN_ANGLE;
+  if (angle > SERVO_MAX_ANGLE) angle = SERVO_MAX_ANGLE;
+  return SERVO_MIN_PULSE + ((SERVO_MAX_PULSE - SERVO_MIN_PULSE) * (angle - SERVO_MIN_ANGLE)) / (SERVO_MAX_ANGLE - SERVO_MIN_ANGLE);
+}
+
+int16_t servoSail_pulseToAngle(uint16_t pulse) {
+  if (pulse < SERVO_MIN_PULSE) pulse = SERVO_MIN_PULSE;
+  if (pulse > SERVO_MAX_PULSE) pulse = SERVO_MAX_PULSE;
+  return SERVO_MIN_ANGLE + ((SERVO_MAX_ANGLE - SERVO_MIN_ANGLE) * (pulse - SERVO_MIN_PULSE)) / (SERVO_MAX_PULSE - SERVO_MIN_PULSE);
 }
