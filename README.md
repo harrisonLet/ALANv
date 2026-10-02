@@ -1,32 +1,71 @@
 # AUTONOMOUS SAILBOAT
 
-### Sensor Team
 
-* Corbin Barney (u1066089)
-* Charbel Salloum (u1446840)
-* Derek Tinoco (u1382366)
-* Connor Stevens (u1463295)
 
-### Antenna Team
+## REPOSITORY
 
-* Harrison LeTourneau (u1460207)
-* Adam Welsh (u1456456)
+This repository contains the code and scripts for the autonomous sailboat project, including firmware for the CM4 and CM7 processors, as well as startup routines and hardware initialization for the servos and sensors. The main directories and files are enumerated below.
 
-## SCRIPTS
+### CM4
 
-`./build.sh [-cm4|-cm7|-startup]`
+This contains all of the code specific to the CM4 core. Below I've listed the important directories and files.
 
-The build script can be used to setup the repo when it is first cloned or compile the individual processor .elf files. 
+* `App` directory - Contains all of the developer code for the CM4 core.
+* `build` directory - Contains built artifacts, ignored by version control.
+* `Core` directory - Contains the STM32 Cube files used to start the core and the developer code.
+* `Core/Inc/stm32h7xx_hal_conf.h` - This controls what HAL drivers are enabled and what hal drivers are not.
+* `Core/Src/main.c` - I assume you know why main is important.
+* `CMakeLists.txt` - The CMake build configuration file for the CM4 core, this is been designed to dynamically build any new files in the `App` and `Drivers` directories. It will link any files that are in the `Core`, `App`, `Drivers`, and `Common` directories.
 
-* After first cloning the repo run the build script with the -startup flag, it will install tools, configure projects, and build both processors. 
-* If you run with the -cm4 or -cm7 flags it will build that processors but will not perform the startup routine. You can declare both flags at the same time to build both .elf files.
+I have not tested the lora fully but it should work with the current setup.
 
-`./flash.sh [-cm4|-cm7|-b]`
+### CM7
 
-The flash script can be used to build and flash the STM32 for a specific processor.
+This contains all of the code specific to the CM7 core. Its design and layout will mirror that of the CM4 core with one exception. The `CMakeLists.txt` file will also compile and include any files in the `Middlewares` directory.
 
-* The -b flag will build the binary for the declared processors and then flash them. If -b is omitted then the script will just flash, no build.
-* the -cm4 and -cm7 flags are used to flash to those specific processors. If both are declared the script will always flash the cm4 and then the cm7.
+### Common
+
+This contains all of the code that is shared between the CM4 and CM7 cores.
+
+`Inc/shared_configuration.h` - This file is the top header file of the repo and is shared accross everything. All it contains are a bunch of defines that you can use to control what compiles and what runs. It has three sections.
+
+1) Shared Configurations
+2) CM4 Configuration
+3) CM7 Configuration
+
+### docs
+
+Kinda a hold over from 3992 but I figured it would be good to have a dedicated place where we store docs so I kept it here.
+
+### Drivers
+
+HAL Drivers for the STM32 microcontrollers. I've included all of the drivers I could find so if you program isn't compiling it is probably because you need to enable the corresponding driver in `Core/Inc/stm32h7xx_hal_conf.h` file of your respective core.
+
+### hardware
+
+This directory contains a KiCAD project for the hardware design of the autonomous sailboat.
+
+### Middlewares
+
+Middlewares for the STM32, right now all we have is RTOS and that is probably all we are ever going to have.
+
+### build.sh
+
+This is the new build script for the repository. It can be used to build and flash both cores independently or together. Use the following command to get details on how to use it. It is unix so windows any gonna run it.
+
+```bash
+./build.sh --help
+```
+
+### common-sources.cmake
+
+Both of the `CMakeLists.txt` files reference this file. It is a central source of truth for any CMake commands that need to be shared by both cores.
+
+### PROJECT.md
+
+Contains the project plan and rough information about how to implement it.
+
+
 
 ## DEBUG
 
@@ -35,5 +74,5 @@ This STM32 is equiped with a virtual serial port that lets you connect to its se
 linux
 ```bash
 screen $(ls /dev/ttyACM* | head -1) 115200 # To start the screen
-# To stop the screen click "ctrl+A" then "k".
+# To stop the screen click "ctrl+A" then "k" then "y".
 ```
