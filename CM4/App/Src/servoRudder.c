@@ -47,9 +47,9 @@ void servoRudder_init(void)
     HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
 
     /* Sweep to extremes on startup so you can see if servo responds */
-    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, SERVO_MIN_PULSE);
+    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, SERVO_CENTER_PULSE-100);
     HAL_Delay(1000);
-    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, SERVO_MAX_PULSE);
+    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, SERVO_CENTER_PULSE+100);
     HAL_Delay(1000);
     __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, SERVO_CENTER_PULSE);
 
