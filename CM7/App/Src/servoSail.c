@@ -7,8 +7,8 @@
 
 #define SERVO_MIN_ANGLE -90
 #define SERVO_MAX_ANGLE 90
-#define SERVO_MIN_PULSE 500
-#define SERVO_MAX_PULSE 2500
+#define SERVO_MIN_PULSE 1000
+#define SERVO_MAX_PULSE 2000
 #define SERVO_CENTER_PULSE ((SERVO_MIN_PULSE + SERVO_MAX_PULSE) / 2)
 
 
@@ -41,9 +41,9 @@ void servoSail_hardwareInit()
   printf("%s Starting motion sweep\r\n", SERVO_SAIL_TASK);
 
   /* Sweep to extremes on startup so you can see if servo responds */
-  __HAL_TIM_SET_COMPARE(&servo_tim, TIM_CHANNEL_1, SERVO_MIN_PULSE);
+  __HAL_TIM_SET_COMPARE(&servo_tim, TIM_CHANNEL_1, SERVO_CENTER_PULSE-100);
   HAL_Delay(1000);
-  __HAL_TIM_SET_COMPARE(&servo_tim, TIM_CHANNEL_1, SERVO_MAX_PULSE);
+  __HAL_TIM_SET_COMPARE(&servo_tim, TIM_CHANNEL_1, SERVO_CENTER_PULSE+100);
   HAL_Delay(1000);
   __HAL_TIM_SET_COMPARE(&servo_tim, TIM_CHANNEL_1, SERVO_CENTER_PULSE);
 

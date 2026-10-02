@@ -28,6 +28,9 @@ void button_handler(void *argument);
 void hardware_init(void) {
     #ifdef CM7_LIVE_ENABLE
     live_hardwareInit();
+    #endif
+
+    #ifdef CM7_BUTTON_ENABLE
     button_hardwareInit();
     #endif
 
@@ -67,13 +70,17 @@ void hardware_init(void) {
 void rtos_init()
 {
     #ifdef CM7_LIVE_ENABLE
-    if ((semphr_button = xSemaphoreCreateBinary()) == NULL) { Error_Handler(); }
     if (xTaskCreate(live_handler,               "liveTask",               64,  NULL, osPriorityNormal,      &task_live)               != pdPASS) { Error_Handler(); }
+    #endif
+
+
+    #ifdef CM7_BUTTON_ENABLE
+    if ((semphr_button = xSemaphoreCreateBinary()) == NULL) { Error_Handler(); }
     if (xTaskCreate(button_handler,             "buttonTask",             64,  NULL, osPriorityNormal,      &task_button)             != pdPASS) { Error_Handler(); }
     #endif
 
     #ifdef CM7_SENSOR_WIND_ENABLE
-    if (xTaskCreate(sensorWind_handler,         "sensorWindTask",         512, NULL, osPriorityAboveNormal, &task_sensorWind)         != pdPASS) { Error_Handler(); }
+    if (xTaskCreate(sensorWind_handler,         SENSOR_WIND_TASK,         512, NULL, osPriorityAboveNormal, &task_sensorWind)         != pdPASS) { Error_Handler(); }
     #endif
 
     #ifdef CM7_SENSOR_MAGNETOMETER_ENABLE

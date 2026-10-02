@@ -74,30 +74,28 @@ void sensorWind_hardwareInit(void)
 
     uint32_t apb1_clk = HAL_RCC_GetPCLK1Freq();
     uint32_t sys_clk  = HAL_RCC_GetSysClockFreq();
-    printf("UART4 init complete on PC10(TX) / PC11(RX)\r\n");
-    printf("  SYSCLK:  %lu Hz\r\n", sys_clk);
-    printf("  APB1CLK: %lu Hz\r\n", apb1_clk);
-    printf("  Expected UART4 baud: 9600\r\n");
+    printf("%s UART4 init complete on PC10(TX) / PC11(RX)\r\n", SENSOR_WIND_TASK);
+    printf("%s     SYSCLK:  %lu Hz\r\n", SENSOR_WIND_TASK, sys_clk);
+    printf("%s     APB1CLK: %lu Hz\r\n", SENSOR_WIND_TASK, apb1_clk);
+    printf("%s     Expected UART4 baud: 9600\r\n", SENSOR_WIND_TASK);
 }
 
 
 void sensorWind_handler(void *argument)
 {
-    vTaskSuspend(NULL);
     for (;;)
     {
         float angle = read_wind_angle_360(SENSOR_ADDRESS);
 
         if (angle < 0.0f)
         {
-            printf("Wind sensor: timeout or CRC error\r\n");
+            printf("%s timeout or CRC error\r\n", SENSOR_WIND_TASK);
         }
         else
         {
             uint16_t degrees = (uint16_t)angle;
             uint16_t tenths  = (uint16_t)(angle * 10) % 10;  // get decimal digit
-            printf("Wind angle: %u.%u deg\r\n", degrees, tenths);
-            servoSail_setAngle((degrees - 180) / -2);
+            printf("%s %u.%u deg\r\n", SENSOR_WIND_TASK, degrees, tenths);
         }
     }
 }
