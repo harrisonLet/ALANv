@@ -85,15 +85,15 @@ At some regular but infrequient interval, the telemetry data from the sensors is
     * Saved Telemetry Data
     * New Telemetry data flag
 * Outputs:
-    * LoRa Saved Telemetry Data
+    * LoRa Sent Telemetry Data
 
 ## PROCESS: Ground Station
 
-* Core: Ground Station
+* Core: Local
 * Inputs:
-    * Saved Telemetry Data from LoRa Communication
+    * LoRa Sent Telemetry Data
 * Outputs:
-    * Commands to LoRa Communication
+    * Ground Station Commands
 
 The ground station needs to have an effective interface to monitor the telemetry data from the sailboat and send appropriate commands back to it.
 
