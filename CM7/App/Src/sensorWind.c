@@ -10,6 +10,7 @@
 /* ------------------------------------------------------------------ */
 
 #define SENSOR_ADDRESS  0x02  // Default per protocol spec
+#define SENSOR_POLL_RATE 10 // Poll rate in Hz
 
 /* ------------------------------------------------------------------ */
 /* Globals                                                              */
@@ -20,6 +21,9 @@ UART_HandleTypeDef  UART4_Handler = {0};
 /* ------------------------------------------------------------------ */
 /* Forward declarations                                                 */
 /* ------------------------------------------------------------------ */
+
+int16_t sensorWind_translateWindToSailAngle(uint16_t u_wind_angle);
+int16_t sensorWind_tailAngleProportion(int16_t wind_angle, int16_t sail_angle_desited);
 
 static uint16_t crc16(const uint8_t *buf, int len);
 static void     append_crc(uint8_t *buf, int len);
@@ -94,10 +98,37 @@ void sensorWind_handler(void *argument)
         else
         {
             uint16_t degrees = (uint16_t)angle;
-            uint16_t tenths  = (uint16_t)(angle * 10) % 10;  // get decimal digit
-            printf("%s %u.%u deg\r\n", SENSOR_WIND_TASK, degrees, tenths);
+            // uint16_t tenths  = (uint16_t)(angle * 10) % 10;  // get decimal digit
+
+            int16_t sail_angle_wanted = sensorWind_translateWindToSailAngle(degrees);
+            int16_t tail_angle_proportion = sensorWind_tailAngleProportion(degrees, sail_angle_wanted);
+            printf("%s Wind Angle: %udeg,\t\tSail Angle (W): %d,\t\tTail Angle (P): %d\r\n", SENSOR_WIND_TASK, degrees, sail_angle_wanted, tail_angle_proportion);
+            servoSail_setAngle(tail_angle_proportion);
+
         }
+
+        vTaskDelay(pdMS_TO_TICKS(1000 / SENSOR_POLL_RATE));
     }
+}
+
+int16_t sensorWind_translateWindToSailAngle(uint16_t u_wind_angle) {
+    int16_t wind_angle_raw = u_wind_angle - 180; // Normalize the wind angle to be between -180 and +180
+    int16_t wind_sign = wind_angle_raw >> 31;
+    int16_t wind_abs = (wind_angle_raw ^ wind_sign) - wind_sign;
+
+    int16_t sail_angle_wanted;
+    if      (wind_abs < 30)  { sail_angle_wanted = 0; } // No Sail Zone
+    else if (wind_abs < 60)  { sail_angle_wanted = 15; } // Close Hauled
+    else if (wind_abs < 90)  { sail_angle_wanted = 35; } // Close Reach
+    else if (wind_abs < 120) { sail_angle_wanted = 60; } // Beam Reach
+    else if (wind_abs < 150) { sail_angle_wanted = 80; } // Broad Reach
+    else                     { sail_angle_wanted = 90; } // Running
+
+    return sail_angle_wanted * wind_sign;
+}
+
+int16_t sensorWind_tailAngleProportion(int16_t wind_angle, int16_t sail_angle_desired) {
+    return wind_angle - sail_angle_desired;
 }
 
 // DEBUG Version, prints out what is sent and what is approaved
