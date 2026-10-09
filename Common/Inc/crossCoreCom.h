@@ -3,9 +3,11 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 #define IPC_HSEM_TELEM          (1U)
 #define IPC_HSEM_CMD_BELL       (2U)
+#define IPC_PROCESS_ID          (0U)
 
 #define IPC_SHARED_BASE         (0x38000000UL)
 #define IPC_SHARED_SIZE         (64UL * 1024UL)
@@ -100,5 +102,16 @@ _Static_assert((IPC_CMD_ALIGN & (IPC_CMD_ALIGN - 1U)) == 0, "IPC_CMD_ALIGN must 
 _Static_assert(offsetof(ipc_cmd_t, payload) == sizeof(ipc_cmd_hdr_t), "payload must directly follow header");
 _Static_assert(IPC_CMD_RECORD_SIZE(IPC_CMD_MAX_PAYLOAD) <= IPC_CMD_RING_SIZE, "max command does not fit in ring");
 _Static_assert(sizeof(ipc_shared_t) <= IPC_SHARED_SIZE, "ipc_shared_t does not fit in SRAM4");
+
+bool ipc_lock(uint32_t hsem_id, uint32_t *primask);
+void ipc_unlock(uint32_t hsem_id, uint32_t primask);
+
+#ifdef CORE_CM4
+bool ipc_cmd_push(const ipc_cmd_t *cmd);
+#endif
+
+#ifdef CORE_CM7
+bool ipc_cmd_pop(ipc_cmd_t *cmd);
+#endif
 
 #endif
