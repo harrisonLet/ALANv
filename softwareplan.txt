@@ -1,0 +1,173 @@
+PROCESSES
+
+Path planning (locally)
+	Inputs:
+		Land/water svg data
+		Active wind data
+		A, B
+	Output:
+		List of Sail Vectors
+			Vector
+			Margin
+
+Live Tack Planning (LTP)
+	Inputs:
+		Sail Vectors
+		GPS location
+		Wind (decide state)
+		
+	Output:
+		Desired Heading
+		Sail/Wind angle
+
+Rudder PID (Hold heading)
+	Input: 
+		Current Heading
+		Desired Heading (LTP)	
+	Output:
+		Rudder Servo Angle
+
+Sail PID (Maintain sail/wind angle)
+	Input:
+		Sail/Boat Angle
+		Desired Sail/Wind Angle (LTP)
+		Wind angle
+	Output:
+		Sail tail Servo Angle
+
+
+LoRa
+
+
+
+FUNCTIONS
+Tack
+	Inputs:
+		Direction
+		Wind angle
+		Current rudder angle
+		Current sail angle
+	Outputs:
+		Servo Angles
+
+
+
+
+Demo Day:
+
+GENERIC GOALS
+- Painted, finished, waterproof boat & sail, dissemble and assemble boat easily (under 5 mins)
+- Remote control of both servos (manual)
+- Remote control of individual servo (other in auto)
+- Receive telemetry
+	SENSORS
+	- GPS (float)
+	- Sail and Rudder servo position (1byte)
+	- Magnetometer (4x 2byte)
+	- Wind vane (1 byte)
+	- Encoder position (2 byte)
+	- Battery status (4 bytes)
+
+	SOFTWARE GEN
+	- Output of LTP (desired heading 1 byte)
+	- Desired sail angle (2 byte)
+
+- Ground station gui
+
+
+- Autonomous navigation (point a to point b (or c d e f g))
+
+ 	SOFTWARE SPECIFICS
+
+	- Generate nautical vectors (vector & margin) from waypoint list
+
+	- Wirelessly load nautical vector list
+
+	THREADS
+
+-----------------------------
+
+	- Read Wind vane
+		- Save to cache
+	
+	- Read sail encoder
+		- Save to cache
+
+	- Read gps
+		- Save to cache
+
+	- Read magnetometer
+		- Save to cache
+
+	- BMS
+
+Due 10/19 Corbin
+-----------------------------
+
+	- Write data to SRAM
+		- Fine to sit waiting for SRAM semaphore
+		- Low priority thread (we only read telemetry data 1hz)
+
+Due 10/26	Connor
+-----------------------------
+
+	- Sail Control (feeds sail tail control)
+		- Takes wind angle (to the boat) and determines optimal sail angle (to 		the boat)
+		- State machine
+
+
+
+	- Rudder control (PID)
+		- Takes desired heading (from LTP) and maintains rudder servo
+
+	- Set rudder servo
+		- Reads desired rudder angle and sets it
+
+	- Sail Tail Control (PID)
+		- Takes desired sail angle (to the boat) and determines tail servo to 				maintain (optimize this to save servo current draw) -> set sail servo
+
+	- Set sail servo
+		- Reads desired sail servo angle and sets it
+
+
+Due 11/2 (Drive the boat with manual headings and no other input) Jared
+-----------------------------
+
+	- Live Tack planning
+		- Takes list of NV, current location, and wind angle and converts to 			desired heading (one single output: desired heading [cardinal degrees])
+
+Due 11/9 Charbel
+-----------------------------
+
+	- Command Module
+		- Toggle pid threads (sail and rudder)
+		- Toggle LTP thread
+		- Toggle sail control thread
+		- Direct servo control inputs to servo threads
+
+Due 11/9 Harrison
+-----------------------------
+
+	- LoRa
+		- Interrupt on receive
+			COMMANDS
+				- Stop
+				- Start autonomous
+					- Auto full
+					- Auto Rudder
+					- Auto Sail
+				- Start manual
+					- Sail servo right/left
+					- Rudder servo right/left
+				- Load new nautical vectors
+		- Interrupt on TIM6
+			- Send telemetry
+				- Read
+
+Due 11/2
+-----------------------------
+
+
+
+
+
