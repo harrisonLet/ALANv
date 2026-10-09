@@ -43,6 +43,7 @@
 # ASSIGNMENTS
 
 [Claude]: Scheduling risk: every task depends on shared data types (WVData, GPSData, IMUData, EData, BMData, telemetry record, NVS, command packet) that nobody owns yet. Assign these to one person and finish them before the 10/19 pollers, otherwise each person will invent their own layout.
+[Corbin]: I will handle this.
 
 [Claude]: Jared's 11/02 arbiters and PIDs need the source-selection logic that lives in Harrison's Commander and Chief (due 11/09). Either move a minimal mode switch (manual heading / direct drive / auto) into Jared's scope, or have the arbiters take a simple "source" input that Commander and Chief fills in later.
 
@@ -158,8 +159,10 @@ Receive and display boat telemetry alongside its position and planned route, pro
 ## CM7
 
 [Claude]: Every sensor output should carry a timestamp and a valid flag (and a sequence number), not only a value. The Stale field then has a concrete meaning, and consumers (PIDs, LTP, arbiters, telemetry) can fall back instead of acting on old data.
+[Corbin]: I will add a timestamp, valid flag, and sequence to the sensor outputs, though I'm not sure we'll ever actually use the sequence number.
 
 [Claude]: Define the frames once, in Common/Inc: heading in degrees 0-360 clockwise (true or magnetic, pick one), wind angle relative to the bow in -180..180 with positive meaning starboard, and whether WVData is apparent or true wind. The plan currently says only "measured wind angle", and LSP and LTP need different things (see their notes).
+[Corbin]: I will define the frames in Common/Inc as suggested.
 
 [Claude]: Each of the "PROCESS" and "PID" items should be a periodic RTOS task driven by a fixed rate (vTaskDelayUntil or a timer), not event-driven, so PID dt is known. See the suggested rate table in the AI section.
 
@@ -205,8 +208,13 @@ Read the wind vane at a regular interval and make the latest wind measurement av
 * Stale:
 
 [Claude]: Suggested meaning of the fields so all five pollers fill them the same way: Frequency = sample rate, Window = max allowed jitter/time between samples, Stale = age after which the data must be treated as invalid. Include a valid flag and timestamp in WVData.
+[Corbin]: Discussed in earlier recommendations. The defenitions it uses are wrong though
+    - Frequency = sample rate in Hz
+    - Window = the number of samples to average
+    - Stale = age in seconds after which the data must be treated as invalid
 
 [Claude]: State whether the vane reports apparent wind relative to the bow (it will, physically), its zero offset, and its sign convention. Consider averaging or low-pass filtering, since vane readings are noisy and LSP/LTP should not react to gusts. Also note that a wind angle taken while the boat is turning is not the same as one taken in steady flight.
+[Corbin]: Wind is relative to the boat in a -180 to 180 range, with 0 being straight ahead, positive to starboard, and negative to port. As for the filtering that is what the window is for.
 
 ### POLLING: GPS
 
@@ -223,8 +231,10 @@ Read the GPS receiver at a regular interval and make the boat's latest position 
 * Stale:
 
 [Claude]: GPSData needs more than position: fix status/quality, satellite count or HDOP, speed over ground and course over ground. LTP needs the validity information to know when to trust the position, and course/speed over ground are useful as a check on heading and leeway.
+[Corbin]: All this info will be in the struct...I think that a valid flag will be sufficent for the LTP and other functions though.
 
 [Claude]: Pick a unit and datum for position (e.g. degrees * 1e7 as int32) to keep the telemetry record small and avoid float-precision surprises at lat/lon scale. Prefer UART + DMA with idle-line detection over per-byte polling.
+[Corbin]: On chip we are going to store the float but in the telemetry we send we will probably optimize for size and use fixed-point representation.
 
 ### POLLING: IMU
 
@@ -241,8 +251,14 @@ Read the inertial measurement unit at a regular interval and make the boat's lat
 * Stale:
 
 [Claude]: Decide what Heading Control needs from IMUData: a fused heading (yaw) in the agreed frame, plus yaw rate if you want a D term. If the IMU only gives raw magnetometer/accelerometer data, the fusion and tilt compensation (the boat heels) must live somewhere, probably here.
+[Corbin]: The IMU has a full internal fusion algorithm. We need the following data:
+    - Yaw
+    - Pitch
+    - Roll
+    - Global Heading Direction (i.e. relative to true north)
 
 [Claude]: Magnetometers are disturbed by the servos and wiring (current draw). Plan a calibration step (hard/soft-iron) and mounting position away from the servos, and consider declination if using magnetic north. The old softwareplan.txt called this a magnetometer; confirm which sensor this actually is.
+[Corbin]: Already discussed outside of this file.
 
 ### POLLING: Encoder
 
@@ -259,6 +275,7 @@ Read the sail encoder at a regular interval and make the latest sail-position me
 * Stale:
 
 [Claude]: Define the encoder zero (sail aligned with the hull centerline), the sign (positive to starboard), and wraparound handling if it is absolute, or how it is homed on boot if it is incremental. State the resolution (the old plan said 2 bytes) and the angle it reports (sail relative to the hull, not to the wind).
+[Corbin]: Sail angle is relative to the center line of the boat, with positive angles to starboard and negative angles to port (Same as wind). Precision will have to be int16 since there are 360 possible degrees of freedom. I think there is a way to get even hight precision from the wind sensor but I don't know that we need more then 1 degree of precision.
 
 ### POLLING: Battery Monitor
 
@@ -275,6 +292,7 @@ Read the battery monitor at a regular interval and make the latest battery statu
 * Stale:
 
 [Claude]: BMData feeds the failsafe logic, not just telemetry. Define low and critical thresholds (and their hysteresis) and who reacts to them (Commander and Chief). Servo stall and motor current draw will sag the battery voltage, so filter or use a debounce before triggering.
+[Corbin]: Commander and Chief will handle putting the boat into a low power mode where we just hold the servos in their respective 0 positions. Beyond that the boat isn't actually going to have any more complex power management.
 
 <!---->
 <!-- Telemetry -->
@@ -483,15 +501,54 @@ Transmit the latest telemetry record to the ground station over LoRa.
 
 <!------------------------------------------------------------------------>
 
+# FAULT TABLE
+
+LoRa Lost:
+* Who detects?
+* Response?
+
+GPS Invalid:
+* Detected by the GPS polling task
+* After a set number of failed GPS readings, trigger a fault response 
+* Fault response will be a notification sent via LoRa and a temporary return to home for the sail and rudder servos.
+
+IMU Stale:
+* Detected by the IMU polling task
+* After a set number of failed IMU readings, trigger a fault response
+* Fault response will be a notification sent via LoRa and a temporary return to home for the sail and rudder servos.
+
+Wind Vane Stale:
+* Detected by the wind vane polling task
+* After a set number of failed wind vane readings, trigger a fault response
+* Fault response will be a notification sent via LoRa and a temporary return to home for the sail and rudder servos.
+
+Encoder Stale:
+* Detected by the encoder polling task
+* After a set number of failed encoder readings, trigger a fault response
+* Fault response will be a notification sent via LoRa and a temporary fallback position for sail servo
+
+Battery Low/Critical:
+* Detected by the battery monitoring task
+* Trigger a fault response when battery level falls below critical threshold
+* Home sail and rudder servos then lock that position.
+
+NVS Empty:
+
+Tack Timeout:
+
+<!------------------------------------------------------------------------>
+
 # AI
 
 [Claude]: Shared data layer. Put all cross-task and cross-core types in Common/Inc (WVData, GPSData, IMUData, EData, BMData, telemetry record, NVS segment, command packet), each with timestamp, valid flag and units documented in comments. Decide on fixed-point vs float up front.
+[Corbin]: I will handle this for the sensor data structures and shared interpretation data such as what -10 deg refers to when talking about the sail or rudder.
 
 [Claude]: Inter-core design. CM7 to CM4 is the telemetry buffer (SRAM4, double buffer or HSEM). CM4 to CM7 is the command queue (including NVS chunks). Specify the HSEM IDs, the memory map/linker placement for both cores, MPU and cache attributes for the shared region (non-cacheable or explicit clean/invalidate), and what each core does if the other has not booted. Check this against the dual-core boot sequence already in Common/Src.
 
 [Claude]: Suggested starting rates (tune later): Heading PID 20 Hz, Sail PID 10 Hz, IMU 50 Hz, wind vane 10 Hz, encoder 20 Hz, GPS 1-5 Hz, battery 1 Hz, LSP 2-5 Hz, LTP 1-2 Hz, Save Telemetry 1-2 Hz. Give higher RTOS priority to the arbiters, Tack sequence and PIDs than to LTP, telemetry and polling of slow sensors. Make sure no task that holds a mutex or semaphore can block the arbiters.
 
 [Claude]: Failsafe matrix. Write a table of fault vs response: LoRa lost, GPS invalid, IMU stale, wind vane stale, encoder stale, battery low/critical, NVS empty, Tack timeout. Each row names who detects it and what state Commander and Chief enters.
+[Corbin]: I added a section above for this and filled out some of the fault cases, the list is not comprehensive yet.
 
 [Claude]: Testing plan. Most of this cannot be tested on water until late. Add a simulation or hardware-in-the-loop mode (inject recorded or synthetic WVData/GPSData/IMUData and watch the outputs), unit-testable pure functions for LSP/LTP/PID, and a bench test of the servos with the arbiters and limits before the boat is put in the water. Do the first PID tuning with manual headings, as the schedule already suggests.
 
