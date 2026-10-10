@@ -1,12 +1,12 @@
 /////////////////////////////////////////////////////////////////////////////
 // Battery
-#define BATTERY_VOLTAGE_MIN 12000
-#define BATTERY_VOLTAGE_NOM 14800
-#define BATTERY_VOLTAGE_MAX 16800
+#define BATTERY_OP_VOLTAGE_MIN 12000
+#define BATTERY_OP_VOLTAGE_NOM 14800
+#define BATTERY_OP_VOLTAGE_MAX 16800
 
-#define BATTERY_CELL_VOLTAGE_MIN 3000
-#define BATTERY_CELL_VOLTAGE_NOM 3700
-#define BATTERY_CELL_VOLTAGE_MAX 4200
+#define BATTERY_CELL_OP_VOLTAGE_MIN 3000
+#define BATTERY_CELL_OP_VOLTAGE_NOM 3700
+#define BATTERY_CELL_OP_VOLTAGE_MAX 4200
 
 #define BATTERY_CELL_COUNT 4
 
@@ -34,7 +34,8 @@ typedef struct {
      * (i.e 3.7V is 3700)
      */
     uint16_t cell_voltage[BATTERY_CELL_COUNT];
-    uint16_t timestamp; /**< Timestamp for when the measurement was taken */
+    
+    uint32_t timestamp; /**< Timestamp for when the measurement was taken */
     uint8_t valid; /**< Indicates if the measurement is valid */
     uint8_t sequence; /**< Sequence number of the measurement, used to ensure a measurment is actually new */
 } TelemetryBattery_t;
