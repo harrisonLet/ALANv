@@ -109,6 +109,9 @@ typedef struct {
      * This value represents the Roll of the vessel away from straight up and 
      * down. Thus its operational range is from -180 to 180 degrees. Where
      * positive values indicate a roll towards the starboard side.
+     *
+     * - Operational Range: -180 to 180 degrees
+     * - Precision: 1 degree
      */
     int16_t angP_roll;
     /**
@@ -119,6 +122,9 @@ typedef struct {
      * This value represents the Pitch of the vessel away from straight up and 
      * down. Thus its operational range is from -180 to 180 degrees. Where
      * positive values indicate a pitch towards the bow of the vessel.
+     *
+     * - Operational Range: -180 to 180 degrees
+     * - Precision: 1 degree
      */
     int16_t angP_pitch;
     
@@ -130,6 +136,9 @@ typedef struct {
      * This value represents the Heading of the vessel relative to magnetic north.
      * Its operational range is from 0 to 360 degrees, where 0/360 indicates
      * north, 90 indicates east, 180 indicates south, and 270 indicates west.
+     *
+     * - Operational Range: 0 to 360 degrees
+     * - Precision: 1 degree
      */
     uint16_t angP_heading;
 
@@ -137,12 +146,18 @@ typedef struct {
      * Latitude of the vessel obtained from GPS. Its operational range is from -90 
      * to 90 degrees, where positive values indicate north latitude and negative 
      * values indicate south latitude.
+     *
+     * - Operational Range: -90 to 90 degrees
+     * - Precision: 0.000001 degree
      */
     float latitude;
     /**
      * Longitude of the vessel obtained from GPS. Its operational range is from -180 
      * to 180 degrees, where positive values indicate east longitude and negative 
      * values indicate west longitude. 0 indicates the prime meridian.
+     *
+     * - Operational Range: -180 to 180 degrees
+     * - Precision: 0.000001 degree
      */
     float longitude;
     

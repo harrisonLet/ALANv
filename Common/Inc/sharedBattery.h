@@ -21,6 +21,9 @@ typedef struct {
     /**
      * Overall voltage differential of the battery. This value gives a direct representation 
      * in millivolts (mV) (i.e 14.8V is 14800)
+     *
+     * - Operational Range: 12000 to 16800 mV
+     * - Precision: 1 mV
      */
     uint16_t overall_health; 
     /**
@@ -32,9 +35,12 @@ typedef struct {
      *
      * This value gives a direct representation of each cell's voltage in millivolts (mV) 
      * (i.e 3.7V is 3700)
+     *
+     * - Operational Range: 3000 to 4200 mV
+     * - Precision: 1 mV
      */
     uint16_t cell_voltage[BATTERY_CELL_COUNT];
-    
+
     uint32_t timestamp; /**< Timestamp for when the measurement was taken */
     uint8_t valid; /**< Indicates if the measurement is valid */
     uint8_t sequence; /**< Sequence number of the measurement, used to ensure a measurment is actually new */
