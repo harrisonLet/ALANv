@@ -103,15 +103,18 @@ _Static_assert(offsetof(ipc_cmd_t, payload) == sizeof(ipc_cmd_hdr_t), "payload m
 _Static_assert(IPC_CMD_RECORD_SIZE(IPC_CMD_MAX_PAYLOAD) <= IPC_CMD_RING_SIZE, "max command does not fit in ring");
 _Static_assert(sizeof(ipc_shared_t) <= IPC_SHARED_SIZE, "ipc_shared_t does not fit in SRAM4");
 
-bool ipc_lock(uint32_t hsem_id, uint32_t *primask);
-void ipc_unlock(uint32_t hsem_id, uint32_t primask);
+bool ipc_lock(uint32_t hsem_id);
+void ipc_unlock(uint32_t hsem_id);
 
 #ifdef CORE_CM4
 bool ipc_cmd_push(const ipc_cmd_t *cmd);
+bool ipc_telem_read(ipc_telemetry_t *telem, uint32_t *telem_seq);
+
 #endif
 
 #ifdef CORE_CM7
 bool ipc_cmd_pop(ipc_cmd_t *cmd);
+bool ipc_telem_write(ipc_telemetry_t *telem);
 #endif
 
 #endif

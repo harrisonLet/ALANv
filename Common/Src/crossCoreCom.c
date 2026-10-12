@@ -8,22 +8,17 @@
 ipc_shared_t ipc_shared __attribute__((section(".ipc_shared")));
 
 // Interrupts stay disabled while the lock is held, ipc_unlock restores them
-bool ipc_lock(uint32_t hsem_id, uint32_t *primask) {
-    *primask = __get_PRIMASK();
-    __disable_irq();
-
+bool ipc_lock(uint32_t hsem_id) {
     if (HAL_HSEM_FastTake(hsem_id) != HAL_OK) {
-        __set_PRIMASK(*primask);
         return false;
     }
     __DMB();
     return true;
 }
 
-void ipc_unlock(uint32_t hsem_id, uint32_t primask) {
+void ipc_unlock(uint32_t hsem_id) {
     __DMB();
     HAL_HSEM_Release(hsem_id, IPC_PROCESS_ID);
-    __set_PRIMASK(primask);
 }
 
 #ifdef CORE_CM4 // Block these functions () if CM4 is not configured
@@ -53,6 +48,16 @@ bool ipc_cmd_push(const ipc_cmd_t *cmd) {
     __DMB();
     ipc_shared.cmd.head = head + record_size;
     return true;
+}
+
+bool ipc_telem_read(ipc_telemetry_t *telem, uint32_t *telem_seq) {
+    if (ipc_lock(IPC_HSEM_TELEM)) {
+        *telem_seq = ipc_shared.telem_seq;
+        memcpy(telem, &ipc_shared.telem, sizeof(ipc_telemetry_t));
+        ipc_unlock(IPC_HSEM_TELEM);
+        return true;
+    }
+    return false;
 }
 #endif
 
@@ -88,5 +93,15 @@ bool ipc_cmd_pop(ipc_cmd_t *cmd) {
     __DMB();
     ipc_shared.cmd.tail = tail + IPC_CMD_RECORD_SIZE(cmd->hdr.len);
     return true;
+}
+
+bool ipc_telem_write(ipc_telemetry_t *telem) {
+    if (ipc_lock(IPC_HSEM_TELEM)) {
+        ipc_shared.telem_seq++;
+        memcpy(&ipc_shared.telem, telem, sizeof(ipc_telemetry_t));
+        ipc_unlock(IPC_HSEM_TELEM);
+        return true;
+    }
+    return false;
 }
 #endif
