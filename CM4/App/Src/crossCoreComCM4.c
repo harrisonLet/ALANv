@@ -1,12 +1,6 @@
 #include <crossCoreComCM4.h>
 
 #include "shared_configuration.h"
-
-#include "portmacro.h"
-
-#include "stm32h7xx_hal_conf.h"
-#include "stm32h7xx_hal_gpio.h"
-#include "stm32h7xx_hal_rcc.h"
 #include "stm32h7xx_hal.h"
 #include "stm32h7xx_nucleo.h"
 

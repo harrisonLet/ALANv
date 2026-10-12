@@ -4,7 +4,7 @@
 
 #include "stm32h7xx_hal.h"
 
-// Placed at IPC_SHARED_BASE (SRAM4) by the linker, same address in both images
+// Allocate both memory structs into SRAM4 (linker handles actual allocation)
 ipc_shared_t ipc_shared __attribute__((section(".ipc_shared")));
 
 // Interrupts stay disabled while the lock is held, ipc_unlock restores them
@@ -26,7 +26,7 @@ void ipc_unlock(uint32_t hsem_id, uint32_t primask) {
     __set_PRIMASK(primask);
 }
 
-#ifdef CORE_CM4
+#ifdef CORE_CM4 // Block these functions () if CM4 is not configured
 // pos is a free-running byte count, wraps to the start of data[] when needed
 static void ipc_buf_write(uint32_t pos, const void *src, uint32_t num_bytes) {
     uint32_t buf_index = pos & (IPC_CMD_RING_SIZE - 1U);
