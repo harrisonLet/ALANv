@@ -13,3 +13,13 @@
 #define HSEM_ID_2 (2U)
 #endif
 #endif
+
+bool crossCoreComCM4_attach(uint32_t timeout_ms) {
+    return true;
+}
+bool crossCoreComCM4_readTelemetry(ipc_telemetry_t *telem, uint32_t *seq) {
+    return true;
+}
+bool crossCoreComCM4_pushCommand(ipc_cmd_t *cmd) {
+    return true;
+}

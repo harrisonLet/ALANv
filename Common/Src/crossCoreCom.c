@@ -1,7 +1,5 @@
 #include "crossCoreCom.h"
-
 #include <string.h>
-
 #include "stm32h7xx_hal.h"
 
 // Allocate both memory structs into SRAM4 (linker handles actual allocation)
@@ -12,16 +10,16 @@ bool ipc_lock(uint32_t hsem_id) {
     if (HAL_HSEM_FastTake(hsem_id) != HAL_OK) {
         return false;
     }
-    __DMB(); // 
+    __DMB(); // Prevents memory operations before HSEM is taken
     return true;
 }
 
 void ipc_unlock(uint32_t hsem_id) {
-    __DMB();
+    __DMB(); // Finish all memory operation before releasing
     HAL_HSEM_Release(hsem_id, IPC_PROCESS_ID);
 }
 
-#ifdef CORE_CM4 // Block these functions () if CM4 is not configured
+#ifdef CORE_CM4 // Block these functions if CM4 is not configured
 // pos is a free-running byte count, wraps to the start of data[] when needed
 static void ipc_buf_write(uint32_t pos, const void *src, uint32_t num_bytes) {
     uint32_t buf_index = pos & (IPC_CMD_RING_SIZE - 1U);
@@ -45,7 +43,7 @@ bool ipc_cmd_push(const ipc_cmd_t *cmd) {
     }
 
     ipc_buf_write(head, cmd, sizeof(ipc_cmd_hdr_t) + cmd->hdr.len);
-    __DMB();
+    __DMB(); // Complete all write operations before updating head and returning
     ipc_shared.cmd.head = head + record_size;
     return true;
 }
@@ -62,6 +60,47 @@ bool ipc_telem_read(ipc_telemetry_t *telem, uint32_t *telem_seq) {
 #endif
 
 #ifdef CORE_CM7
+
+static const MPU_Region_InitTypeDef SRAM4_Config = {
+    MPU_REGION_ENABLE, 
+    MPU_REGION_NUMBER0, 
+    IPC_SHARED_BASE, 
+    MPU_REGION_SIZE_64KB, 
+    .SubRegionDisable = 0x00, // Min_Data 
+    MPU_TEX_LEVEL1,
+    MPU_REGION_FULL_ACCESS,
+    MPU_INSTRUCTION_ACCESS_DISABLE,
+    MPU_ACCESS_SHAREABLE,
+    MPU_ACCESS_NOT_CACHEABLE,
+    MPU_ACCESS_NOT_BUFFERABLE
+};
+
+void ipc_init(void) {
+    // Enable Hardware Semaphore Clock
+    __HAL_RCC_HSEM_CLK_ENABLE();
+
+    // Diable MPU to configure SRAM4
+    HAL_MPU_Disable();
+    // Cofigure CM7 so it doesn't cache SRAM4 (CM4 doesn't cache)
+    HAL_MPU_ConfigRegion(&SRAM4_Config);
+    // Reenable the rest of the MPU with defaults
+    HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
+
+    // Clear SRAM4
+    memset((void *)&ipc_shared, 0, sizeof(ipc_shared));
+    
+    // Write IPC Version to SRAM4
+    ipc_shared.version = IPC_VERSION;  
+    // Set mode in SRAM4 to AUTO
+    ipc_shared.telem.mode = IPC_MODE_AUTO;
+
+    // Make sure everything is cleared/written before magic is set
+    __DMB();
+
+    // Write Magic (this signals to CM4 that SRAM4 is initialized)
+    ipc_shared.magic = IPC_MAGIC;
+}
+
 static void ipc_buf_read(uint32_t pos, void *dst, uint32_t num_bytes) {
     uint32_t buf_index = pos & (IPC_CMD_RING_SIZE - 1U);
     uint32_t first = IPC_CMD_RING_SIZE - buf_index;
@@ -80,7 +119,7 @@ bool ipc_cmd_pop(ipc_cmd_t *cmd) {
     if (head == tail) {
         return false;
     }
-    __DMB();
+    __DMB(); // Make sure reading is done with updated head/tail
 
     ipc_buf_read(tail, &cmd->hdr, sizeof(ipc_cmd_hdr_t));
     if (cmd->hdr.len > IPC_CMD_MAX_PAYLOAD) {
@@ -90,7 +129,7 @@ bool ipc_cmd_pop(ipc_cmd_t *cmd) {
     }
     ipc_buf_read(tail + sizeof(ipc_cmd_hdr_t), cmd->payload.raw, cmd->hdr.len);
 
-    __DMB();
+    __DMB(); // Finish all buffer operations before updating tail and returning
     ipc_shared.cmd.tail = tail + IPC_CMD_RECORD_SIZE(cmd->hdr.len);
     return true;
 }

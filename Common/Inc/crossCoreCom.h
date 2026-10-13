@@ -11,7 +11,7 @@
 
 #define IPC_SHARED_BASE         (0x38000000UL)
 #define IPC_SHARED_SIZE         (64UL * 1024UL)
-#define IPC_MAGIC               (0x49504331UL)
+#define IPC_MAGIC               (0x12345678UL)
 #define IPC_REV                 (1U)
 
 #define IPC_CMD_RING_SIZE       (2048U)
@@ -109,10 +109,10 @@ void ipc_unlock(uint32_t hsem_id);
 #ifdef CORE_CM4
 bool ipc_cmd_push(const ipc_cmd_t *cmd);
 bool ipc_telem_read(ipc_telemetry_t *telem, uint32_t *telem_seq);
-
 #endif
 
 #ifdef CORE_CM7
+void ipc_init(void);
 bool ipc_cmd_pop(ipc_cmd_t *cmd);
 bool ipc_telem_write(ipc_telemetry_t *telem);
 #endif

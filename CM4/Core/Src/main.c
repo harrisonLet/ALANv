@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "shared_configuration.h"
+#include "crossCoreComCM4.h"
 
 #include "lora.h"
 #include "servoRudder.h"
@@ -62,7 +63,6 @@ typedef struct __attribute__((packed)) {
 #define HSEM_ID_0 (0U) /* HW semaphore 0*/
 #endif
 #endif
-
 #define ADDR_SAMD21  0xAA
 #define ADDR_STM32   0xBB
 
@@ -132,6 +132,9 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN Init */
+
+  // Initialize CrossCoreCom and wait 5s for Cm7 to setup shared memory 
+  crossCoreComCM4_attach(5000U); 
 
   /* USER CODE END Init */
 
