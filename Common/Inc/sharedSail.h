@@ -49,10 +49,6 @@ typedef struct {
      * - Precision: 1 degree
      */
     uint16_t ang_port;
-    
-    uint32_t timestamp; /**< Timestamp for when the measurement was taken */
-    uint8_t valid; /**< Indicates if the measurement is valid */
-    uint8_t sequence; /**< Sequence number of the measurement, used to ensure a measurment is actually new */
 } TelemetryMainSail_t;
 
 
@@ -113,8 +109,4 @@ typedef struct {
      * - Precision: 1 degree
      */
     int16_t ang_rearward;
-
-    uint32_t timestamp; /**< Timestamp for when the measurement was taken */
-    uint8_t valid; /**< Indicates if the measurement is valid */
-    uint8_t sequence; /**< Sequence number of the measurement, used to ensure a measurment is actually new */
 } TelemetryTailSail_t;

@@ -59,10 +59,6 @@ typedef struct {
      * Measured in millimeters per second squared.
      */
     int16_t linA_sway;
-
-    uint32_t timestamp; /**< Timestamp for when the measurement was taken */
-    uint8_t valid; /**< Indicates if the measurement is valid */
-    uint8_t sequence; /**< Sequence number of the measurement, used to ensure a measurment is actually new */
 } TelemetryBoatRelativeOrientation_t;
 
 
@@ -160,9 +156,5 @@ typedef struct {
      * - Precision: 4e-6 to 8e-6 degree but in practice it can really only give 1 meter accuracy
      */
     double longitude;
-    
-    uint32_t timestamp; /**< Timestamp for when the measurement was taken */
-    uint8_t valid; /**< Indicates if the measurement is valid */
-    uint8_t sequence; /**< Sequence number of the measurement, used to ensure a measurment is actually new */
 } TelemetryBoatGlobalOrientation_t;
 
