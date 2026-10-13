@@ -45,17 +45,17 @@ typedef struct {
     int16_t linV_sway;
     
     /**
-     * Linear acceleration along the heave axis derived from linR_heave.
+     * Linear acceleration along the heave axis derived from raw sensor readings.
      * Measured in millimeters per second squared.
      */
     int16_t linA_heave;
     /**
-     * Linear acceleration along the surge axis derived from linR_surge.
+     * Linear acceleration along the surge axis derived from raw sensor readings.
      * Measured in millimeters per second squared.
      */
     int16_t linA_surge;
     /**
-     * Linear acceleration along the sway axis derived from linR_sway.
+     * Linear acceleration along the sway axis derived from raw sensor readings.
      * Measured in millimeters per second squared.
      */
     int16_t linA_sway;
@@ -130,14 +130,14 @@ typedef struct {
     
     /**
      * By combining the readings of the magnetometer with the integration of
-     * the angular velocity in the yaw axis, we can find the absolute heading
-     * of the vessel relative to magnetic north.
+     * the angular velocity in the yaw axis and GPS coordinates, we can find 
+     * the absolute heading of the vessel relative to true north.
      *
-     * This value represents the Heading of the vessel relative to magnetic north.
+     * This value represents the heading of the vessel relative to true north.
      * Its operational range is from 0 to 360 degrees, where 0/360 indicates
      * north, 90 indicates east, 180 indicates south, and 270 indicates west.
      *
-     * - Operational Range: 0 to 360 degrees
+     * - Operational Range: [0 to 360) degrees
      * - Precision: 1 degree
      */
     uint16_t angP_heading;
@@ -148,18 +148,18 @@ typedef struct {
      * values indicate south latitude.
      *
      * - Operational Range: -90 to 90 degrees
-     * - Precision: 0.000001 degree
+     * - Precision: 4e-6 to 8e-6 degree but in practice it can really only give 1 meter accuracy
      */
-    float latitude;
+    double latitude;
     /**
      * Longitude of the vessel obtained from GPS. Its operational range is from -180 
      * to 180 degrees, where positive values indicate east longitude and negative 
      * values indicate west longitude. 0 indicates the prime meridian.
      *
      * - Operational Range: -180 to 180 degrees
-     * - Precision: 0.000001 degree
+     * - Precision: 4e-6 to 8e-6 degree but in practice it can really only give 1 meter accuracy
      */
-    float longitude;
+    double longitude;
     
     uint32_t timestamp; /**< Timestamp for when the measurement was taken */
     uint8_t valid; /**< Indicates if the measurement is valid */

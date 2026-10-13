@@ -13,18 +13,18 @@ typedef struct {
      * Measured in degrees this value represents a GPS coordinate.
      *
      * - Operational Range: -90 to 90 degrees for latitude.
-     * - Precision: 0.000001 degree
+     * - Precision: 4e-6 to 8e-6 degree but in practice it can really only give 1 meter accuracy
      */
-    float start_latitude;
+    double start_latitude;
     /**
      * The longitude of the starting position of the vector.
      *
      * Measured in degrees this value represents a GPS coordinate.
      *
      * - Operational Range: -180 to 180 degrees for longitude.
-     * - Precision: 0.000001 degree
+     * - Precision: 4e-6 to 8e-6 degree but in practice it can really only give 1 meter accuracy
      */
-    float start_longitude;
+    double start_longitude;
     /**
      * The absolute distance from the starting position within which the boat
      * can safely begin navigation. When chaining multiple vectors, the boat 
@@ -42,18 +42,18 @@ typedef struct {
      * Measured in degrees this value represents a GPS coordinate.
      *
      * - Operational Range: -90 to 90 degrees for latitude.
-     * - Precision: 0.000001 degree
+     * - Precision: 4e-6 to 8e-6 degree but in practice it can really only give 1 meter accuracy
      */
-    float end_latitude;
+    double end_latitude;
     /**
      * The longitude of the ending position of the vector.
      *
      * Measured in degrees this value represents a GPS coordinate.
      *
      * - Operational Range: -180 to 180 degrees for longitude.
-     * - Precision: 0.000001 degree
+     * - Precision: 4e-6 to 8e-6 degree but in practice it can really only give 1 meter accuracy
      */
-    float end_longitude;
+    double end_longitude;
     /**
      * The absolute distance from the ending position within which the boat
      * can safely conclude navigation. Measured in meters, this value is a radius

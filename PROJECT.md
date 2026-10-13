@@ -222,6 +222,7 @@ Read the wind vane at a regular interval and make the latest wind measurement av
 
 [Claude]: State whether the vane reports apparent wind relative to the bow (it will, physically), its zero offset, and its sign convention. Consider averaging or low-pass filtering, since vane readings are noisy and LSP/LTP should not react to gusts. Also note that a wind angle taken while the boat is turning is not the same as one taken in steady flight.
 [Corbin]: Wind is relative to the boat in a -180 to 180 range, with 0 being straight ahead, positive to starboard, and negative to port. As for the filtering that is what the window is for.
+[Claude]: Revisit later: averaging `Window` samples of a wrapped angle breaks at +-180 (e.g. -179 and +179 average to 0, which is the opposite direction). Use a circular mean (average sin and cos, then atan2) or unwrap relative to the first sample before averaging. A running (stern-to-wind) boat sits exactly at this boundary, so it will happen in practice.
 
 ### POLLING: GPS
 
@@ -266,6 +267,7 @@ Read the inertial measurement unit at a regular interval and make the boat's lat
 
 [Claude]: Magnetometers are disturbed by the servos and wiring (current draw). Plan a calibration step (hard/soft-iron) and mounting position away from the servos, and consider declination if using magnetic north. The old softwareplan.txt called this a magnetometer; confirm which sensor this actually is.
 [Corbin]: Already discussed outside of this file.
+[Claude]: Revisit later: if `Window` is used for heading (or yaw), the same wraparound problem as the wind vane applies at 359/1 degrees. Use a circular mean, or skip the extra averaging if the IMU's fusion output is already filtered, since an average adds lag of about Window / Frequency to the heading loop.
 
 ### POLLING: Encoder
 
@@ -283,6 +285,7 @@ Read the sail encoder at a regular interval and make the latest sail-position me
 
 [Claude]: Define the encoder zero (sail aligned with the hull centerline), the sign (positive to starboard), and wraparound handling if it is absolute, or how it is homed on boot if it is incremental. State the resolution (the old plan said 2 bytes) and the angle it reports (sail relative to the hull, not to the wind).
 [Corbin]: Sail angle is relative to the center line of the boat, with positive angles to starboard and negative angles to port (Same as wind). Precision will have to be int16 since there are 360 possible degrees of freedom. I think there is a way to get even hight precision from the wind sensor but I don't know that we need more then 1 degree of precision.
+[Claude]: Revisit later: the sail angle is also -180..180, so averaging `Window` samples breaks near +-180 (sail pointing straight aft) the same way as the wind vane. Use a circular mean or unwrap before averaging.
 
 ### POLLING: Battery Monitor
 
