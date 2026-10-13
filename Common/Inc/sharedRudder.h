@@ -5,8 +5,10 @@
 
 /**
  * Represents the current position and rotation of the rudder relative to 
- * the vessel. This value is not sensed in any way but is instead the assumed
- * position based on the commanded rudder angle.
+ * the vessel. 
+ *
+ * This value is not sensed in any way but is instead the assumed position 
+ * based on the commanded rudder angle.
  */
 typedef struct {
     /**
@@ -14,7 +16,7 @@ typedef struct {
      *
      * Measured in degrees this represents the angle between the centerline of
      * the vessel and a second line drawn from the tail to the tip of the rudder.
-     * positive values indicate the rudder is pointed towards the starboard side.
+     * Positive values indicate the rudder is pointed towards the starboard side.
      * Negative values indicate the rudder is pointed towards the port side.
      *
      * - Operational Range: -90 to 90 degrees
