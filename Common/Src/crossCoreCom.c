@@ -7,12 +7,12 @@
 // Allocate both memory structs into SRAM4 (linker handles actual allocation)
 ipc_shared_t ipc_shared __attribute__((section(".ipc_shared")));
 
-// Interrupts stay disabled while the lock is held, ipc_unlock restores them
+// Attempt to take hardware semaphore
 bool ipc_lock(uint32_t hsem_id) {
     if (HAL_HSEM_FastTake(hsem_id) != HAL_OK) {
         return false;
     }
-    __DMB();
+    __DMB(); // 
     return true;
 }
 
