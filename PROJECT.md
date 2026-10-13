@@ -10,6 +10,7 @@
     3) Adjust the sailboat's heading and sail positions in real-time based on sensor data and the optimal sailing route.
     4) Arrive at Point B safely.
     [Claude]: Define "arrive" (arrival radius around B, in meters) and "safely" (e.g. no tack in irons, battery above a floor, link-loss behaviour). What does the boat do after arriving: hold station, heave-to, or drop sails?
+    [Corbin]: I've defined arrive by using a "range" variable that is tied to the start and end of nautical vectors, this value would have to be passed into the system along with all other parts of the nautical vectors (ie starting positions, ending positions, margins, etc).
 
 3) Semi-Autonomous Sailing:
     1) Control only the rudder manually over LoRa, while the sail is adjusted autonomously.
@@ -44,6 +45,7 @@
 
 [Claude]: Scheduling risk: every task depends on shared data types (WVData, GPSData, IMUData, EData, BMData, telemetry record, NVS, command packet) that nobody owns yet. Assign these to one person and finish them before the 10/19 pollers, otherwise each person will invent their own layout.
 [Corbin]: I will handle this.
+[Corbin]: I have added several shared structures, enums, and macros to the Common/Inc/ directory, it probably isn't comprehensive and I know what is there is not totally complete, but it should cover the basics for starting to code. The only caution is the sharedSensor.h file, this holds a bunch of metadata structures and rigth now none of them are filled out.
 
 [Claude]: Jared's 11/02 arbiters and PIDs need the source-selection logic that lives in Harrison's Commander and Chief (due 11/09). Either move a minimal mode switch (manual heading / direct drive / auto) into Jared's scope, or have the arbiters take a simple "source" input that Commander and Chief fills in later.
 
@@ -123,8 +125,10 @@ Given a starting point and a series of waypoints, dynamically generate the optim
     * Nautical Vector Series (NVS), array of vectors and margins representing the ideal path for the boat to follow and the margin of deviation for each path segment.
 
 [Claude]: Define the NVS wire format now, since it constrains CM4 and LTP: each segment as start/end lat-lon (or heading + length), plus margin as a lateral corridor half-width in meters. Keep each segment small and fixed size, with a count and CRC for the whole set, so it can be sent in chunks.
+[Corbin]: We've extablished the final structure that needs to be created by the NVS wire but not what will actually be sent. Some parts of the NVS can be dynamically or statically set, such as the margin_warning, but Harrison and Charbel will have to figure this out.
 
 [Claude]: Plan for the NVS size limit given LoRa airtime, and decide whether the route is re-sent or re-planned when the boat leaves the corridor.
+[Corbin]: I say the boat enters emergency shut down, we can send it commands and a new set of routes to take it out of that but it should assume that even if it renters the corridor, it is unable to control itself and thus cannot sail without outside direction.
 
 ### Ground Station GUI
 
@@ -160,11 +164,14 @@ Receive and display boat telemetry alongside its position and planned route, pro
 
 [Claude]: Every sensor output should carry a timestamp and a valid flag (and a sequence number), not only a value. The Stale field then has a concrete meaning, and consumers (PIDs, LTP, arbiters, telemetry) can fall back instead of acting on old data.
 [Corbin]: I will add a timestamp, valid flag, and sequence to the sensor outputs, though I'm not sure we'll ever actually use the sequence number.
+[Corbin]: Done, see Common/Inc/ for structures.
 
 [Claude]: Define the frames once, in Common/Inc: heading in degrees 0-360 clockwise (true or magnetic, pick one), wind angle relative to the bow in -180..180 with positive meaning starboard, and whether WVData is apparent or true wind. The plan currently says only "measured wind angle", and LSP and LTP need different things (see their notes).
 [Corbin]: I will define the frames in Common/Inc as suggested.
+[Corbin]: Done, I added a bunch of defines to create the frames of reference.
 
 [Claude]: Each of the "PROCESS" and "PID" items should be a periodic RTOS task driven by a fixed rate (vTaskDelayUntil or a timer), not event-driven, so PID dt is known. See the suggested rate table in the AI section.
+[Corbin]: It might be better to do a timer for the PID, that way the internal time cost of the task does not affect the dt used in the PID calculations. Though that value may be negligible if the task is fast enough.
 
 <!-- Control center -->
 

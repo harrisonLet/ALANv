@@ -40,6 +40,9 @@ typedef enum {
  * Represents a single deconstructed command.
  */
 typedef struct {
+    /**
+     * The ID of the command being represented.
+     */
     uint8_t command_id;
-    uint8_t args[COMMAND_LENGTH-1];
-} CommandALANv_t
+    uint8_t args[COMMAND_LENGTH-1]; /**< The arguments associated with the command. */
+} CommandALANv_t;
