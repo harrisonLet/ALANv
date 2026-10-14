@@ -141,7 +141,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   /* USER CODE BEGIN 2 */
-#if defined(CM4_ENABLE) && !defined(CM7_ENABLE)
+#if defined(CM4_ENABLE) && !defined(CM7_ENABLE) && defined(CM4_COM1_ENABLE)
   /* Initialize COM1 port (115200, 8 bits (7-bit data + 1 stop bit), no parity */
   BspCOMInit.BaudRate   = 115200;
   BspCOMInit.WordLength = COM_WORDLENGTH_8B;

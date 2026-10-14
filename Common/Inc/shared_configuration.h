@@ -1,3 +1,5 @@
+#pragma once
+
 /////////////////////////////////////////////////////////////////////////////////////////
 // Shared Configuration
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -8,6 +10,7 @@
 // CM4 Configuration
 /////////////////////////////////////////////////////////////////////////////////////////
 // #define CM4_ENABLE
+// #define CM4_COM1_ENABLE
 // #define CM4_SERVOS_ENABLE
 
 
@@ -15,11 +18,14 @@
 // CM7 Configuration
 /////////////////////////////////////////////////////////////////////////////////////////
 #define CM7_ENABLE
+#define CM7_COM1_ENABLE
 #define CM7_LIVE_ENABLE
-// #define CM7_BUTTON_ENABLE
-#define CM7_SERVO_SAIL_ENABLE
-#define CM7_SERVO_RUDDER_ENABLE
-// #define CM7_SENSOR_WIND_ENABLE
-// #define CM7_SENSOR_MAGNETOMETER_ENABLE
-// #define CM7_SENSOR_ENCODER_ENABLE
-// #define CM7_SENSOR_GPS_ENABLE
+
+// #define CM7_SERVO_SAIL_ENABLE
+// #define CM7_SERVO_RUDDER_ENABLE
+
+#define CM7_SENSORPOLL_BATTERY_ENABLE
+// #define CM7_SENSORPOLL_ENCODER_ENABLE
+// #define CM7_SENSORPOLL_GPS_ENABLE
+// #define CM7_SENSORPOLL_IMU_ENABLE
+// #define CM7_SENSORPOLL_WIND_ENABLE
