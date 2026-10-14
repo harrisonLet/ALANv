@@ -11,15 +11,13 @@
 // PHY REF_CLK, which injects noise regardless of firmware ETH usage.
 /////////////////////////////////////////////////////////////////////////////////////////
 
+#include "main.h"
 #include "system.h"
 
 #include "sensorBattery.h"
 #include "objRing.h"
 
 #include "queue.h"
-
-#include "sharedSensor.h"
-#include "sharedBattery.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -50,31 +48,39 @@ static QueueHandle_t queue_telemetry;
 
 static MetadataBattery_t storage_metadata[SENSOR_BATTERY_WINDOW];
 static Ring_o ring_metadata;
-static uint32_t sum_metadata_raw_cell[BATTERY_CELL_COUNT];
 static uint32_t sum_metadata_voltage_cell[BATTERY_CELL_COUNT];
 
 static uint8_t sequence;
 
-static uint16_t* getRawTaps(void);
+static bool getRawTaps(uint16_t* buff);
 static uint16_t rawTapsToMv(uint16_t counts);
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void sensorBattery_hardwareInit(void)
 {
-    // Initialize the memory constructs
+    sensorBattery_printf("Initializing BMS (Battery Monitor System) hardware and software.");
+
+    // Initialize the Queues used to share data
+    sensorBattery_printf("    - init shared queues");
     queue_metadata =  xQueueCreate(1, sizeof(MetadataBattery_t));
     queue_telemetry = xQueueCreate(1, sizeof(TelemetryBattery_t));
 
+    // Initialize the windows used to integrate data
+    sensorBattery_printf("    - init ring buffer for windowed sensor reading");
     objRing_init(&ring_metadata, storage_metadata, sizeof(MetadataBattery_t), SENSOR_BATTERY_WINDOW);
     for (uint16_t i = 0; i < BATTERY_CELL_COUNT; i++)
     {
-        sum_metadata_raw_cell[i] = 0;
         sum_metadata_voltage_cell[i] = 0;
     }
 
-    // Initialize the GPIOs
+    // Initialize Clocks
+    sensorBattery_printf("    - init hardware clocks");
     __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_ADC12_CLK_ENABLE();
+
+    // Initialize the GPIOs
+    sensorBattery_printf("    - init hardware GPIO pins");
     GPIO_InitTypeDef GPIO_InitStruct = {0};
     GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
@@ -82,6 +88,7 @@ void sensorBattery_hardwareInit(void)
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
     // Initialize ADC
+    sensorBattery_printf("    - init ADC (Analog to Digital Converter) hardware");
     hadc1.Instance = ADC1;
     hadc1.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV4;
     hadc1.Init.Resolution            = ADC_RESOLUTION_16B;
@@ -103,6 +110,7 @@ void sensorBattery_hardwareInit(void)
 
     // Scan mode converts ranks 1..4 upward in a single start, one channel per rank,
     // so the sequencer configuration only needs to happen once here.
+    sensorBattery_printf("    - init ADC configuration for ranked reads");
     static const uint32_t battery_adcChannels[BATTERY_CELL_COUNT] =
     {
         ADC_CHANNEL_16, // PA0 - BC1 (Battery Cell 1)
@@ -129,86 +137,103 @@ void sensorBattery_hardwareInit(void)
         sConfig.Rank    = ranks[i];
         if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) { Error_Handler(); }
     }
+
+    sensorBattery_printf("Initialization of BMS complete.");
 }
 
 
 
 void sensorBattery_handler(void *argument)
 {
+    sensorBattery_printf("Starting BMS polling task. Sensor will poll every %u ms.", (1000 / SENSOR_BATTERY_FREQUENCY));
     vTaskDelay(pdMS_TO_TICKS(BATTERY_SETTLE_MS));
+    TickType_t lastWake = xTaskGetTickCount();
     for (;;)
     {
         // Read Frequency
-        vTaskDelay(pdMS_TO_TICKS(1000 / SENSOR_BATTERY_FREQUENCY));
+        vTaskDelayUntil(&lastWake, pdMS_TO_TICKS(1000 / SENSOR_BATTERY_FREQUENCY));
 
         // Metadata
         MetadataBattery_t metadata;
-        uint16_t *rawTaps = getRawTaps();
         metadata.valid = VALIDITY_UNKNOWN;
         metadata.sequence = sequence++;
-        for (uint32_t i = 0; i < BATTERY_CELL_COUNT; i++)
-        {
-            uint16_t mv = rawTapsToMv(rawTaps[i]);
-            metadata.raw_cell[i] = rawTaps[i];
-            metadata.voltage_cell[i] = mv;
-            if (rawTaps[i] == 0)                  { metadata.valid = VALIDITY_UNTRUSTED_VALUE_IMPLAUSIBLE; break; }
-            if (mv < BATTERY_CELL_OP_VOLTAGE_MIN) { metadata.valid = VALIDITY_UNTRUSTED_UNDER_SATURATION; break; }
-            if (mv > BATTERY_CELL_OP_VOLTAGE_MAX) { metadata.valid = VALIDITY_UNTRUSTED_OVER_SATURATION; break; }
-            metadata.valid = VALIDITY_VALID;
-        }
         metadata.timestamp = HAL_GetTick();
-        if (metadata.valid == VALIDITY_VALID)
+        uint16_t rawTaps[BATTERY_CELL_COUNT];
+
+        if (!getRawTaps(rawTaps)) 
         {
-            for (uint16_t i = 0; i < BATTERY_CELL_COUNT; i++) {
-                sum_metadata_raw_cell[i] += metadata.raw_cell[i];
-                sum_metadata_voltage_cell[i] += metadata.voltage_cell[i];
+            metadata.valid = VALIDITY_ERROR_UNREACHABLE;
+        }
+        else 
+        {
+            uint16_t prev_mv = 0;
+            for (uint32_t i = 0; i < BATTERY_CELL_COUNT; i++)
+            {
+                uint16_t mv = rawTapsToMv(rawTaps[i]);
+                metadata.raw_cell[i] = rawTaps[i];
+                metadata.voltage_cell[i] = mv;
+                if (rawTaps[i] == 0)     { metadata.valid = VALIDITY_UNTRUSTED_VALUE_IMPLAUSIBLE; break; }
+                if (mv - prev_mv < 1000) { metadata.valid = VALIDITY_UNTRUSTED_UNDER_SATURATION; break; }
+                if (mv - prev_mv > 5000) { metadata.valid = VALIDITY_UNTRUSTED_OVER_SATURATION; break; }
+                metadata.valid = VALIDITY_VALID;
+                prev_mv = mv;
             }
-            MetadataBattery_t metadata_old;
-            if (objRing_push(&ring_metadata, &metadata, &metadata_old)) {
+            if (metadata.valid == VALIDITY_VALID)
+            {
                 for (uint16_t i = 0; i < BATTERY_CELL_COUNT; i++) {
-                    sum_metadata_raw_cell[i] -= metadata_old.raw_cell[i];
-                    sum_metadata_voltage_cell[i] -= metadata_old.voltage_cell[i];
+                    sum_metadata_voltage_cell[i] += metadata.voltage_cell[i];
+                }
+                MetadataBattery_t metadata_old;
+                if (objRing_push(&ring_metadata, &metadata, &metadata_old)) {
+                    for (uint16_t i = 0; i < BATTERY_CELL_COUNT; i++) {
+                        sum_metadata_voltage_cell[i] -= metadata_old.voltage_cell[i];
+                    }
                 }
             }
-            xQueueOverwrite(queue_metadata, &metadata);
+            else { }
+            if (ring_metadata.count < SENSOR_BATTERY_WINDOW) { metadata.valid = VALIDITY_VALID_WINDOW_FILLING; }
         }
-        else { }
+        xQueueOverwrite(queue_metadata, &metadata);
 
         // Telemetry
+        if (ring_metadata.count == 0) { continue; }
         TelemetryBattery_t telemetry;
-        telemetry.battery_voltage = sum_metadata_voltage_cell[BATTERY_CELL_COUNT - 1] / SENSOR_BATTERY_WINDOW;
-        uint16_t cell_prev = 0;
+        telemetry.battery_voltage = sum_metadata_voltage_cell[BATTERY_CELL_COUNT - 1] / ring_metadata.count;
+        uint16_t prev_mv = 0;
         for (uint16_t i = 0; i < BATTERY_CELL_COUNT; i++)
         {
-            telemetry.cell_voltage[i] = (sum_metadata_voltage_cell[i] / SENSOR_BATTERY_WINDOW) - cell_prev;
-            cell_prev = telemetry.cell_voltage[i];
+            uint16_t mv = (sum_metadata_voltage_cell[i] / ring_metadata.count);
+            telemetry.cell_voltage[i] = mv - prev_mv;
+            prev_mv = mv;
         }
         xQueueOverwrite(queue_telemetry, &telemetry);
     }
 }
 
-static uint16_t* getRawTaps(void)
+static bool getRawTaps(uint16_t* buff)
 {
-    uint16_t battery_rawTaps[BATTERY_CELL_COUNT];
-
     uint32_t sums[BATTERY_CELL_COUNT] = {0};
     for (uint32_t s = 0; s < BATTERY_AVG_SAMPLES; s++)
     {
         HAL_ADC_Start(&hadc1);
         for (uint32_t i = 0; i < BATTERY_CELL_COUNT; i++)
         {
-            if (HAL_ADC_PollForConversion(&hadc1, BATTERY_ADC_TIMEOUT) == HAL_OK)  { sums[i] += HAL_ADC_GetValue(&hadc1); }
-            else                                                                   { sums[i] += BATTERY_CELL_OP_VOLTAGE_NOM; }
+            if (HAL_ADC_PollForConversion(&hadc1, BATTERY_ADC_TIMEOUT) != HAL_OK)  
+            { 
+                HAL_ADC_Stop(&hadc1);
+                return false; 
+            }
+            sums[i] += HAL_ADC_GetValue(&hadc1);
         }
         HAL_ADC_Stop(&hadc1);
     }
 
     for (uint32_t i = 0; i < BATTERY_CELL_COUNT; i++)
     {
-        battery_rawTaps[i] = (uint16_t)(sums[i] / BATTERY_AVG_SAMPLES);
+        buff[i] = (uint16_t)(sums[i] / BATTERY_AVG_SAMPLES);
     }
 
-    return battery_rawTaps;
+    return true;
 }
 
 static uint16_t rawTapsToMv(uint16_t counts)

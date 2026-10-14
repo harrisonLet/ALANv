@@ -11,6 +11,7 @@
  */
 typedef enum {
     VALIDITY_UNKNOWN                        = 0x00, /**< Sensor validity is unknown, this was set to 0 as newly initialized data blocks will be 0 */
+    
     VALIDITY_VALID                          = 0x01, /**< Sensor validity is confirmed to be valid */
     VALIDITY_VALID_CALIBRATING              = 0x02, /**< Sensor is currently calibrating, such as an IMU performing self-calibration */
     VALIDITY_VALID_WARMING                  = 0x03, /**< Sensor is currently warming up, such as GPS waiting for a lock */

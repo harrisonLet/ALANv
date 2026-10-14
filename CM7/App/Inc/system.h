@@ -19,6 +19,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-
+#include "shared_configuration.h"
 
 #define STM32H755_CLOCK_RATE 64000000
+#define DEBUG_PRINTF(tag, fmt, ...) printf("%s " fmt "\r\n", tag, ##__VA_ARGS__)
