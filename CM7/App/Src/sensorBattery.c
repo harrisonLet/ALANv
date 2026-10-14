@@ -12,6 +12,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 
 #include "main.h"
+#include "sharedSensor.h"
 #include "system.h"
 
 #include "sensorBattery.h"
@@ -193,6 +194,10 @@ void sensorBattery_handler(void *argument)
             else { }
             if (ring_metadata.count < SENSOR_BATTERY_WINDOW) { metadata.valid = VALIDITY_VALID_WINDOW_FILLING; }
         }
+        // #ifdef CM7_SENSORPOLL_BATTERY_DEBUG
+        // char metadata_str[METADATA_BATTERY_STR_SIZE];
+        // sensorBattery_printf("%s", MetadataBattery_toString(&metadata, metadata_str));
+        // #endif
         xQueueOverwrite(queue_metadata, &metadata);
 
         // Telemetry
@@ -206,6 +211,10 @@ void sensorBattery_handler(void *argument)
             telemetry.cell_voltage[i] = mv - prev_mv;
             prev_mv = mv;
         }
+        #ifdef CM7_SENSORPOLL_BATTERY_DEBUG
+        char telemetry_str[TELEMETRY_BATTERY_STR_SIZE] = {0};
+        sensorBattery_printf("%s", TelemetryBattery_toString(&telemetry, telemetry_str));
+        #endif
         xQueueOverwrite(queue_telemetry, &telemetry);
     }
 }

@@ -19,7 +19,6 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 #define CM7_ENABLE
 #define CM7_COM1_ENABLE
-
 #define CM7_LIVE_ENABLE
 #define CM7_SENSORPOLL_BATTERY_ENABLE
 // #define CM7_SENSORPOLL_ENCODER_ENABLE
@@ -32,9 +31,9 @@
 
 
 #ifdef CM7_LIVE_ENABLE
-#define CM7_LIVE_DEBUG
+// #define CM7_LIVE_DEBUG
 #endif
 
 #ifdef CM7_SENSORPOLL_BATTERY_ENABLE
-#define CM7_SENSORPOLL_BATTERY_DEBUG
+// #define CM7_SENSORPOLL_BATTERY_DEBUG
 #endif

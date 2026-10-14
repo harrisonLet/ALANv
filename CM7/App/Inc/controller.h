@@ -1,7 +1,7 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
-#define LIVE_TASK "[MLIVE---]"
+#define LIVE_TASK "[LIVE----]"
 #define LIVE_TASK_PRIORITY osPriorityLow
 
 #ifdef CM7_LIVE_DEBUG
