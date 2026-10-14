@@ -33,7 +33,7 @@ typedef struct {
      * - Operational Range: 12000 to 16800 mV
      * - Precision: 1 mV
      */
-    uint16_t overall_health; 
+    uint16_t battery_voltage; 
     /**
      * The voltage of each individual cell in the battery. LiPo batteries provide each 
      * cell's voltage as a cumulative value. The actual voltage of each cell must be 

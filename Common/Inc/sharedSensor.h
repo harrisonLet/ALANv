@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "sharedBattery.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // Shared Constants
@@ -47,6 +48,8 @@ typedef enum {
  * SENSOR: Battery Monitor
  */
 typedef struct {
+    uint16_t raw_cell[BATTERY_CELL_COUNT];
+    uint16_t voltage_cell[BATTERY_CELL_COUNT];
 
     uint32_t timestamp; /**< Timestamp for when the measurement was taken, measured in ms */
     uint8_t valid; /**< Indicates if the measurement is valid */
