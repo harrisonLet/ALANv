@@ -49,3 +49,6 @@ typedef struct {
      */
     uint16_t cell_voltage[BATTERY_CELL_COUNT];
 } TelemetryBattery_t;
+
+#define TELEMETRY_BATTERY_STR_SIZE 64u
+char *TelemetryBattery_toString(const TelemetryBattery_t *telemetry, char buf[TELEMETRY_BATTERY_STR_SIZE]);

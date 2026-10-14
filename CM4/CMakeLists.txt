@@ -64,6 +64,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/syscalls.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../Common/Src/system_stm32h7xx_dualcore_boot_cm4_cm7.c
     ${COMMON_DRIVER_SOURCES}
+    ${COMMON_APP_SOURCES}
 )
 
 # Auto-collect user sources - app code lives outside Core/, which is CubeMX-owned

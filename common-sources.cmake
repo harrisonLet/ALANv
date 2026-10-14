@@ -10,6 +10,11 @@ file(GLOB_RECURSE COMMON_DRIVER_SOURCES CONFIGURE_DEPENDS
 )
 list(FILTER COMMON_DRIVER_SOURCES EXCLUDE REGEX "_template\\.c$")
 
+# Shared app code (e.g. to_string helpers for the shared structs). The system
+# file is already listed explicitly in each core's CMakeLists, so skip it here.
+file(GLOB COMMON_APP_SOURCES CONFIGURE_DEPENDS "${SAILBOAT_ROOT_DIR}/Common/Src/*.c")
+list(FILTER COMMON_APP_SOURCES EXCLUDE REGEX "system_stm32h7xx")
+
 set(COMMON_INCLUDE_DIRS
     ${SAILBOAT_ROOT_DIR}/Common/Inc
     ${SAILBOAT_ROOT_DIR}/Drivers/STM32H7xx_HAL_Driver/Inc
