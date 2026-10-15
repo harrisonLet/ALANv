@@ -7,7 +7,7 @@
 #define SENSOR_BATTERY_TASK "[SBATTERY]"
 #define SENSOR_BATTERY_TASK_PRIORITY osPriorityNormal
 
-#ifdef CM7_SENSORPOLL_BATTERY_DEBUG
+#ifdef CM7_SENSOR_BATTERY_DEBUG
 #define SENSOR_BATTERY_TASK_HEAP 350
 #define sensorBattery_printf(fmt, ...) DEBUG_PRINTF(SENSOR_BATTERY_TASK, fmt, ##__VA_ARGS__)
 #else

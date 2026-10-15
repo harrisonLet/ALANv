@@ -194,7 +194,7 @@ void sensorBattery_handler(void *argument)
             else { }
             if (ring_metadata.count < SENSOR_BATTERY_WINDOW) { metadata.valid = VALIDITY_VALID_WINDOW_FILLING; }
         }
-        #ifdef CM7_SENSORPOLL_BATTERY_DEBUG
+        #ifdef CM7_SENSOR_BATTERY_DEBUG
         char metadata_str[METADATA_BATTERY_STR_SIZE];
         sensorBattery_printf("%s", MetadataBattery_toString(&metadata, metadata_str));
         #endif

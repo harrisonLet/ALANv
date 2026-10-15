@@ -28,7 +28,7 @@ void hardware_init(void) {
     live_hardwareInit();
     #endif
 
-    #ifdef CM7_SENSORPOLL_BATTERY_ENABLE
+    #ifdef CM7_SENSOR_BATTERY_ENABLE
     sensorBattery_hardwareInit();
     #endif
 
@@ -70,7 +70,7 @@ void rtos_init()
     #ifdef CM7_LIVE_ENABLE
     if (xTaskCreate(live_handler, LIVE_TASK, LIVE_TASK_HEAP, NULL, LIVE_TASK_PRIORITY, &task_live) != pdPASS) { Error_Handler(); }
     #endif
-    #ifdef CM7_SENSORPOLL_BATTERY_ENABLE
+    #ifdef CM7_SENSOR_BATTERY_ENABLE
     if (xTaskCreate(sensorBattery_handler, SENSOR_BATTERY_TASK, SENSOR_BATTERY_TASK_HEAP, NULL, SENSOR_BATTERY_TASK_PRIORITY, &sensorBattery_task) != pdPASS) { Error_Handler(); }
     #endif
 }
@@ -102,13 +102,13 @@ void live_handler(void *argument)
     {
         #ifdef CM7_LIVE_DEBUG_STACK
         live_printf("StackHW (Live): %u", (unsigned)uxTaskGetStackHighWaterMark(NULL));
-        #ifdef CM7_SENSORPOLL_BATTERY_ENABLE
+        #ifdef CM7_SENSOR_BATTERY_ENABLE
         live_printf("StackHW (sensorBattery)=%u", (unsigned)uxTaskGetStackHighWaterMark(sensorBattery_task));
         #endif
         #endif
 
         #ifdef CM7_LIVE_DEBUG_TELEMETRY
-        #ifdef CM7_SENSORPOLL_BATTERY_ENABLE
+        #ifdef CM7_SENSOR_BATTERY_ENABLE
         {
             TelemetryBattery_t telemetry;
             sensorBattery_getTelemetry(&telemetry);
