@@ -100,10 +100,24 @@ void live_handler(void *argument)
     live_printf("Starting liveliness task.");
     for(;;)
     {
-        live_printf("StackHW (Manager Live): %u", (unsigned)uxTaskGetStackHighWaterMark(NULL));
+        #ifdef CM7_LIVE_DEBUG_STACK
+        live_printf("StackHW (Live): %u", (unsigned)uxTaskGetStackHighWaterMark(NULL));
         #ifdef CM7_SENSORPOLL_BATTERY_ENABLE
-        live_printf("StackHW (Sensor Battery)=%u", (unsigned)uxTaskGetStackHighWaterMark(sensorBattery_task));
+        live_printf("StackHW (sensorBattery)=%u", (unsigned)uxTaskGetStackHighWaterMark(sensorBattery_task));
         #endif
+        #endif
+
+        #ifdef CM7_LIVE_DEBUG_TELEMETRY
+        #ifdef CM7_SENSORPOLL_BATTERY_ENABLE
+        {
+            TelemetryBattery_t telemetry;
+            sensorBattery_getTelemetry(&telemetry);
+            char telemetryStr[TELEMETRY_BATTERY_STR_SIZE];
+            live_printf("%s", TelemetryBattery_toString(&telemetry, telemetryStr));
+        }
+        #endif
+        #endif
+
         HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0);
         vTaskDelay(1000 * portTICK_PERIOD_MS);
     }

@@ -5,7 +5,7 @@
 #define LIVE_TASK_PRIORITY osPriorityLow
 
 #ifdef CM7_LIVE_DEBUG
-#define LIVE_TASK_HEAP 180
+#define LIVE_TASK_HEAP 300
 #define live_printf(fmt, ...) DEBUG_PRINTF(LIVE_TASK, fmt, ##__VA_ARGS__)
 #else
 #define LIVE_TASK_HEAP 32
