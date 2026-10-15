@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////////////////
-// Battery sensor driver for reading cell voltages and pack voltage of the LiPo Battery
+// Battery sensor driver for reading cell voltages and pack voltage of the LiPo Battery.
 //
 // GPIO:          PA0  PA4  PA5  PA6
 // ADC1 channels: 16   18   19   3
@@ -11,8 +11,6 @@
 // PHY REF_CLK, which injects noise regardless of firmware ETH usage.
 /////////////////////////////////////////////////////////////////////////////////////////
 
-#include "main.h"
-#include "sharedSensor.h"
 #include "system.h"
 
 #include "sensorBattery.h"
@@ -35,14 +33,13 @@
 #define BATTERY_DIVIDER_NUM         100u
 #define BATTERY_DIVIDER_DEN         18u
 
-
 /////////////////////////////////////////////////////////////////////////////////////////
 
 TaskHandle_t sensorBattery_task;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-static ADC_HandleTypeDef hadc1;
+static ADC_HandleTypeDef adc_handler;
 
 static QueueHandle_t queue_metadata;
 static QueueHandle_t queue_telemetry;
@@ -50,7 +47,6 @@ static QueueHandle_t queue_telemetry;
 static MetadataBattery_t storage_metadata[SENSOR_BATTERY_WINDOW];
 static Ring_o ring_metadata;
 static uint32_t sum_metadata_voltage_cell[BATTERY_CELL_COUNT];
-
 static uint8_t sequence;
 
 static bool getRawTaps(uint16_t* buff);
@@ -90,24 +86,24 @@ void sensorBattery_hardwareInit(void)
 
     // Initialize ADC
     sensorBattery_printf("    - init ADC (Analog to Digital Converter) hardware");
-    hadc1.Instance = ADC1;
-    hadc1.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV4;
-    hadc1.Init.Resolution            = ADC_RESOLUTION_16B;
-    hadc1.Init.ScanConvMode          = ADC_SCAN_ENABLE;
-    hadc1.Init.EOCSelection          = ADC_EOC_SINGLE_CONV;
-    hadc1.Init.LowPowerAutoWait      = DISABLE;
-    hadc1.Init.ContinuousConvMode    = DISABLE;
-    hadc1.Init.NbrOfConversion       = BATTERY_CELL_COUNT;
-    hadc1.Init.DiscontinuousConvMode = DISABLE;
-    hadc1.Init.NbrOfDiscConversion   = 1;
-    hadc1.Init.ExternalTrigConv      = ADC_SOFTWARE_START;
-    hadc1.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;
-    hadc1.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DR;
-    hadc1.Init.Overrun               = ADC_OVR_DATA_OVERWRITTEN;
-    hadc1.Init.LeftBitShift          = ADC_LEFTBITSHIFT_NONE;
-    hadc1.Init.OversamplingMode      = DISABLE;
-    if (HAL_ADC_Init(&hadc1) != HAL_OK) { Error_Handler(); }
-    if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED) != HAL_OK) { Error_Handler(); }
+    adc_handler.Instance = ADC1;
+    adc_handler.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV4;
+    adc_handler.Init.Resolution            = ADC_RESOLUTION_16B;
+    adc_handler.Init.ScanConvMode          = ADC_SCAN_ENABLE;
+    adc_handler.Init.EOCSelection          = ADC_EOC_SINGLE_CONV;
+    adc_handler.Init.LowPowerAutoWait      = DISABLE;
+    adc_handler.Init.ContinuousConvMode    = DISABLE;
+    adc_handler.Init.NbrOfConversion       = BATTERY_CELL_COUNT;
+    adc_handler.Init.DiscontinuousConvMode = DISABLE;
+    adc_handler.Init.NbrOfDiscConversion   = 1;
+    adc_handler.Init.ExternalTrigConv      = ADC_SOFTWARE_START;
+    adc_handler.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;
+    adc_handler.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DR;
+    adc_handler.Init.Overrun               = ADC_OVR_DATA_OVERWRITTEN;
+    adc_handler.Init.LeftBitShift          = ADC_LEFTBITSHIFT_NONE;
+    adc_handler.Init.OversamplingMode      = DISABLE;
+    if (HAL_ADC_Init(&adc_handler) != HAL_OK) { Error_Handler(); }
+    if (HAL_ADCEx_Calibration_Start(&adc_handler, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED) != HAL_OK) { Error_Handler(); }
 
     // Scan mode converts ranks 1..4 upward in a single start, one channel per rank,
     // so the sequencer configuration only needs to happen once here.
@@ -136,7 +132,7 @@ void sensorBattery_hardwareInit(void)
     {
         sConfig.Channel = battery_adcChannels[i];
         sConfig.Rank    = ranks[i];
-        if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) { Error_Handler(); }
+        if (HAL_ADC_ConfigChannel(&adc_handler, &sConfig) != HAL_OK) { Error_Handler(); }
     }
 
     sensorBattery_printf("Initialization of BMS complete.");
@@ -155,18 +151,22 @@ void sensorBattery_handler(void *argument)
         vTaskDelayUntil(&lastWake, pdMS_TO_TICKS(1000 / SENSOR_BATTERY_FREQUENCY));
 
         // Metadata
+        sensorBattery_printf("Setting up metadata for battery reading");
         MetadataBattery_t metadata;
         metadata.valid = VALIDITY_UNKNOWN;
         metadata.sequence = sequence++;
         metadata.timestamp = HAL_GetTick();
-        uint16_t rawTaps[BATTERY_CELL_COUNT];
 
+        sensorBattery_printf("Reading raw taps from battery ADC");
+        uint16_t rawTaps[BATTERY_CELL_COUNT];
         if (!getRawTaps(rawTaps)) 
         {
+            sensorBattery_printf("ERROR: Failed to read raw taps from battery ADC");
             metadata.valid = VALIDITY_ERROR_UNREACHABLE;
         }
         else 
         {
+            sensorBattery_printf("Processing raw taps into metadata");
             uint16_t prev_mv = 0;
             for (uint32_t i = 0; i < BATTERY_CELL_COUNT; i++)
             {
@@ -179,6 +179,7 @@ void sensorBattery_handler(void *argument)
                 metadata.valid = VALIDITY_VALID;
                 prev_mv = mv;
             }
+
             if (metadata.valid == VALIDITY_VALID)
             {
                 for (uint16_t i = 0; i < BATTERY_CELL_COUNT; i++) {
@@ -192,6 +193,7 @@ void sensorBattery_handler(void *argument)
                 }
             }
             else { }
+            
             if (ring_metadata.count < SENSOR_BATTERY_WINDOW) { metadata.valid = VALIDITY_VALID_WINDOW_FILLING; }
         }
         #ifdef CM7_SENSOR_BATTERY_DEBUG
@@ -201,6 +203,7 @@ void sensorBattery_handler(void *argument)
         xQueueOverwrite(queue_metadata, &metadata);
 
         // Telemetry
+        sensorBattery_printf("Generating telemetry from metadata");
         if (ring_metadata.count == 0) { continue; }
         TelemetryBattery_t telemetry;
         telemetry.battery_voltage = sum_metadata_voltage_cell[BATTERY_CELL_COUNT - 1] / ring_metadata.count;
@@ -220,17 +223,17 @@ static bool getRawTaps(uint16_t* buff)
     uint32_t sums[BATTERY_CELL_COUNT] = {0};
     for (uint32_t s = 0; s < BATTERY_AVG_SAMPLES; s++)
     {
-        HAL_ADC_Start(&hadc1);
+        HAL_ADC_Start(&adc_handler);
         for (uint32_t i = 0; i < BATTERY_CELL_COUNT; i++)
         {
-            if (HAL_ADC_PollForConversion(&hadc1, BATTERY_ADC_TIMEOUT) != HAL_OK)  
+            if (HAL_ADC_PollForConversion(&adc_handler, BATTERY_ADC_TIMEOUT) != HAL_OK)  
             { 
-                HAL_ADC_Stop(&hadc1);
+                HAL_ADC_Stop(&adc_handler);
                 return false; 
             }
-            sums[i] += HAL_ADC_GetValue(&hadc1);
+            sums[i] += HAL_ADC_GetValue(&adc_handler);
         }
-        HAL_ADC_Stop(&hadc1);
+        HAL_ADC_Stop(&adc_handler);
     }
 
     for (uint32_t i = 0; i < BATTERY_CELL_COUNT; i++)

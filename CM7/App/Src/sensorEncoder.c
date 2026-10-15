@@ -1,7 +1,16 @@
+/////////////////////////////////////////////////////////////////////////////////////////
+// Encoder sensor driver for reading angular position of the main sail relative to the
+// vessel.
+/////////////////////////////////////////////////////////////////////////////////////////
+
 #include "system.h"
 
 #include "sensorEncoder.h"
-#include <math.h>
+#include "objRing.h"
+
+#include "queue.h"
+
+/////////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef AS5600_REGS_H
 #define AS5600_REGS_H
@@ -34,127 +43,122 @@
 
 /* Burn command */
 #define AS5600_BURN             0xFF
-#define AS5600_BURN_ANGLE           0x80
-#define AS5600_BURN_SETTING         0x40
+#define AS5600_BURN_ANGLE       0x80
+#define AS5600_BURN_SETTING     0x40
 
 /* STATUS bits */
-#define AS5600_STATUS_MH            (1U << 3)  /* magnet too strong */
-#define AS5600_STATUS_ML            (1U << 4)  /* magnet too weak   */
-#define AS5600_STATUS_MD            (1U << 5)  /* magnet detected   */
+#define AS5600_STATUS_MH        (1U << 3)  /* magnet too strong */
+#define AS5600_STATUS_ML        (1U << 4)  /* magnet too weak   */
+#define AS5600_STATUS_MD        (1U << 5)  /* magnet detected   */
 
 /* 12-bit value mask for H/L register pairs */
 #define AS5600_12BIT_MASK           0x0FFF
 
 #endif /* AS5600_REGS_H */
 
-// Helper macro to split a float into printable integer parts
-#define FLOAT_INT(f)  ((int)(f))
-#define FLOAT_FRAC(f) ((int)(fabsf((f) - (int)(f)) * 10000))
+/////////////////////////////////////////////////////////////////////////////////////////
+
+TaskHandle_t sensorEncoder_task;
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+static I2C_HandleTypeDef i2c_handler;
+
+static QueueHandle_t queue_metadata;
+static QueueHandle_t queue_telemetry;
+
+static MetadataEncoder_t storage_metadata[SENSOR_ENCODER_WINDOW];
+static Ring_o ring_metadata;
+static uint32_t sum_metadata_angle;
+static int16_t prev_telemetry_ang_forward;
+static uint32_t integral_telemetry_ang;
+static uint8_t sequence;
+
+// Must divide 256 so the read cadence survives the uint8_t sequence wrap.
+static uint16_t cached_magnitude;
+static uint8_t cached_agc;
 
 static HAL_StatusTypeDef AS5600_readRegs(uint8_t reg, uint8_t *buf, uint16_t len);
 static HAL_StatusTypeDef AS5600_writeReg(uint8_t reg, uint8_t value);
-static HAL_StatusTypeDef AS5600_read12(uint8_t regH, uint16_t *value);
-static void fillStruct();
-static void printEncoder();
+static HAL_StatusTypeDef AS5600_read(uint8_t seq, MetadataEncoder_t *metadata);
 
-#pragma pack(1) // ensure no padding between fields
-typedef struct {
-    uint16_t raw_angle;   // 0-4095, unscaled angle
-    uint16_t angle;       // 0-4095, scaled by ZPOS/MPOS/MANG (same as raw_angle until those are programmed)
-    uint16_t magnitude;   // internal CORDIC magnitude
-    uint8_t  status;      // MD/ML/MH bits
-    uint8_t  agc;         // gain: 0-255 at 5V, 0-128 at 3.3V (aim for the middle)
-
-    // Claude said to have ths for when we transfer between cores
-    uint32_t update_count;
-} Encoder_Data;
-#pragma pack()
-
-Encoder_Data encoder = {0};
-TaskHandle_t task_sensorEncoder;
-I2C_HandleTypeDef I2C_AS5600_Handle;
+/////////////////////////////////////////////////////////////////////////////////////////
 
 /**
   * Initialize the hardware.
   */
 void sensorEncoder_hardwareInit()
 {
+    sensorEncoder_printf("Initializing Main Sail Encoder hardware and software.");
+
+    // Initialize the Queues used to share data
+    sensorEncoder_printf("    - init shared queues");
+    queue_metadata =  xQueueCreate(1, sizeof(MetadataEncoder_t));
+    queue_telemetry = xQueueCreate(1, sizeof(TelemetryMainSail_t));
+
+    // Initialize the windows used to integrate data
+    sensorEncoder_printf("    - init ring buffer for windowed sensor reading");
+    objRing_init(&ring_metadata, storage_metadata, sizeof(MetadataEncoder_t), SENSOR_ENCODER_WINDOW);
+    sum_metadata_angle = 0;
+    prev_telemetry_ang_forward = 0;
+    integral_telemetry_ang = 0;
+
+    // Initialize clocks
+    sensorEncoder_printf("    - init hardware clocks");
     __HAL_RCC_GPIOB_CLK_ENABLE();
     __HAL_RCC_I2C1_CLK_ENABLE();
     
-    // Using PB6 I2C1_SCL and PB7 I2C1_SDA
-    // added __HAL_RCC_I2C1_CLK_ENABLE(); to the main.c
+    // Initialize GPIOs, Using PB6 I2C1_SCL and PB7 I2C1_SDA
+    sensorEncoder_printf("    - init hardware GPIO pins");
     GPIO_InitTypeDef GPIO_InitStruct = {0};
-
-    // using PB7 for I2C1_SDA
-    GPIO_InitStruct.Pin = GPIO_PIN_7;
+    GPIO_InitStruct.Pin = GPIO_PIN_7 | GPIO_PIN_6;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD; // Open Drain - OD
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-    // using PB6 for I2C1_SCL
-    GPIO_InitStruct.Pin = GPIO_PIN_6;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-    // HAL_StatusTypeDef HAL_I2C_Init(I2C_HandleTypeDef *hi2c);                      line 601 of Stm32h7xx_hal_i2c.h
-    // I2C_TypeDef                *Instance;      /*!< I2C registers base address    line 186 of Stm32h7xx_hal_i2c.h
-    // I2C_InitTypeDef            Init;           /*!< I2C communication parameters  line 187 of Stm32h7xx_hal_i2c.h
-    I2C_AS5600_Handle.Instance = I2C1;
-
-    //<---------------Connor and Charbel Timing Setup----------------->
-    // Use table example in reference manual (use 64Mhz base clock divide by 16 to get 4MHz)
-    // For each frequency the tables prescales each frequency into 4Mhz and uses 4Mhz for every other settings
-    // That's why prescale is 15 since 64MHz / 16 = 4MHz
+    // Initialize I2C handle structure
+    // Our system uses I2C with a 64MHz clock, ie f_i2cclk = 64MHz. We scale this down 
+    // to 4MHz using a prescaler of 16 (PRESC = 15), 64MHz / 16 = 4MHz. Once there we used
+    // the standard 100kHz I2C timing settings described in the reference manual (reference
+    // manual RM0399 pg 2138), any of the tables will do since all of the register values
+    // except prescaler are the same for all frequencies.
     //
-    // I2C TIMINGR register layout (RM0433 reference manual):
-    // [31:28] PRESC  - Prescaler: divides I2C kernel clock. tick = 1/(f_i2cclk / (PRESC+1))
-    // [27:24] (reserved, must be 0)
-    // [23:20] SCLDEL - SCL data setup delay (in prescaled ticks)
-    // [19:16] SDADEL - SDA data hold delay  (in prescaled ticks)
-    // [15:8]  SCLH   - SCL high period      (in prescaled ticks, actual = SCLH+1)
-    // [7:0]   SCLL   - SCL low period       (in prescaled ticks, actual = SCLL+1)
-    //
-    // With 64MHz kernel clock and PRESC=15: tick = 1/(64MHz/16) = 250ns
-    // SCLDEL=4 -> setup  = 5   * 250ns = 1250ns
-    // SDADEL=1 -> hold   = 1   * 250ns =  250ns (AS5600 max data hold is 450ns)
-    // SCLH=15  -> high   = 16  * 250ns = 4000ns
-    // SCLL=19  -> low    = 20  * 250ns = 5000ns
-    // f_SCL = 1 / (4000ns + 5000ns) ~= 111kHz (standard-mode 100kHz, rise/fall times account for the rest)
-    I2C_AS5600_Handle.Init.Timing =
-        (0xFU << 28) |  // PRESC  = 15 : 64MHz / 16 = 4MHz (250ns per tick)
-        (0x0U << 24) |  // reserved
-        (0x4U << 20) |  // SCLDEL =  4 : SCL data setup  = 5   ticks = 1.25us
-        (0x1U << 16) |  // SDADEL =  1 : SDA data hold   = 1   ticks = 250ns
-        (0x0FU << 8) |  // SCLH   = 15 : SCL high period = 16  ticks = 4us
-        (0x13U << 0);   // SCLL   = 19 : SCL low  period = 20  ticks = 5us
+    // I2C TIMINGR register layout (reference manual RM0399 pg 2162)
+    sensorEncoder_printf("    - init I2C handle structure");
+    i2c_handler.Instance = I2C1;
+    i2c_handler.Init.Timing = 0;
+    i2c_handler.Init.Timing =
+        (15 << 28) |  // PRESC  = 15 : 64MHz / 16 = 4MHz (250ns per tick)
+        (4 << 20) |   // SCLDEL =  4 : SCL data setup  = 5   ticks = 1.25us
+        (2 << 16) |   // SDADEL =  2 : SDA data hold   = 2   ticks = 0.5us
+        (15 << 8) |   // SCLH   = 15 : SCL high period = 16  ticks = 4us
+        (19 << 0);    // SCLL   = 19 : SCL low  period = 20  ticks = 5us
+    // f_SCL = 1 / (4us + 5us) ~= 111kHz (standard-mode 100kHz, rise/fall times account for the rest)
+    i2c_handler.Init.AddressingMode =  I2C_ADDRESSINGMODE_7BIT;
+    i2c_handler.Init.OwnAddress1 = 0x1;
+    i2c_handler.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+    i2c_handler.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+    i2c_handler.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+    if (HAL_I2C_Init(&i2c_handler) != HAL_OK) { Error_Handler(); }
 
-    I2C_AS5600_Handle.Init.AddressingMode =  I2C_ADDRESSINGMODE_7BIT;
-    I2C_AS5600_Handle.Init.OwnAddress1 = 0x1;
-    I2C_AS5600_Handle.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-    I2C_AS5600_Handle.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-    I2C_AS5600_Handle.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-
-    if (HAL_I2C_Init(&I2C_AS5600_Handle) != HAL_OK) {
-        printf("I2C1 (AS5600) Init Error");
-        Error_Handler();
-    }
-
+    // Initialize AS5600 sensor
+    sensorEncoder_printf("    - init AS5600 sensor");
     // AS5600 power-up time T_PU = 10ms max (datasheet p.8)
     HAL_Delay(10);
-
     // AS5600 has no WHO_AM_I register, so an ACK on its address is the check
-    if (HAL_I2C_IsDeviceReady(&I2C_AS5600_Handle, AS5600_ADDR << 1, 3, 100) != HAL_OK) {
-        printf("AS5600 not responding at 0x%02X, I2C error: 0x%lX\r\n", AS5600_ADDR, HAL_I2C_GetError(&I2C_AS5600_Handle));
+    if (HAL_I2C_IsDeviceReady(&i2c_handler, AS5600_ADDR << 1, 3, 100) != HAL_OK) {
+        sensorEncoder_printf("ERROR: AS5600 not responding at 0x%02X, I2C error: 0x%lX\r\n", AS5600_ADDR, HAL_I2C_GetError(&i2c_handler));
         return;
     }
-
     uint8_t status = 0;
     if (AS5600_readRegs(AS5600_STATUS, &status, 1) == HAL_OK) {
-        printf("AS5600 STATUS 0x%02X: MD=%d ML=%d MH=%d\r\n", status,
+        sensorEncoder_printf("AS5600 STATUS 0x%02X: MD=%d ML=%d MH=%d\r\n", status,
                !!(status & AS5600_STATUS_MD), !!(status & AS5600_STATUS_ML), !!(status & AS5600_STATUS_MH));
     }
+
+    sensorEncoder_printf("AS5600 initialization complete");
 }
 
 /**
@@ -162,11 +166,63 @@ void sensorEncoder_hardwareInit()
   */
 void sensorEncoder_handler(void *argument)
 {
+    sensorEncoder_printf("Starting sensor encoder task. Sensor will poll every %u ms", 1000 / SENSOR_ENCODER_FREQUENCY);
+    TickType_t lastWake = xTaskGetTickCount();
     for(;;)
     {
-        fillStruct();
-        printEncoder();
-        vTaskDelay(pdMS_TO_TICKS(1000)); // Delay for demonstration purposes
+        // Read Frequency
+        vTaskDelayUntil(&lastWake, pdMS_TO_TICKS(1000 / SENSOR_ENCODER_FREQUENCY));
+
+        // Metdata
+        sensorEncoder_printf("Setting up metadata for encoder reading");
+        MetadataEncoder_t metadata;
+        metadata.valid = VALIDITY_UNKNOWN;
+        metadata.sequence = sequence++;
+        metadata.timestamp = HAL_GetTick();
+
+        sensorEncoder_printf("Reading registers from AS5600");
+        HAL_StatusTypeDef status_read = AS5600_read(metadata.sequence, &metadata);
+        if (status_read != HAL_OK)
+        {
+            sensorEncoder_printf("ERROR: Failed to read AS5600 registers, HAL status: %d", status_read);
+            metadata.valid = VALIDITY_ERROR;
+        }
+        else
+        {
+            sensorEncoder_printf("Processing AS5600 readings into metadata");
+            if      (metadata.status & AS5600_STATUS_MH) { metadata.valid = VALIDITY_UNTRUSTED_OVER_SATURATION; }
+            else if (metadata.status & AS5600_STATUS_ML) { metadata.valid = VALIDITY_UNTRUSTED_UNDER_SATURATION; }
+            else { metadata.valid = VALIDITY_VALID; }
+            
+            if (metadata.valid == VALIDITY_VALID) {
+                sum_metadata_angle += metadata.angle;
+                MetadataEncoder_t metadata_old;
+                if (objRing_push(&ring_metadata, &metadata, &metadata_old)) {
+                    sum_metadata_angle -= metadata_old.angle;
+                }
+            }
+            else { }
+
+            if (ring_metadata.count < SENSOR_ENCODER_WINDOW) { metadata.valid = VALIDITY_VALID_WINDOW_FILLING; }
+        }
+        #ifdef CM7_SENSOR_ENCODER_DEBUG
+        char metadata_str[METADATA_ENCODER_STR_SIZE];
+        sensorEncoder_printf("%s", MetadataEncoder_toString(&metadata, metadata_str));
+        #endif
+        xQueueOverwrite(queue_metadata, &metadata);
+
+        // Telemetry
+        sensorEncoder_printf("Generating telemetry from metadata");
+        if (ring_metadata.count == 0) { continue; }
+        TelemetryMainSail_t telemetry;
+        int16_t ang_forward = (sum_metadata_angle / ring_metadata.count) - 180;
+        telemetry.ang_forward = ang_forward;
+        integral_telemetry_ang += ang_forward - prev_telemetry_ang_forward;
+        if      (integral_telemetry_ang > 0)  { telemetry.ang_starboard = integral_telemetry_ang; telemetry.ang_port = 0; }
+        else if (integral_telemetry_ang < 0)  { telemetry.ang_starboard = 0;                      telemetry.ang_port = -integral_telemetry_ang; }
+        else                                  { telemetry.ang_starboard = 0;                      telemetry.ang_port = 0; }
+        prev_telemetry_ang_forward = ang_forward;
+        xQueueOverwrite(queue_telemetry, &telemetry);
     }
 }
 
@@ -176,11 +232,11 @@ void sensorEncoder_handler(void *argument)
   */
 static HAL_StatusTypeDef AS5600_readRegs(uint8_t reg, uint8_t *buf, uint16_t len)
 {
-    HAL_StatusTypeDef status = HAL_I2C_Mem_Read(&I2C_AS5600_Handle, AS5600_ADDR << 1, reg,
+    HAL_StatusTypeDef status = HAL_I2C_Mem_Read(&i2c_handler, AS5600_ADDR << 1, reg,
                                                 I2C_MEMADD_SIZE_8BIT, buf, len, 100);
     if (status != HAL_OK) {
-        printf("AS5600 read 0x%02X failed, HAL status: %d, I2C error: 0x%lX\r\n",
-               reg, status, HAL_I2C_GetError(&I2C_AS5600_Handle));
+        sensorEncoder_printf("ERROR: AS5600 read 0x%02X failed, HAL status: %d, I2C error: 0x%lX\r\n",
+               reg, status, HAL_I2C_GetError(&i2c_handler));
     }
     return status;
 }
@@ -191,56 +247,38 @@ static HAL_StatusTypeDef AS5600_readRegs(uint8_t reg, uint8_t *buf, uint16_t len
   */
 static HAL_StatusTypeDef AS5600_writeReg(uint8_t reg, uint8_t value)
 {
-    HAL_StatusTypeDef status = HAL_I2C_Mem_Write(&I2C_AS5600_Handle, AS5600_ADDR << 1, reg,
+    HAL_StatusTypeDef status = HAL_I2C_Mem_Write(&i2c_handler, AS5600_ADDR << 1, reg,
                                                  I2C_MEMADD_SIZE_8BIT, &value, 1, 100);
     if (status != HAL_OK) {
-        printf("AS5600 write 0x%02X failed, HAL status: %d, I2C error: 0x%lX\r\n",
-               reg, status, HAL_I2C_GetError(&I2C_AS5600_Handle));
+        sensorEncoder_printf("ERROR: AS5600 write 0x%02X failed, HAL status: %d, I2C error: 0x%lX\r\n",
+               reg, status, HAL_I2C_GetError(&i2c_handler));
     }
     return status;
 }
 
 /**
-  * Read a 12-bit H/L register pair. Pass the _H register (e.g. AS5600_RAW_ANGLE_H):
-  * ANGLE, RAW ANGLE and MAGNITUDE only handle the address pointer correctly when
-  * the read starts at the high byte (datasheet p.13).
+  * Fill the AS5600 fields of metadata. STATUS, RAW_ANGLE and ANGLE come from one burst
+  * (0x0B-0x0F, each 12-bit pair read high byte first). AGC and MAGNITUDE (0x1A-0x1C)
+  * are re-read only every AS5600_DIAG_PERIOD samples; the cached values are used between.
   */
-static HAL_StatusTypeDef AS5600_read12(uint8_t regH, uint16_t *value)
+static HAL_StatusTypeDef AS5600_read(uint8_t seq, MetadataEncoder_t *metadata)
 {
-    uint8_t buf[2];
-    HAL_StatusTypeDef status = AS5600_readRegs(regH, buf, 2);
-    if (status == HAL_OK) {
-        *value = ((buf[0] << 8) | buf[1]) & AS5600_12BIT_MASK;
+    uint8_t buf[5];
+    HAL_StatusTypeDef status = AS5600_readRegs(AS5600_STATUS, buf, sizeof(buf));
+    if (status != HAL_OK) { return status; }
+    metadata->status    = buf[0];
+    metadata->raw_angle = ((buf[1] << 8) | buf[2]) & AS5600_12BIT_MASK;
+    metadata->angle     = ((buf[3] << 8) | buf[4]) & AS5600_12BIT_MASK;
+
+    if ((seq % 128u) == 0)
+    {
+        uint8_t diag[3];
+        status = AS5600_readRegs(AS5600_AGC, diag, sizeof(diag));
+        if (status != HAL_OK) { return status; }
+        cached_agc       = diag[0];
+        cached_magnitude = ((diag[1] << 8) | diag[2]) & AS5600_12BIT_MASK;
     }
-    return status;
-}
-
-static void fillStruct()
-{
-    // Read into locals: the struct is packed, so taking &encoder.field gives an unaligned pointer
-    uint16_t raw_angle = 0, angle = 0, magnitude = 0;
-    uint8_t status = 0, agc = 0;
-
-    AS5600_read12(AS5600_RAW_ANGLE_H, &raw_angle);
-    AS5600_read12(AS5600_ANGLE_H, &angle);
-    AS5600_read12(AS5600_MAGNITUDE_H, &magnitude);
-    AS5600_readRegs(AS5600_STATUS, &status, 1);
-    AS5600_readRegs(AS5600_AGC, &agc, 1);
-
-    encoder.raw_angle = raw_angle;
-    encoder.angle     = angle;
-    encoder.magnitude = magnitude;
-    encoder.status    = status;
-    encoder.agc       = agc;
-    encoder.update_count++;
-}
-
-static void printEncoder()
-{
-    float degrees = encoder.raw_angle * 360.0f / 4096.0f;
-
-    printf("AS5600 raw: %4u (%d.%04d deg) | STATUS MD=%d ML=%d MH=%d | AGC: %u | MAG: %u\r\n",
-           encoder.raw_angle, FLOAT_INT(degrees), FLOAT_FRAC(degrees),
-           !!(encoder.status & AS5600_STATUS_MD), !!(encoder.status & AS5600_STATUS_ML),
-           !!(encoder.status & AS5600_STATUS_MH), encoder.agc, encoder.magnitude);
+    metadata->agc       = cached_agc;
+    metadata->magnitude = cached_magnitude;
+    return HAL_OK;
 }

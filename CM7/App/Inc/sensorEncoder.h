@@ -4,11 +4,27 @@
 #include "sharedSensor.h"
 #include "sharedSail.h"
 
+#define SENSOR_ENCODER_TASK "[SENCODER]"
+#define SENSOR_ENCODER_TASK_PRIORITY osPriorityAboveNormal
 
+#ifdef CM7_SENSOR_ENCODER_DEBUG
+#define SENSOR_ENCODER_TASK_HEAP 350
+#define sensorEncoder_printf(fmt, ...) DEBUG_PRINTF(SENSOR_ENCODER_TASK, fmt, ##__VA_ARGS__)
+#else
+#define SENSOR_ENCODER_TASK_HEAP 100
+#define sensorEncoder_printf(...) ((void)0)
+#endif
 
-extern TaskHandle_t task_sensorEncoder;
+#define SENSOR_ENCODER_FREQUENCY 100u // Hz
+#define SENSOR_ENCODER_WINDOW 10u // num readings
+#define SENSOR_ENCODER_STALE 100u // ms before data is considered stale
 
-void sensorEncoder_hardwareInit();
+extern TaskHandle_t sensorEncoder_task;
+
+void sensorEncoder_hardwareInit(void);
 void sensorEncoder_handler(void *argument);
+
+bool sensorEncoder_getTelemetry(TelemetryMainSail_t *telemetry);
+bool sensorEncoder_getMetadata(MetadataEncoder_t *metadata);
 
 #endif // SENSOR_ENCODER_H

@@ -14,3 +14,39 @@ char *MetadataBattery_toString(const MetadataBattery_t *metadata, char buf[METAD
     );
     return buf;
 }
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Encoder Sensor
+char *MetadataEncoder_toString(const MetadataEncoder_t *metadata, char buf[METADATA_ENCODER_STR_SIZE])
+{
+    return buf;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+// GPS Sensor
+char *MetadataGPS_toString(const MetadataGPS_t *metadata, char buf[METADATA_GPS_STR_SIZE])
+{
+    return buf;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+// IMU Sensor
+char *MetadataIMU_toString(const MetadataIMU_t *metadata, char buf[METADATA_IMU_STR_SIZE])
+{
+    return buf;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Wind Sensor
+char *MetadataWind_toString(const MetadataWind_t *metadata, char buf[METADATA_WIND_STR_SIZE])
+{
+    return buf;
+}

@@ -49,8 +49,8 @@ typedef enum {
  * SENSOR: Battery Monitor
  */
 typedef struct {
-    uint16_t raw_cell[BATTERY_CELL_COUNT];
-    uint16_t voltage_cell[BATTERY_CELL_COUNT];
+    uint16_t raw_cell[BATTERY_CELL_COUNT]; /**< Raw ADC readings for each battery cell */
+    uint16_t voltage_cell[BATTERY_CELL_COUNT]; /**< Voltage readings for each battery cell */
 
     uint32_t timestamp; /**< Timestamp for when the measurement was taken, measured in ms */
     uint8_t valid; /**< Indicates if the measurement is valid */
@@ -71,11 +71,19 @@ char *MetadataBattery_toString(const MetadataBattery_t *metadata, char buf[METAD
  * SENSOR: Encoder
  */
 typedef struct {
+    uint16_t raw_angle;   /**< 0-4095, unscaled angle */
+    uint16_t angle;       /**< 0-4095, scaled by ZPOS/MPOS/MANG (same as raw_angle until those are programmed) */
+    uint16_t magnitude;   /**< internal CORDIC magnitude */
+    uint8_t  status;      /**< MD/ML/MH bits */
+    uint8_t  agc;         /**< gain: 0-255 at 5V, 0-128 at 3.3V (aim for the middle) */
 
-    uint32_t timestamp; /**< Timestamp for when the measurement was taken, measured in ms */
-    uint8_t valid; /**< Indicates if the measurement is valid */
-    uint8_t sequence; /**< Sequence number of the measurement, used to ensure a measurment is actually new */
+    uint32_t timestamp;   /**< Timestamp for when the measurement was taken, measured in ms */
+    uint8_t valid;        /**< Indicates if the measurement is valid */
+    uint8_t sequence;     /**< Sequence number of the measurement, used to ensure a measurment is actually new */
 } MetadataEncoder_t;
+
+#define METADATA_ENCODER_STR_SIZE 128u
+char *MetadataEncoder_toString(const MetadataEncoder_t *metadata, char buf[METADATA_ENCODER_STR_SIZE]);
 
 
 
@@ -94,6 +102,9 @@ typedef struct {
     uint8_t sequence; /**< Sequence number of the measurement, used to ensure a measurment is actually new */
 } MetadataGPS_t;
 
+#define METADATA_GPS_STR_SIZE 128u
+char *MetadataGPS_toString(const MetadataGPS_t *metadata, char buf[METADATA_GPS_STR_SIZE]);
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -111,6 +122,9 @@ typedef struct {
     uint8_t sequence; /**< Sequence number of the measurement, used to ensure a measurment is actually new */
 } MetadataIMU_t;
 
+#define METADATA_IMU_STR_SIZE 128u
+char *MetadataIMU_toString(const MetadataIMU_t *metadata, char buf[METADATA_IMU_STR_SIZE]);
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -127,3 +141,6 @@ typedef struct {
     uint8_t valid; /**< Indicates if the measurement is valid */
     uint8_t sequence; /**< Sequence number of the measurement, used to ensure a measurment is actually new */
 } MetadataWind_t;
+
+#define METADATA_WIND_STR_SIZE 128u
+char *MetadataWind_toString(const MetadataWind_t *metadata, char buf[METADATA_WIND_STR_SIZE]);
