@@ -49,21 +49,6 @@ static Validity_e interpretGGAStr(const char *metadata_raw);
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-
-// size_t sensorGPS_readBytes(uint8_t *dst, size_t max)
-// {
-//     uint16_t head = uart_dma_head;
-//     size_t count = 0;
-//     while (uart_dma_tail != head && count < max)
-//     {
-//         dst[count++] = uart_dma_buf[uart_dma_tail];
-//         uart_dma_tail = (uart_dma_tail + 1) % SENSOR_GPS_DMA_BUFFER_SIZE;
-//     }
-//     return count;
-// }
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
 HardwareInit_e sensorGPS_hardwareInit(void)
 {
     sensorGPS_printf("sensorGPS_hardwareInit start");

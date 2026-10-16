@@ -4840,6 +4840,16 @@
 	)
 	(wire
 		(pts
+			(xy 231.14 167.64) (xy 231.14 165.1)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "49a88c48-e5ae-4d92-bd06-f3a57a01ae93")
+	)
+	(wire
+		(pts
 			(xy 323.85 109.22) (xy 331.47 109.22)
 		)
 		(stroke
@@ -4857,6 +4867,16 @@
 			(type default)
 		)
 		(uuid "57a2d5d8-61e4-46b0-a4c5-52791889a0c2")
+	)
+	(wire
+		(pts
+			(xy 218.44 170.18) (xy 237.49 170.18)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5b5208d9-9538-44b9-8dd5-09b2aa7e689e")
 	)
 	(wire
 		(pts
@@ -4990,6 +5010,16 @@
 	)
 	(wire
 		(pts
+			(xy 237.49 167.64) (xy 231.14 167.64)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "93579a8d-4d32-4f9c-a1e5-d1bac9b94d16")
+	)
+	(wire
+		(pts
 			(xy 393.7 137.16) (xy 400.05 137.16)
 		)
 		(stroke
@@ -5097,6 +5127,16 @@
 			(type default)
 		)
 		(uuid "c5849dd8-9bc3-4f0f-970b-f11165c1b308")
+	)
+	(wire
+		(pts
+			(xy 218.44 165.1) (xy 231.14 165.1)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c6696820-7e87-46ab-89ac-eef3367208f6")
 	)
 	(wire
 		(pts
@@ -5218,6 +5258,16 @@
 		)
 		(uuid "1bbf9151-5e29-45cb-abb9-0c6bf2c303f8")
 	)
+	(label "sensorGPS_UART7Rx"
+		(at 218.44 165.1 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "36d6739d-cdf0-4802-a755-b6b1ba7c1a19")
+	)
 	(label "B3"
 		(at 406.4 96.52 0)
 		(effects
@@ -5247,6 +5297,16 @@
 			(justify left bottom)
 		)
 		(uuid "826247c4-5830-4e69-9140-3f09707de483")
+	)
+	(label "sensorGPS_UART7Tx"
+		(at 218.44 170.18 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "8855b327-c4eb-4f3f-91ae-4de9114b29af")
 	)
 	(label "B1"
 		(at 381 96.52 0)
