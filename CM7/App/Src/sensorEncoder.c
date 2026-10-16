@@ -92,7 +92,6 @@ TaskHandle_t sensorEncoder_task;
 static I2C_HandleTypeDef i2c_handler;
 
 static QueueHandle_t queue_metadata;
-static QueueHandle_t queue_telemetry;
 
 static int32_t ang_unwrapped;
 static int32_t ang_unwrapped_storage[SENSOR_ENCODER_WINDOW];
@@ -121,7 +120,6 @@ void sensorEncoder_hardwareInit()
     // Initialize the Queues used to share data
     sensorEncoder_printf("    - init shared queues");
     queue_metadata =  xQueueCreate(1, sizeof(MetadataEncoder_t));
-    queue_telemetry = xQueueCreate(1, sizeof(TelemetryMainSail_t));
 
     // Initialize the windows used to integrate data
     sensorEncoder_printf("    - init ring buffer for windowed sensor reading");
@@ -253,7 +251,7 @@ void sensorEncoder_handler(void *argument)
         if      (degrees > 0) { telemetry.ang_starboard = degrees; telemetry.ang_port = 0; }
         else if (degrees < 0) { telemetry.ang_starboard = 0;       telemetry.ang_port = -degrees; }
         else                  { telemetry.ang_starboard = 0;       telemetry.ang_port = 0; }
-        xQueueOverwrite(queue_telemetry, &telemetry);
+        telemetry_setMainSail(&telemetry);
     }
 }
 
@@ -316,5 +314,4 @@ static HAL_StatusTypeDef AS5600_read(uint8_t seq, MetadataEncoder_t *metadata)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-bool sensorEncoder_getTelemetry(TelemetryMainSail_t *telemetry) { return xQueuePeek(queue_telemetry, telemetry, 0) == pdTRUE; }
 bool sensorEncoder_getMetadata(MetadataEncoder_t *metadata)     { return xQueuePeek(queue_metadata, metadata, 0) == pdTRUE; }

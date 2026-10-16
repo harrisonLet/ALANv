@@ -1,6 +1,7 @@
 #include "main.h"
 #include "system.h"
 #include "controller.h"
+#include "telemetry.h"
 
 #include "servoShared.h"
 #include "servoSail.h"
@@ -26,6 +27,9 @@ void live_handler(void *argument);
 void hardware_init(void) {
     #ifdef CM7_LIVE_ENABLE
     live_hardwareInit();
+    #endif
+    #ifdef CM7_TELEMETRY_ENABLE
+    telemetry_init();
     #endif
 
     #ifdef CM7_SENSOR_BATTERY_ENABLE
@@ -61,6 +65,10 @@ void rtos_init()
     #ifdef CM7_LIVE_ENABLE
     if (xTaskCreate(live_handler, LIVE_TASK, LIVE_TASK_HEAP, NULL, LIVE_TASK_PRIORITY, &task_live) != pdPASS) { Error_Handler(); }
     totalStack += LIVE_TASK_HEAP;
+    #endif
+    #ifdef CM7_TELEMETRY_ENABLE
+    if (xTaskCreate(telemetry_handler, TELEMETRY_TASK, TELEMETRY_TASK_HEAP, NULL, TELEMETRY_TASK_PRIORITY, &telemetry_task) != pdPASS) { Error_Handler(); }
+    totalStack += TELEMETRY_TASK_HEAP;
     #endif
 
     #ifdef CM7_SENSOR_BATTERY_ENABLE
@@ -109,25 +117,6 @@ void live_handler(void *argument)
         #endif
         #ifdef CM7_SENSOR_ENCODER_ENABLE
         live_printf("StackHW (sensorEncoder)=%u", (unsigned)uxTaskGetStackHighWaterMark(sensorEncoder_task));
-        #endif
-        #endif
-
-        #ifdef CM7_LIVE_DEBUG_TELEMETRY
-        #ifdef CM7_SENSOR_BATTERY_ENABLE
-        {
-            TelemetryBattery_t telemetry;
-            sensorBattery_getTelemetry(&telemetry);
-            char telemetryStr[TELEMETRY_BATTERY_STR_SIZE];
-            live_printf("%s", TelemetryBattery_toString(&telemetry, telemetryStr));
-        }
-        #endif
-        #ifdef CM7_SENSOR_ENCODER_ENABLE
-        {
-            TelemetryMainSail_t telemetry;
-            sensorEncoder_getTelemetry(&telemetry);
-            char telemetryStr[TELEMETRY_ENCODER_STR_SIZE];
-            live_printf("%s", TelemetryMainSail_toString(&telemetry, telemetryStr));
-        }
         #endif
         #endif
 

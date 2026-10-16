@@ -10,16 +10,21 @@
 // CM4 Configuration
 /////////////////////////////////////////////////////////////////////////////////////////
 // #define CM4_ENABLE
-// #define CM4_DEBUG
 // #define CM4_SERVOS_ENABLE
+
+
+
+#ifdef CM4_ENABLE
+#define CM4_DEBUG
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // CM7 Configuration
 /////////////////////////////////////////////////////////////////////////////////////////
 #define CM7_ENABLE
-#define CM7_DEBUG
 #define CM7_LIVE_ENABLE
+#define CM7_TELEMETRY_ENABLE
 #define CM7_SENSOR_BATTERY_ENABLE
 #define CM7_SENSOR_ENCODER_ENABLE
 // #define CM7_SENSOR_GPS_ENABLE
@@ -28,18 +33,25 @@
 
 
 
+#ifdef CM7_ENABLE
+#define CM7_DEBUG
+#endif
+
 #ifdef CM7_LIVE_ENABLE
 // #define CM7_LIVE_DEBUG
 // #define CM7_LIVE_DEBUG_STACK // CM7_LIVE_DEBUG must be enabled
-// #define CM7_LIVE_DEBUG_TELEMETRY // CM7_LIVE_DEBUG must be enabled
+#endif
+
+#ifdef CM7_TELEMETRY_ENABLE
+// #define CM7_TELEMETRY_DEBUG
 #endif
 
 #ifdef CM7_SENSOR_BATTERY_ENABLE
-#define CM7_SENSOR_BATTERY_DEBUG
+// #define CM7_SENSOR_BATTERY_DEBUG
 #endif
 
 #ifdef CM7_SENSOR_ENCODER_ENABLE
-#define CM7_SENSOR_ENCODER_DEBUG
+// #define CM7_SENSOR_ENCODER_DEBUG
 #endif
 
 #ifdef CM7_SENSOR_GPS_ENABLE

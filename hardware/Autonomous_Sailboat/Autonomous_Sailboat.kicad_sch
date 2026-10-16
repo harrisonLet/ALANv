@@ -4407,10 +4407,6 @@
 		(uuid "4b80f630-fd35-40fa-9ba7-902448196d8f")
 	)
 	(no_connect
-		(at 323.85 167.64)
-		(uuid "4bb92bce-3903-4ab7-894c-eb86fe4c6ccd")
-	)
-	(no_connect
 		(at 323.85 162.56)
 		(uuid "4d9c9e78-862b-4cbe-986e-4645566da118")
 	)
@@ -4663,10 +4659,6 @@
 		(uuid "e9579dc8-620b-4af6-beab-8628ae3a9bda")
 	)
 	(no_connect
-		(at 323.85 170.18)
-		(uuid "e9de7275-bdb6-4a4d-ab96-1d93cf6075fc")
-	)
-	(no_connect
 		(at 237.49 121.92)
 		(uuid "ead8ded5-3749-4242-b1b7-abd2c11f2a2a")
 	)
@@ -4766,6 +4758,16 @@
 	)
 	(wire
 		(pts
+			(xy 323.85 167.64) (xy 330.2 167.64)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2bbbb321-e33a-48f8-af1b-3ec25d3b3fb1")
+	)
+	(wire
+		(pts
 			(xy 369.57 124.46) (xy 419.1 124.46)
 		)
 		(stroke
@@ -4786,13 +4788,13 @@
 	)
 	(wire
 		(pts
-			(xy 323.85 180.34) (xy 342.9 180.34)
+			(xy 330.2 167.64) (xy 330.2 165.1)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "337c58b1-3a3d-4c8e-88a9-8137417ea844")
+		(uuid "39e91eab-819a-4ef5-bf76-b9333d8c1dd0")
 	)
 	(wire
 		(pts
@@ -4836,36 +4838,6 @@
 	)
 	(wire
 		(pts
-			(xy 215.9 213.36) (xy 237.49 213.36)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "4b1a37fd-4436-41c1-ab4e-89423d672c0e")
-	)
-	(wire
-		(pts
-			(xy 215.9 172.72) (xy 228.6 172.72)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "4ee36177-df4b-4cd2-9cae-5ecaa8abee55")
-	)
-	(wire
-		(pts
-			(xy 323.85 228.6) (xy 342.9 228.6)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "552ef13c-10c8-4834-ab09-0cf4fbce2c59")
-	)
-	(wire
-		(pts
 			(xy 323.85 109.22) (xy 331.47 109.22)
 		)
 		(stroke
@@ -4893,16 +4865,6 @@
 			(type default)
 		)
 		(uuid "5ef79134-a0ec-43eb-baff-89f46d17dc23")
-	)
-	(wire
-		(pts
-			(xy 323.85 223.52) (xy 342.9 223.52)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "621de6e5-979a-4ad9-967e-533dc4c9c233")
 	)
 	(wire
 		(pts
@@ -4936,16 +4898,6 @@
 	)
 	(wire
 		(pts
-			(xy 330.2 218.44) (xy 342.9 218.44)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "6a627d49-ad7a-42ca-bbed-b7976b4fca0e")
-	)
-	(wire
-		(pts
 			(xy 419.1 124.46) (xy 419.1 129.54)
 		)
 		(stroke
@@ -4973,6 +4925,16 @@
 			(type default)
 		)
 		(uuid "75d5de10-88bb-47a5-88d4-df6fbe0952eb")
+	)
+	(wire
+		(pts
+			(xy 323.85 170.18) (xy 342.9 170.18)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "77a7791f-0e08-4ab0-845d-5a7c54e52bcd")
 	)
 	(wire
 		(pts
@@ -5016,16 +4978,6 @@
 	)
 	(wire
 		(pts
-			(xy 323.85 187.96) (xy 342.9 187.96)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "91b3987d-130b-4404-ab11-95d2ae034e2c")
-	)
-	(wire
-		(pts
 			(xy 393.7 137.16) (xy 400.05 137.16)
 		)
 		(stroke
@@ -5043,16 +4995,6 @@
 			(type default)
 		)
 		(uuid "94dc93b4-7d0b-4a72-81d2-f6a85f869255")
-	)
-	(wire
-		(pts
-			(xy 323.85 220.98) (xy 330.2 220.98)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "99cb8436-e4a3-4260-ab2f-b776471e75c5")
 	)
 	(wire
 		(pts
@@ -5076,16 +5018,6 @@
 	)
 	(wire
 		(pts
-			(xy 330.2 177.8) (xy 330.2 175.26)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "a5a63bff-9715-4bb8-8f96-f0dbea917fef")
-	)
-	(wire
-		(pts
 			(xy 323.85 119.38) (xy 344.17 119.38)
 		)
 		(stroke
@@ -5093,16 +5025,6 @@
 			(type default)
 		)
 		(uuid "a6ffa735-e582-493d-b26f-205417225a91")
-	)
-	(wire
-		(pts
-			(xy 323.85 177.8) (xy 330.2 177.8)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "a9df2f23-eac1-42f0-ab5b-b2d9aa11bdbb")
 	)
 	(wire
 		(pts
@@ -5126,16 +5048,6 @@
 	)
 	(wire
 		(pts
-			(xy 228.6 170.18) (xy 228.6 172.72)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "bc4fd8c1-74f0-43ac-89ca-b8afaed28178")
-	)
-	(wire
-		(pts
 			(xy 393.7 104.14) (xy 393.7 119.38)
 		)
 		(stroke
@@ -5146,13 +5058,13 @@
 	)
 	(wire
 		(pts
-			(xy 215.9 167.64) (xy 237.49 167.64)
+			(xy 330.2 165.1) (xy 342.9 165.1)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "c4feb4ec-6c3e-4755-a548-e4f81bd8a66b")
+		(uuid "c5849dd8-9bc3-4f0f-970b-f11165c1b308")
 	)
 	(wire
 		(pts
@@ -5206,16 +5118,6 @@
 	)
 	(wire
 		(pts
-			(xy 330.2 175.26) (xy 342.9 175.26)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "d735269e-6c43-4091-ba8b-e179d8860d88")
-	)
-	(wire
-		(pts
 			(xy 50.8 50.8) (xy 558.8 50.8)
 		)
 		(stroke
@@ -5256,26 +5158,6 @@
 	)
 	(wire
 		(pts
-			(xy 330.2 220.98) (xy 330.2 218.44)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "f394c9b5-6ac2-4b88-827a-ee31e835ec65")
-	)
-	(wire
-		(pts
-			(xy 237.49 170.18) (xy 228.6 170.18)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "f88e8609-3831-4acb-8811-f4b309c5b408")
-	)
-	(wire
-		(pts
 			(xy 331.47 109.22) (xy 331.47 127)
 		)
 		(stroke
@@ -5294,7 +5176,7 @@
 		)
 		(uuid "0743df0e-422a-4b62-928b-c5b5156aafe4")
 	)
-	(label "LD1_liveliness"
+	(label "live_LEDGreen"
 		(at 342.9 152.4 0)
 		(effects
 			(font
@@ -5303,26 +5185,6 @@
 			(justify left bottom)
 		)
 		(uuid "1bbf9151-5e29-45cb-abb9-0c6bf2c303f8")
-	)
-	(label "UART7RX_GPS"
-		(at 215.9 167.64 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "2ebce666-19c6-497a-85a2-c8666212415b")
-	)
-	(label "UART4RX_WindSensor"
-		(at 342.9 223.52 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "53a4db5b-32f1-4aaf-9808-27c5be30fed2")
 	)
 	(label "B3"
 		(at 406.4 96.52 0)
@@ -5334,55 +5196,15 @@
 		)
 		(uuid "6162439d-0dbc-456a-8e92-17fe7caf6060")
 	)
-	(label "I2C2_SDA"
-		(at 342.9 180.34 0)
+	(label "sensorEncoder_I2C1SCL"
+		(at 342.9 165.1 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
 			(justify left bottom)
 		)
-		(uuid "8e3f347b-1330-4977-b37c-4050af4510f9")
-	)
-	(label "UART7TX_GPS"
-		(at 215.9 172.72 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "90069535-8c90-4221-943d-53c8a71eb9fa")
-	)
-	(label "LD3_UserButtonLED"
-		(at 342.9 187.96 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "9c5420b0-0c9d-468e-9b34-62afc39a2b63")
-	)
-	(label "UART4TX_WindSensort"
-		(at 342.9 218.44 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "9ed3e837-d1b4-4060-ba29-69d0526c1573")
-	)
-	(label "B1_UserButton"
-		(at 342.9 228.6 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "bbb09d8e-ed82-4a92-9c72-ca11c8ffd1f9")
+		(uuid "61966290-d07b-437b-82b6-ee857ebdc6c9")
 	)
 	(label "B1"
 		(at 381 96.52 0)
@@ -5394,6 +5216,16 @@
 		)
 		(uuid "bd65e9d8-13e3-4488-a40b-30044a37e51f")
 	)
+	(label "sensorEncoder_I2C1SDA"
+		(at 342.9 170.18 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "bde9e97f-c414-4f03-995c-e3c6a6c472f7")
+	)
 	(label "B0"
 		(at 368.3 96.52 0)
 		(effects
@@ -5404,16 +5236,6 @@
 		)
 		(uuid "c0f58334-a61f-433c-a2ac-92f86cd85951")
 	)
-	(label "I2C2_SCL"
-		(at 342.9 175.26 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "e3e6ea64-92a3-44b3-b9e0-1b6099e19f1b")
-	)
 	(label "B2"
 		(at 393.7 96.52 0)
 		(effects
@@ -5423,16 +5245,6 @@
 			(justify left bottom)
 		)
 		(uuid "ee496c93-e6e6-4e83-822e-aadcf2e66caa")
-	)
-	(label "GPIO_SailServoControl"
-		(at 215.9 213.36 180)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "fdb5a096-7c28-44e8-8f21-9c43c98649bc")
 	)
 	(symbol
 		(lib_id "power:GND")

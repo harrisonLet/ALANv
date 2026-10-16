@@ -15,6 +15,7 @@
 
 #include "sensorBattery.h"
 #include "objRing.h"
+#include "telemetry.h"
 
 #include "queue.h"
 
@@ -42,7 +43,6 @@ TaskHandle_t sensorBattery_task;
 static ADC_HandleTypeDef adc_handler;
 
 static QueueHandle_t queue_metadata;
-static QueueHandle_t queue_telemetry;
 
 static MetadataBattery_t storage_metadata[SENSOR_BATTERY_WINDOW];
 static Ring_o ring_metadata;
@@ -61,7 +61,6 @@ void sensorBattery_hardwareInit(void)
     // Initialize the Queues used to share data
     sensorBattery_printf("    - init shared queues");
     queue_metadata =  xQueueCreate(1, sizeof(MetadataBattery_t));
-    queue_telemetry = xQueueCreate(1, sizeof(TelemetryBattery_t));
 
     // Initialize the windows used to integrate data
     sensorBattery_printf("    - init ring buffer for windowed sensor reading");
@@ -214,7 +213,7 @@ void sensorBattery_handler(void *argument)
             telemetry.cell_voltage[i] = mv - prev_mv;
             prev_mv = mv;
         }
-        xQueueOverwrite(queue_telemetry, &telemetry);
+        telemetry_setBattery(&telemetry);
     }
 }
 
@@ -252,5 +251,4 @@ static uint16_t rawTapsToMv(uint16_t counts)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-bool sensorBattery_getTelemetry(TelemetryBattery_t *telemetry) { return xQueuePeek(queue_telemetry, telemetry, 0) == pdTRUE; }
 bool sensorBattery_getMetadata(MetadataBattery_t *metadata)    { return xQueuePeek(queue_metadata, metadata, 0) == pdTRUE; }

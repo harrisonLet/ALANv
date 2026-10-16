@@ -24,7 +24,6 @@ extern TaskHandle_t sensorBattery_task;
 void sensorBattery_hardwareInit(void);
 void sensorBattery_handler(void *argument);
 
-bool sensorBattery_getTelemetry(TelemetryBattery_t *telemetry);
 bool sensorBattery_getMetadata(MetadataBattery_t *metadata);
 
 #endif // SENSOR_BATTERY_H

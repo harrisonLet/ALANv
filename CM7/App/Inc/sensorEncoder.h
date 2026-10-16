@@ -15,7 +15,7 @@
 #define sensorEncoder_printf(...) ((void)0)
 #endif
 
-#define SENSOR_ENCODER_FREQUENCY 100u // Hz
+#define SENSOR_ENCODER_FREQUENCY 100u // Hz, this value is primarily limited by the i2c bus speed, max: ~300Hz
 #define SENSOR_ENCODER_WINDOW 10u // num readings
 #define SENSOR_ENCODER_STALE 100u // ms before data is considered stale
 
@@ -24,7 +24,6 @@ extern TaskHandle_t sensorEncoder_task;
 void sensorEncoder_hardwareInit(void);
 void sensorEncoder_handler(void *argument);
 
-bool sensorEncoder_getTelemetry(TelemetryMainSail_t *telemetry);
 bool sensorEncoder_getMetadata(MetadataEncoder_t *metadata);
 
 #endif // SENSOR_ENCODER_H
