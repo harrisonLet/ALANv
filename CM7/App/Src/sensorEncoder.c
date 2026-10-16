@@ -240,8 +240,6 @@ void sensorEncoder_handler(void *argument)
                 if (objRing_push(&ang_unwrapped_ring, &ang_unwrapped, &ang_unwrapped_old)) {
                     ang_unwrapped_sum -= ang_unwrapped_old;
                 }
-
-                if (ang_unwrapped_ring.count < SENSOR_ENCODER_WINDOW) { metadata.valid = VALIDITY_VALID_WINDOW_FILLING; }
             }
             else { }
         }

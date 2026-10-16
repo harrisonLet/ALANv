@@ -37,11 +37,12 @@ char *MetadataEncoder_toString(const MetadataEncoder_t *metadata, char buf[METAD
 // GPS Sensor
 char *MetadataGPS_toString(const MetadataGPS_t *metadata, char buf[METADATA_GPS_STR_SIZE])
 {
-    snprintf(buf, METADATA_GPS_STR_SIZE, "MetadataGPS (%08lu, %02X, %03u): [ %+10.6f | %+11.6f | %+8.2f ] %03dS %02XF - %02d:%02d:%02d",
+    snprintf(buf, METADATA_GPS_STR_SIZE, "MetadataGPS (%08lu, %02X, %03u): [ %+10.6f | %+11.6f | %+8.2f ] %03dS %02XF - %02d:%02d:%02d - %s",
         (unsigned long)metadata->timestamp, (unsigned)metadata->valid, (unsigned)metadata->sequence,
         metadata->latitude, metadata->longitude, metadata->altitude,
         (unsigned)metadata->satellites, (unsigned)metadata->fix_valid,
-        (unsigned)metadata->hours, (unsigned)metadata->minutes, (unsigned)metadata->seconds
+        (unsigned)metadata->hours, (unsigned)metadata->minutes, (unsigned)metadata->seconds,
+        metadata->raw
     );
     return buf;
 }

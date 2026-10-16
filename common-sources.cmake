@@ -28,5 +28,6 @@ set(COMMON_INCLUDE_DIRS
 # Force the float variants in for both cores (gcc / newlib toolchains only).
 set(COMMON_LINK_OPTIONS "")
 if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
-    list(APPEND COMMON_LINK_OPTIONS -u _printf_float -u _scanf_float)
+    # -u and its symbol must be a single option, CMake de-duplicates repeated "-u" entries
+    list(APPEND COMMON_LINK_OPTIONS -Wl,-u,_printf_float -Wl,-u,_scanf_float)
 endif()

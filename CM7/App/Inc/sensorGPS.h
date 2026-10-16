@@ -5,19 +5,19 @@
 #include "sharedSensor.h"
 
 #define SENSOR_GPS_TASK "[SGPS----]"
-#define SENSOR_GPS_TASK_PRIORITY osPriorityAboveNormal
+#define SENSOR_GPS_TASK_PRIORITY osPriorityNormal
 
 #ifdef CM7_SENSOR_GPS_DEBUG
-#define SENSOR_GPS_TASK_HEAP 250
+#define SENSOR_GPS_TASK_HEAP 500
 #define sensorGPS_printf(fmt, ...) DEBUG_PRINTF(SENSOR_GPS_TASK, fmt, ##__VA_ARGS__)
 #else
-#define SENSOR_GPS_TASK_HEAP 100
+#define SENSOR_GPS_TASK_HEAP 250
 #define sensorGPS_printf(...) ((void)0)
 #endif
 
-#define SENSOR_GPS_FREQUENCY 10u // Hz
+#define SENSOR_GPS_FREQUENCY 1u // Hz, we don't actually use or set this value, the GPS module itself naturally functions at about 1Hz
 #define SENSOR_GPS_WINDOW 3u // num readings
-#define SENSOR_GPS_STALE 1000u // ms before data is considered stale
+#define SENSOR_GPS_STALE 5000u // ms before data is considered stale
 
 extern TaskHandle_t sensorGPS_task;
 

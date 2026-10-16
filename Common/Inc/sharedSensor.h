@@ -17,6 +17,7 @@ typedef enum {
     VALIDITY_VALID_WARMING                  = 0x03, /**< Sensor is currently warming up, such as GPS waiting for a lock */
     VALIDITY_VALID_WINDOW_FILLING           = 0x04, /**< Sensor is currently filling its measurement window, such as the averaging window of the wind sensor */
     VALIDITY_VALID_DISABLED                 = 0x05, /**< Sensor is currently disabled */
+    VALIDITY_VALID_PARTIAL_DATA             = 0x06, /**< This really only exists for the GPS sensor which provides all of its data in separate messages, it is possible for use to have valid data but not new data in every field */
 
     VALIDITY_UNTRUSTED                      = 0x10, /**< Sensor is untrusted */
     VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE   = 0x11, /**< Sensor value is out of range */
@@ -34,6 +35,7 @@ typedef enum {
     VALIDITY_INVALID_BATTERY                = 0x80, /**< Generic validity failure for the battery sensor */
     VALIDITY_INVALID_ENCODER                = 0x90, /**< Generic validity failure for the encoder sensor */
     VALIDITY_INVALID_GPS                    = 0xA0, /**< Generic validity failure for the GPS sensor */
+    VALIDITY_INVALID_GPS_STALE              = 0xA1, /**< GPS data has not been updated recently (stale) */
     VALIDITY_INVALID_IMU                    = 0xB0, /**< Generic validity failure for the IMU sensor */
     VALIDITY_INVALID_WIND                   = 0xC0, /**< Generic validity failure for the wind sensor */
 } Validity_e;
@@ -95,6 +97,7 @@ char *MetadataEncoder_toString(const MetadataEncoder_t *metadata, char buf[METAD
  * SENSOR: Global Positioning System (GPS)
  */
 typedef struct {
+    char raw[128]; /**< Raw NMEA string from the GPS module */
     double latitude;  /**< Latitude in degrees */
     double longitude; /**< Longitude in degrees */
     float altitude;   /**< Altitude in meters */
@@ -109,7 +112,7 @@ typedef struct {
     uint8_t sequence; /**< Sequence number of the measurement, used to ensure a measurment is actually new */
 } MetadataGPS_t;
 
-#define METADATA_GPS_STR_SIZE 128u
+#define METADATA_GPS_STR_SIZE 256u
 char *MetadataGPS_toString(const MetadataGPS_t *metadata, char buf[METADATA_GPS_STR_SIZE]);
 
 

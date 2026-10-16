@@ -8,10 +8,10 @@
 #include "servoRudder.h"
 
 #include "sensorBattery.h"
-#include "sensorWind.h"
-#include "sensorMagnetometer.h"
 #include "sensorEncoder.h"
 #include "sensorGPS.h"
+#include "sensorMagnetometer.h"
+#include "sensorWind.h"
 
 #include "semphr.h"
 
@@ -38,6 +38,9 @@ void hardware_init(void) {
     #endif
     #ifdef CM7_SENSOR_ENCODER_ENABLE
     sensorEncoder_hardwareInit();
+    #endif
+    #ifdef CM7_SENSOR_GPS_ENABLE
+    sensorGPS_hardwareInit();
     #endif
 
 
@@ -83,6 +86,11 @@ void rtos_init()
     if (sensorEncoder_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
     if (xTaskCreate(sensorEncoder_handler, SENSOR_ENCODER_TASK, SENSOR_ENCODER_TASK_HEAP, NULL, SENSOR_ENCODER_TASK_PRIORITY, &sensorEncoder_task) != pdPASS) { Error_Handler(); }
     totalStack += SENSOR_ENCODER_TASK_HEAP;
+    #endif
+    #ifdef CM7_SENSOR_GPS_ENABLE
+    if (sensorGPS_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(sensorGPS_handler, SENSOR_GPS_TASK, SENSOR_GPS_TASK_HEAP, NULL, SENSOR_GPS_TASK_PRIORITY, &sensorGPS_task) != pdPASS) { Error_Handler(); }
+    totalStack += SENSOR_GPS_TASK_HEAP;
     #endif
 
     #ifdef CM7_DEBUG

@@ -40,6 +40,7 @@ MEMORY
 FLASH (rx)      : ORIGIN = 0x08000000, LENGTH = 1024K
 RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 128K
 ITCMRAM (xrw)      : ORIGIN = 0x00000000, LENGTH = 64K
+AXI_SRAM (xrw)     : ORIGIN = 0x24000000, LENGTH = 512K
 }
 /* Highest address of the user mode stack */
 _estack = 0x20020000;    /* end of RAM */
@@ -218,7 +219,13 @@ SECTIONS
     . = ALIGN(8);
   } >RAM
 
-  
+  /* DMA-accessible buffers. DTCM (RAM above) is not reachable by DMA1/DMA2. */
+  .axi_sram (NOLOAD) : ALIGN(32)
+  {
+    *(.axi_sram)
+    *(.axi_sram*)
+    . = ALIGN(32);
+  } >AXI_SRAM
 
   /* Remove information from the standard libraries */
   /DISCARD/ :

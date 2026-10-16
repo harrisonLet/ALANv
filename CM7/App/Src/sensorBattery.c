@@ -196,7 +196,6 @@ void sensorBattery_handler(void *argument)
                         metadata_raw_cell_sum[i] -= metadata_raw_cell_old[i];
                     }
                 }
-                if (metadata_raw_cell_ring.count < SENSOR_BATTERY_WINDOW) { metadata.valid = VALIDITY_VALID_WINDOW_FILLING; }
             }
             else { }
         }
