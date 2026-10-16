@@ -76,6 +76,9 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined library search paths
 )
 
+# Shared linker options (float printf/scanf support)
+target_link_options(${CMAKE_PROJECT_NAME} PRIVATE ${COMMON_LINK_OPTIONS})
+
 # Add linked libraries
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
     ${TOOLCHAIN_LINK_LIBRARIES}

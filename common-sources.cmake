@@ -23,3 +23,10 @@ set(COMMON_INCLUDE_DIRS
     ${SAILBOAT_ROOT_DIR}/Drivers/CMSIS/Device/ST/STM32H7xx/Include
     ${SAILBOAT_ROOT_DIR}/Drivers/CMSIS/Include
 )
+
+# Newlib-nano ships printf/scanf without floating point support by default.
+# Force the float variants in for both cores (gcc / newlib toolchains only).
+set(COMMON_LINK_OPTIONS "")
+if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    list(APPEND COMMON_LINK_OPTIONS -u _printf_float -u _scanf_float)
+endif()

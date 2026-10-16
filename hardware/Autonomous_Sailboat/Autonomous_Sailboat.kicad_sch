@@ -4295,10 +4295,6 @@
 		(uuid "0c677161-7c49-4ff2-aa1d-e1d2a075c496")
 	)
 	(no_connect
-		(at 323.85 259.08)
-		(uuid "0cded368-12a5-461c-bea9-36ed5b0c6b10")
-	)
-	(no_connect
 		(at 237.49 144.78)
 		(uuid "0d34d4f8-d6bd-4dbf-986f-b4b6f936e87d")
 	)
@@ -4357,10 +4353,6 @@
 	(no_connect
 		(at 237.49 134.62)
 		(uuid "2d342e0e-022a-4119-8256-816532f497d3")
-	)
-	(no_connect
-		(at 323.85 261.62)
-		(uuid "30008677-ea03-4649-95ff-229c5b9f0d60")
 	)
 	(no_connect
 		(at 237.49 215.9)
@@ -4688,6 +4680,16 @@
 	)
 	(wire
 		(pts
+			(xy 323.85 261.62) (xy 342.9 261.62)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "00bb86b3-5236-4b87-9050-cacbca65ddeb")
+	)
+	(wire
+		(pts
 			(xy 280.67 99.06) (xy 283.21 99.06)
 		)
 		(stroke
@@ -4958,6 +4960,16 @@
 	)
 	(wire
 		(pts
+			(xy 323.85 259.08) (xy 330.2 259.08)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "82f258f0-6c77-44b0-9988-207d003de600")
+	)
+	(wire
+		(pts
 			(xy 344.17 119.38) (xy 393.7 119.38)
 		)
 		(stroke
@@ -5015,6 +5027,26 @@
 			(type default)
 		)
 		(uuid "9b8da837-5aec-488b-ac3a-51163c8aa05b")
+	)
+	(wire
+		(pts
+			(xy 330.2 256.54) (xy 342.9 256.54)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9d6a2391-40a7-4fbc-a849-1da07d625513")
+	)
+	(wire
+		(pts
+			(xy 330.2 259.08) (xy 330.2 256.54)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a67a0b2e-edef-42de-aec7-ecae20328095")
 	)
 	(wire
 		(pts
@@ -5206,6 +5238,16 @@
 		)
 		(uuid "61966290-d07b-437b-82b6-ee857ebdc6c9")
 	)
+	(label "stm32COM1_USART3Tx"
+		(at 342.9 256.54 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "826247c4-5830-4e69-9140-3f09707de483")
+	)
 	(label "B1"
 		(at 381 96.52 0)
 		(effects
@@ -5235,6 +5277,16 @@
 			(justify left bottom)
 		)
 		(uuid "c0f58334-a61f-433c-a2ac-92f86cd85951")
+	)
+	(label "stm32COM1_USART3Rx"
+		(at 342.9 261.62 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "eb7381e9-65ac-4223-b937-bc211408c705")
 	)
 	(label "B2"
 		(at 393.7 96.52 0)

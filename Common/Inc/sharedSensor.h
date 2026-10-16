@@ -95,6 +95,14 @@ char *MetadataEncoder_toString(const MetadataEncoder_t *metadata, char buf[METAD
  * SENSOR: Global Positioning System (GPS)
  */
 typedef struct {
+    double latitude;  /**< Latitude in degrees */
+    double longitude; /**< Longitude in degrees */
+    float altitude;   /**< Altitude in meters */
+    uint8_t satellites; /**< Number of satellites in view */
+    uint8_t fix_valid; /**< Indicates if the GPS fix is valid */
+    uint8_t hours;     /**< Hours part of the timestamp */
+    uint8_t minutes;   /**< Minutes part of the timestamp */
+    uint8_t seconds;   /**< Seconds part of the timestamp */
 
     uint32_t timestamp; /**< Timestamp for when the measurement was taken, measured in ms */
     uint8_t valid; /**< Indicates if the measurement is valid */

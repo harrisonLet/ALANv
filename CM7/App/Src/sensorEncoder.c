@@ -90,7 +90,7 @@ TaskHandle_t sensorEncoder_task;
 
 static I2C_HandleTypeDef i2c_handler;
 
-static QueueHandle_t queue_metadata;
+static QueueHandle_t metadata_queue;
 
 static int32_t ang_unwrapped;
 static int32_t ang_unwrapped_storage[SENSOR_ENCODER_WINDOW];
@@ -99,9 +99,9 @@ static int32_t ang_unwrapped_sum;
 
 static uint16_t metadata_angle_prev;
 
-static uint8_t sequence;
-static uint16_t cached_magnitude;
-static uint8_t cached_agc;
+static uint8_t metadata_sequence;
+static uint16_t metadata_magnitude_cache;
+static uint8_t metadata_agc_cache;
 
 static HAL_StatusTypeDef AS5600_readRegs(uint8_t reg, uint8_t *buf, uint16_t len);
 static HAL_StatusTypeDef AS5600_writeReg(uint8_t reg, uint8_t value) __attribute__((unused)); // it is possible we will need to write offsets to the sensor in the future
@@ -182,7 +182,7 @@ RtosInit_e sensorEncoder_rtosInit(void)
 
     // Initialize the Queues used to share data
     sensorEncoder_printf("    - init shared RTOS structures");
-    if ((queue_metadata = xQueueCreate(1, sizeof(MetadataEncoder_t))) == NULL)
+    if ((metadata_queue = xQueueCreate(1, sizeof(MetadataEncoder_t))) == NULL)
     {
         sensorEncoder_printf("ERROR: Failed to create queue for metadata");
         return RTOS_INIT_FAIL;
@@ -211,13 +211,11 @@ void sensorEncoder_handler(void *argument)
         vTaskDelayUntil(&lastWake, pdMS_TO_TICKS(1000 / SENSOR_ENCODER_FREQUENCY));
 
         // Metdata
-        sensorEncoder_printf("Setting up metadata for encoder reading");
         MetadataEncoder_t metadata = {0};
         metadata.valid = VALIDITY_UNKNOWN;
-        metadata.sequence = sequence++;
+        metadata.sequence = metadata_sequence++;
         metadata.timestamp = HAL_GetTick();
 
-        sensorEncoder_printf("Reading registers from AS5600");
         HAL_StatusTypeDef status_read = AS5600_read(metadata.sequence, &metadata);
         if (status_read != HAL_OK)
         {
@@ -226,7 +224,6 @@ void sensorEncoder_handler(void *argument)
         }
         else
         {
-            sensorEncoder_printf("Processing AS5600 readings into metadata");
             if      (metadata.status & AS5600_STATUS_MH) { metadata.valid = VALIDITY_UNTRUSTED_OVER_SATURATION; }
             else if (metadata.status & AS5600_STATUS_ML) { metadata.valid = VALIDITY_UNTRUSTED_UNDER_SATURATION; }
             else                                         { metadata.valid = VALIDITY_VALID; }
@@ -252,10 +249,9 @@ void sensorEncoder_handler(void *argument)
         char metadata_str[METADATA_ENCODER_STR_SIZE];
         sensorEncoder_printf("%s", MetadataEncoder_toString(&metadata, metadata_str));
         #endif
-        xQueueOverwrite(queue_metadata, &metadata);
+        xQueueOverwrite(metadata_queue, &metadata);
 
         // Telemetry
-        sensorEncoder_printf("Generating telemetry from metadata");
         if (ang_unwrapped_ring.count == 0) { continue; }
         TelemetryMainSail_t telemetry;
         int32_t degrees = ((ang_unwrapped_sum / (int32_t)ang_unwrapped_ring.count) * 360) / ENCODER_COUNTS;
@@ -316,14 +312,14 @@ static HAL_StatusTypeDef AS5600_read(uint8_t seq, MetadataEncoder_t *metadata)
         uint8_t diag[3];
         status = AS5600_readRegs(AS5600_AGC, diag, sizeof(diag));
         if (status != HAL_OK) { return status; }
-        cached_agc       = diag[0];
-        cached_magnitude = ((diag[1] << 8) | diag[2]) & AS5600_12BIT_MASK;
+        metadata_agc_cache       = diag[0];
+        metadata_magnitude_cache = ((diag[1] << 8) | diag[2]) & AS5600_12BIT_MASK;
     }
-    metadata->agc       = cached_agc;
-    metadata->magnitude = cached_magnitude;
+    metadata->agc       = metadata_agc_cache;
+    metadata->magnitude = metadata_magnitude_cache;
     return HAL_OK;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-bool sensorEncoder_getMetadata(MetadataEncoder_t *metadata)     { return xQueuePeek(queue_metadata, metadata, 0) == pdTRUE; }
+bool sensorEncoder_getMetadata(MetadataEncoder_t *metadata)     { return xQueuePeek(metadata_queue, metadata, 0) == pdTRUE; }
