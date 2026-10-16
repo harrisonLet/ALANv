@@ -74,7 +74,7 @@ int main(void)
   HAL_Init();
   SystemClock_Config();
 
-  #if defined(CM7_ENABLE) && defined(CM7_COM1_ENABLE)
+  #if defined(CM7_ENABLE) && defined(CM7_DEBUG)
   /* Initialize COM1 port (115200, 8 bits (7-bit data + 1 stop bit), no parity */
   BspCOMInit.BaudRate   = 115200;
   BspCOMInit.WordLength = COM_WORDLENGTH_8B;

@@ -21,6 +21,13 @@ char *MetadataBattery_toString(const MetadataBattery_t *metadata, char buf[METAD
 // Encoder Sensor
 char *MetadataEncoder_toString(const MetadataEncoder_t *metadata, char buf[METADATA_ENCODER_STR_SIZE])
 {
+    snprintf(buf, METADATA_ENCODER_STR_SIZE, "MetadataEncoder (%08lu, %02X, %03u): %04uRA  %04uA  %05uM  ( %02X, %02X )",
+        (unsigned long)metadata->timestamp, (unsigned)metadata->valid, (unsigned)metadata->sequence,
+        (unsigned)metadata->raw_angle,
+        (unsigned)metadata->angle,
+        (unsigned)metadata->magnitude,
+        (unsigned)metadata->status, (unsigned)metadata->agc
+    );
     return buf;
 }
 

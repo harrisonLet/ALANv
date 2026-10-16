@@ -10,7 +10,7 @@
 // CM4 Configuration
 /////////////////////////////////////////////////////////////////////////////////////////
 // #define CM4_ENABLE
-// #define CM4_COM1_ENABLE
+// #define CM4_DEBUG
 // #define CM4_SERVOS_ENABLE
 
 
@@ -18,7 +18,7 @@
 // CM7 Configuration
 /////////////////////////////////////////////////////////////////////////////////////////
 #define CM7_ENABLE
-#define CM7_COM1_ENABLE
+#define CM7_DEBUG
 #define CM7_LIVE_ENABLE
 #define CM7_SENSOR_BATTERY_ENABLE
 #define CM7_SENSOR_ENCODER_ENABLE

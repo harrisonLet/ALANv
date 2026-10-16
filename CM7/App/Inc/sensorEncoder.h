@@ -8,10 +8,10 @@
 #define SENSOR_ENCODER_TASK_PRIORITY osPriorityAboveNormal
 
 #ifdef CM7_SENSOR_ENCODER_DEBUG
-#define SENSOR_ENCODER_TASK_HEAP 350
+#define SENSOR_ENCODER_TASK_HEAP 400
 #define sensorEncoder_printf(fmt, ...) DEBUG_PRINTF(SENSOR_ENCODER_TASK, fmt, ##__VA_ARGS__)
 #else
-#define SENSOR_ENCODER_TASK_HEAP 100
+#define SENSOR_ENCODER_TASK_HEAP 200
 #define sensorEncoder_printf(...) ((void)0)
 #endif
 

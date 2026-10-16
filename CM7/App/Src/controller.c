@@ -31,6 +31,11 @@ void hardware_init(void) {
     #ifdef CM7_SENSOR_BATTERY_ENABLE
     sensorBattery_hardwareInit();
     #endif
+    #ifdef CM7_SENSOR_ENCODER_ENABLE
+    sensorEncoder_hardwareInit();
+    #endif
+
+
 
     #if defined(CM7_SERVO_SAIL_ENABLE) || defined(CM7_SERVO_RUDDER_ENABLE)
     servoShared_hardwareInit();
@@ -43,22 +48,6 @@ void hardware_init(void) {
     #ifdef CM7_SERVO_RUDDER_ENABLE
     servoRudder_hardwareInit();
     #endif
-
-    #ifdef CM7_SENSOR_WIND_ENABLE
-    sensorWind_hardwareInit();
-    #endif
-
-    #ifdef CM7_SENSOR_MAGNETOMETER_ENABLE
-    sensorMagnetometer_hardwareInit();
-    #endif
-
-    #ifdef CM7_SENSOR_ENCODER_ENABLE
-    sensorEncoder_hardwareInit();
-    #endif
-
-    #ifdef CM7_SENSOR_GPS_ENABLE
-    sensorGPS_hardwareInit();
-    #endif
 }
 
 /**
@@ -67,11 +56,24 @@ void hardware_init(void) {
   */
 void rtos_init()
 {
+    int32_t totalStack = 0;
+    
     #ifdef CM7_LIVE_ENABLE
     if (xTaskCreate(live_handler, LIVE_TASK, LIVE_TASK_HEAP, NULL, LIVE_TASK_PRIORITY, &task_live) != pdPASS) { Error_Handler(); }
+    totalStack += LIVE_TASK_HEAP;
     #endif
+
     #ifdef CM7_SENSOR_BATTERY_ENABLE
     if (xTaskCreate(sensorBattery_handler, SENSOR_BATTERY_TASK, SENSOR_BATTERY_TASK_HEAP, NULL, SENSOR_BATTERY_TASK_PRIORITY, &sensorBattery_task) != pdPASS) { Error_Handler(); }
+    totalStack += SENSOR_BATTERY_TASK_HEAP;
+    #endif
+    #ifdef CM7_SENSOR_ENCODER_ENABLE
+    if (xTaskCreate(sensorEncoder_handler, SENSOR_ENCODER_TASK, SENSOR_ENCODER_TASK_HEAP, NULL, SENSOR_ENCODER_TASK_PRIORITY, &sensorEncoder_task) != pdPASS) { Error_Handler(); }
+    totalStack += SENSOR_ENCODER_TASK_HEAP;
+    #endif
+
+    #ifdef CM7_DEBUG
+    printf("Total stack allocated: %d B / %d B\n", totalStack * 4, configTOTAL_HEAP_SIZE);
     #endif
 }
 
@@ -105,6 +107,9 @@ void live_handler(void *argument)
         #ifdef CM7_SENSOR_BATTERY_ENABLE
         live_printf("StackHW (sensorBattery)=%u", (unsigned)uxTaskGetStackHighWaterMark(sensorBattery_task));
         #endif
+        #ifdef CM7_SENSOR_ENCODER_ENABLE
+        live_printf("StackHW (sensorEncoder)=%u", (unsigned)uxTaskGetStackHighWaterMark(sensorEncoder_task));
+        #endif
         #endif
 
         #ifdef CM7_LIVE_DEBUG_TELEMETRY
@@ -114,6 +119,14 @@ void live_handler(void *argument)
             sensorBattery_getTelemetry(&telemetry);
             char telemetryStr[TELEMETRY_BATTERY_STR_SIZE];
             live_printf("%s", TelemetryBattery_toString(&telemetry, telemetryStr));
+        }
+        #endif
+        #ifdef CM7_SENSOR_ENCODER_ENABLE
+        {
+            TelemetryMainSail_t telemetry;
+            sensorEncoder_getTelemetry(&telemetry);
+            char telemetryStr[TELEMETRY_ENCODER_STR_SIZE];
+            live_printf("%s", TelemetryMainSail_toString(&telemetry, telemetryStr));
         }
         #endif
         #endif

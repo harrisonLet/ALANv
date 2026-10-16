@@ -152,7 +152,7 @@ void sensorBattery_handler(void *argument)
 
         // Metadata
         sensorBattery_printf("Setting up metadata for battery reading");
-        MetadataBattery_t metadata;
+        MetadataBattery_t metadata = {0};
         metadata.valid = VALIDITY_UNKNOWN;
         metadata.sequence = sequence++;
         metadata.timestamp = HAL_GetTick();
@@ -193,7 +193,7 @@ void sensorBattery_handler(void *argument)
                 }
             }
             else { }
-            
+
             if (ring_metadata.count < SENSOR_BATTERY_WINDOW) { metadata.valid = VALIDITY_VALID_WINDOW_FILLING; }
         }
         #ifdef CM7_SENSOR_BATTERY_DEBUG
@@ -250,7 +250,7 @@ static uint16_t rawTapsToMv(uint16_t counts)
     return (uint16_t)((pin_mv * BATTERY_DIVIDER_NUM) / BATTERY_DIVIDER_DEN);
 }
 
-
+/////////////////////////////////////////////////////////////////////////////////////////
 
 bool sensorBattery_getTelemetry(TelemetryBattery_t *telemetry) { return xQueuePeek(queue_telemetry, telemetry, 0) == pdTRUE; }
 bool sensorBattery_getMetadata(MetadataBattery_t *metadata)    { return xQueuePeek(queue_metadata, metadata, 0) == pdTRUE; }

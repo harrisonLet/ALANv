@@ -1,6 +1,28 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 // Encoder sensor driver for reading angular position of the main sail relative to the
 // vessel.
+//
+// I2C: PB6 (SCL), PB7 (SDA)
+//
+// Wrap safe angle:
+// The AS5600 reports 0-4095 counts per turn and jumps from 4095 back to 0 at the seam, so
+// averaging raw reads breaks near it. Instead we track a continuous "unwrapped" angle:
+//   1. First valid read: unwrapped = raw - ENCODER_FORWARD (counts relative to forward). It 
+//      is stored in an int32 so it can keep growing past +-2048 (4096 counts per turn).
+//   2. Every later read: take the difference from the previous raw read, wrap it to
+//      +-2048 (the shortest way around) and add it to unwrapped. Crossing the seam
+//      becomes a small step instead of a jump.
+//   3. A running sum of the last SENSOR_ENCODER_WINDOW unwrapped values (add the new one,
+//      subtract the one leaving the ring buffer) gives a plain average with no seam.
+//   4. The average is converted to degrees. ang_forward is that wrapped to -180..179,
+//      ang_starboard/ang_port keep the unwrapped value so they count past 180.
+//
+// Example, sail pointing nearly aft (right at the seam):
+//   raw reads:   4090  4094      3      8
+//   raw step:      --    +4  -4091     +5     (-4091 wraps to +5)
+//   unwrapped:   2042  2046   2051   2056
+// Averaging the raw reads gives ~2048, which reads as forward: the opposite side.
+// Averaging the unwrapped values gives ~2048 counts from forward = 180 deg, which is correct.
 /////////////////////////////////////////////////////////////////////////////////////////
 
 #include "system.h"
@@ -56,6 +78,11 @@
 
 #endif /* AS5600_REGS_H */
 
+// Continuous sail angle in encoder counts relative to forward (raw 2048), it never jumps at the 0/4095 seam.
+#define ENCODER_COUNTS     4096
+#define ENCODER_HALF_TURN  2048
+#define ENCODER_FORWARD    2048
+
 /////////////////////////////////////////////////////////////////////////////////////////
 
 TaskHandle_t sensorEncoder_task;
@@ -67,19 +94,19 @@ static I2C_HandleTypeDef i2c_handler;
 static QueueHandle_t queue_metadata;
 static QueueHandle_t queue_telemetry;
 
-static MetadataEncoder_t storage_metadata[SENSOR_ENCODER_WINDOW];
-static Ring_o ring_metadata;
-static uint32_t sum_metadata_angle;
-static int16_t prev_telemetry_ang_forward;
-static uint32_t integral_telemetry_ang;
-static uint8_t sequence;
+static int32_t ang_unwrapped;
+static int32_t ang_unwrapped_storage[SENSOR_ENCODER_WINDOW];
+static Ring_o  ang_unwrapped_ring;
+static int32_t ang_unwrapped_sum;
 
-// Must divide 256 so the read cadence survives the uint8_t sequence wrap.
+static uint16_t metadata_angle_prev;
+
+static uint8_t sequence;
 static uint16_t cached_magnitude;
 static uint8_t cached_agc;
 
 static HAL_StatusTypeDef AS5600_readRegs(uint8_t reg, uint8_t *buf, uint16_t len);
-static HAL_StatusTypeDef AS5600_writeReg(uint8_t reg, uint8_t value);
+static HAL_StatusTypeDef AS5600_writeReg(uint8_t reg, uint8_t value) __attribute__((unused)); // it is possible we will need to write offsets to the sensor in the future
 static HAL_StatusTypeDef AS5600_read(uint8_t seq, MetadataEncoder_t *metadata);
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -98,10 +125,10 @@ void sensorEncoder_hardwareInit()
 
     // Initialize the windows used to integrate data
     sensorEncoder_printf("    - init ring buffer for windowed sensor reading");
-    objRing_init(&ring_metadata, storage_metadata, sizeof(MetadataEncoder_t), SENSOR_ENCODER_WINDOW);
-    sum_metadata_angle = 0;
-    prev_telemetry_ang_forward = 0;
-    integral_telemetry_ang = 0;
+    objRing_init(&ang_unwrapped_ring, ang_unwrapped_storage, sizeof(int32_t), SENSOR_ENCODER_WINDOW);
+    ang_unwrapped_sum = 0;
+    ang_unwrapped = 0;
+    metadata_angle_prev = ENCODER_FORWARD;
 
     // Initialize clocks
     sensorEncoder_printf("    - init hardware clocks");
@@ -175,7 +202,7 @@ void sensorEncoder_handler(void *argument)
 
         // Metdata
         sensorEncoder_printf("Setting up metadata for encoder reading");
-        MetadataEncoder_t metadata;
+        MetadataEncoder_t metadata = {0};
         metadata.valid = VALIDITY_UNKNOWN;
         metadata.sequence = sequence++;
         metadata.timestamp = HAL_GetTick();
@@ -192,18 +219,24 @@ void sensorEncoder_handler(void *argument)
             sensorEncoder_printf("Processing AS5600 readings into metadata");
             if      (metadata.status & AS5600_STATUS_MH) { metadata.valid = VALIDITY_UNTRUSTED_OVER_SATURATION; }
             else if (metadata.status & AS5600_STATUS_ML) { metadata.valid = VALIDITY_UNTRUSTED_UNDER_SATURATION; }
-            else { metadata.valid = VALIDITY_VALID; }
+            else                                         { metadata.valid = VALIDITY_VALID; }
             
             if (metadata.valid == VALIDITY_VALID) {
-                sum_metadata_angle += metadata.angle;
-                MetadataEncoder_t metadata_old;
-                if (objRing_push(&ring_metadata, &metadata, &metadata_old)) {
-                    sum_metadata_angle -= metadata_old.angle;
+                int32_t delta = (int32_t)metadata.angle - metadata_angle_prev;
+                if (delta >  ENCODER_HALF_TURN) { delta -= ENCODER_COUNTS; }
+                if (delta < -ENCODER_HALF_TURN) { delta += ENCODER_COUNTS; }
+                ang_unwrapped += delta;
+                metadata_angle_prev = metadata.angle;
+
+                int32_t ang_unwrapped_old;
+                ang_unwrapped_sum += ang_unwrapped;
+                if (objRing_push(&ang_unwrapped_ring, &ang_unwrapped, &ang_unwrapped_old)) {
+                    ang_unwrapped_sum -= ang_unwrapped_old;
                 }
+
+                if (ang_unwrapped_ring.count < SENSOR_ENCODER_WINDOW) { metadata.valid = VALIDITY_VALID_WINDOW_FILLING; }
             }
             else { }
-
-            if (ring_metadata.count < SENSOR_ENCODER_WINDOW) { metadata.valid = VALIDITY_VALID_WINDOW_FILLING; }
         }
         #ifdef CM7_SENSOR_ENCODER_DEBUG
         char metadata_str[METADATA_ENCODER_STR_SIZE];
@@ -213,15 +246,13 @@ void sensorEncoder_handler(void *argument)
 
         // Telemetry
         sensorEncoder_printf("Generating telemetry from metadata");
-        if (ring_metadata.count == 0) { continue; }
+        if (ang_unwrapped_ring.count == 0) { continue; }
         TelemetryMainSail_t telemetry;
-        int16_t ang_forward = (sum_metadata_angle / ring_metadata.count) - 180;
-        telemetry.ang_forward = ang_forward;
-        integral_telemetry_ang += ang_forward - prev_telemetry_ang_forward;
-        if      (integral_telemetry_ang > 0)  { telemetry.ang_starboard = integral_telemetry_ang; telemetry.ang_port = 0; }
-        else if (integral_telemetry_ang < 0)  { telemetry.ang_starboard = 0;                      telemetry.ang_port = -integral_telemetry_ang; }
-        else                                  { telemetry.ang_starboard = 0;                      telemetry.ang_port = 0; }
-        prev_telemetry_ang_forward = ang_forward;
+        int32_t degrees = ((ang_unwrapped_sum / (int32_t)ang_unwrapped_ring.count) * 360) / ENCODER_COUNTS;
+        telemetry.ang_forward = (int16_t)((((degrees + 180) % 360) + 360) % 360 - 180);
+        if      (degrees > 0) { telemetry.ang_starboard = degrees; telemetry.ang_port = 0; }
+        else if (degrees < 0) { telemetry.ang_starboard = 0;       telemetry.ang_port = -degrees; }
+        else                  { telemetry.ang_starboard = 0;       telemetry.ang_port = 0; }
         xQueueOverwrite(queue_telemetry, &telemetry);
     }
 }
@@ -233,7 +264,7 @@ void sensorEncoder_handler(void *argument)
 static HAL_StatusTypeDef AS5600_readRegs(uint8_t reg, uint8_t *buf, uint16_t len)
 {
     HAL_StatusTypeDef status = HAL_I2C_Mem_Read(&i2c_handler, AS5600_ADDR << 1, reg,
-                                                I2C_MEMADD_SIZE_8BIT, buf, len, 100);
+                                                I2C_MEMADD_SIZE_8BIT, buf, len, 3);
     if (status != HAL_OK) {
         sensorEncoder_printf("ERROR: AS5600 read 0x%02X failed, HAL status: %d, I2C error: 0x%lX\r\n",
                reg, status, HAL_I2C_GetError(&i2c_handler));
@@ -248,7 +279,7 @@ static HAL_StatusTypeDef AS5600_readRegs(uint8_t reg, uint8_t *buf, uint16_t len
 static HAL_StatusTypeDef AS5600_writeReg(uint8_t reg, uint8_t value)
 {
     HAL_StatusTypeDef status = HAL_I2C_Mem_Write(&i2c_handler, AS5600_ADDR << 1, reg,
-                                                 I2C_MEMADD_SIZE_8BIT, &value, 1, 100);
+                                                 I2C_MEMADD_SIZE_8BIT, &value, 1, 3);
     if (status != HAL_OK) {
         sensorEncoder_printf("ERROR: AS5600 write 0x%02X failed, HAL status: %d, I2C error: 0x%lX\r\n",
                reg, status, HAL_I2C_GetError(&i2c_handler));
@@ -259,7 +290,7 @@ static HAL_StatusTypeDef AS5600_writeReg(uint8_t reg, uint8_t value)
 /**
   * Fill the AS5600 fields of metadata. STATUS, RAW_ANGLE and ANGLE come from one burst
   * (0x0B-0x0F, each 12-bit pair read high byte first). AGC and MAGNITUDE (0x1A-0x1C)
-  * are re-read only every AS5600_DIAG_PERIOD samples; the cached values are used between.
+  * are re-read only every 128 samples; the cached values are used between.
   */
 static HAL_StatusTypeDef AS5600_read(uint8_t seq, MetadataEncoder_t *metadata)
 {
@@ -282,3 +313,8 @@ static HAL_StatusTypeDef AS5600_read(uint8_t seq, MetadataEncoder_t *metadata)
     metadata->magnitude = cached_magnitude;
     return HAL_OK;
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+bool sensorEncoder_getTelemetry(TelemetryMainSail_t *telemetry) { return xQueuePeek(queue_telemetry, telemetry, 0) == pdTRUE; }
+bool sensorEncoder_getMetadata(MetadataEncoder_t *metadata)     { return xQueuePeek(queue_metadata, metadata, 0) == pdTRUE; }

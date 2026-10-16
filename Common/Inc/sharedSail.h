@@ -55,6 +55,9 @@ typedef struct {
     uint16_t ang_port;
 } TelemetryMainSail_t;
 
+#define TELEMETRY_MAIN_SAIL_STR_SIZE 128
+char *TelemetryMainSail_toString(TelemetryMainSail_t *telemetry, char *str);
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -114,3 +117,6 @@ typedef struct {
      */
     int16_t ang_rearward;
 } TelemetryTailSail_t;
+
+#define TELEMETRY_TAIL_SAIL_STR_SIZE 128
+char *TelemetryTailSail_toString(TelemetryTailSail_t *telemetry, char *str);
