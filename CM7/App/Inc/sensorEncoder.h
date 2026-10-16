@@ -1,6 +1,7 @@
 #ifndef SENSOR_ENCODER_H
 #define SENSOR_ENCODER_H
 
+#include "system.h"
 #include "sharedSensor.h"
 #include "sharedSail.h"
 
@@ -8,7 +9,7 @@
 #define SENSOR_ENCODER_TASK_PRIORITY osPriorityAboveNormal
 
 #ifdef CM7_SENSOR_ENCODER_DEBUG
-#define SENSOR_ENCODER_TASK_HEAP 400
+#define SENSOR_ENCODER_TASK_HEAP 500
 #define sensorEncoder_printf(fmt, ...) DEBUG_PRINTF(SENSOR_ENCODER_TASK, fmt, ##__VA_ARGS__)
 #else
 #define SENSOR_ENCODER_TASK_HEAP 200
@@ -21,7 +22,8 @@
 
 extern TaskHandle_t sensorEncoder_task;
 
-void sensorEncoder_hardwareInit(void);
+HardwareInit_e sensorEncoder_hardwareInit(void);
+RtosInit_e sensorEncoder_rtosInit(void);
 void sensorEncoder_handler(void *argument);
 
 bool sensorEncoder_getMetadata(MetadataEncoder_t *metadata);

@@ -55,7 +55,7 @@ typedef struct {
     uint16_t ang_port;
 } TelemetryMainSail_t;
 
-#define TELEMETRY_MAIN_SAIL_STR_SIZE 128
+#define TELEMETRY_MAIN_SAIL_STR_SIZE 64
 char *TelemetryMainSail_toString(TelemetryMainSail_t *telemetry, char *str);
 
 
@@ -104,7 +104,7 @@ typedef struct {
      * Represents the angle between the main sail and tail sail when measuring in the 
      * opposite direction.
      *
-     * Measured in degrees this value represents the nagle between a line drawn from the
+     * Measured in degrees this value represents the angle between a line drawn from the
      * trailing edge of the main sail to the leading edge of the main sail and a second line
      * drawn from the leading edge of the tail sail to the trailing edge of the tail sail.
      * Positive values represent the forward (not the rearward) line of the tail sail pointing

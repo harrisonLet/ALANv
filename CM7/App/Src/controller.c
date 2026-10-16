@@ -17,7 +17,8 @@
 
 TaskHandle_t task_live;
 
-void live_hardwareInit();
+HardwareInit_e live_hardwareInit();
+RtosInit_e live_rtosInit();
 void live_handler(void *argument);
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -29,7 +30,7 @@ void hardware_init(void) {
     live_hardwareInit();
     #endif
     #ifdef CM7_TELEMETRY_ENABLE
-    telemetry_init();
+    telemetry_hardwareInit();
     #endif
 
     #ifdef CM7_SENSOR_BATTERY_ENABLE
@@ -63,25 +64,29 @@ void rtos_init()
     int32_t totalStack = 0;
     
     #ifdef CM7_LIVE_ENABLE
+    if (live_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
     if (xTaskCreate(live_handler, LIVE_TASK, LIVE_TASK_HEAP, NULL, LIVE_TASK_PRIORITY, &task_live) != pdPASS) { Error_Handler(); }
     totalStack += LIVE_TASK_HEAP;
     #endif
     #ifdef CM7_TELEMETRY_ENABLE
+    if (telemetry_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
     if (xTaskCreate(telemetry_handler, TELEMETRY_TASK, TELEMETRY_TASK_HEAP, NULL, TELEMETRY_TASK_PRIORITY, &telemetry_task) != pdPASS) { Error_Handler(); }
     totalStack += TELEMETRY_TASK_HEAP;
     #endif
 
     #ifdef CM7_SENSOR_BATTERY_ENABLE
+    if (sensorBattery_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
     if (xTaskCreate(sensorBattery_handler, SENSOR_BATTERY_TASK, SENSOR_BATTERY_TASK_HEAP, NULL, SENSOR_BATTERY_TASK_PRIORITY, &sensorBattery_task) != pdPASS) { Error_Handler(); }
     totalStack += SENSOR_BATTERY_TASK_HEAP;
     #endif
     #ifdef CM7_SENSOR_ENCODER_ENABLE
+    if (sensorEncoder_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
     if (xTaskCreate(sensorEncoder_handler, SENSOR_ENCODER_TASK, SENSOR_ENCODER_TASK_HEAP, NULL, SENSOR_ENCODER_TASK_PRIORITY, &sensorEncoder_task) != pdPASS) { Error_Handler(); }
     totalStack += SENSOR_ENCODER_TASK_HEAP;
     #endif
 
     #ifdef CM7_DEBUG
-    printf("Total stack allocated: %d B / %d B\n", totalStack * 4, configTOTAL_HEAP_SIZE);
+    printf("Total stack allocated: %u B / %u B\r\n", (uint)(totalStack * 4), (uint)configTOTAL_HEAP_SIZE);
     #endif
 }
 
@@ -89,9 +94,9 @@ void rtos_init()
 // Live Functions
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void live_hardwareInit()
+HardwareInit_e live_hardwareInit()
 {
-    live_printf("Initializing the liveliness LED");
+    live_printf("live_hardwareInit start");
 
     live_printf("    - init GPIO pins");
     __HAL_RCC_GPIOB_CLK_ENABLE();
@@ -102,12 +107,20 @@ void live_hardwareInit()
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-    live_printf("Initialization of live complete.");
+    live_printf("live_hardwareInit complete");
+    return HARDWARE_INIT_SUCCESS;
+}
+
+RtosInit_e live_rtosInit()
+{
+    live_printf("live_rtosInit start");
+    live_printf("live_rtosInit complete");
+    return RTOS_INIT_SUCCESS;
 }
 
 void live_handler(void *argument)
 {
-    live_printf("Starting liveliness task.");
+    live_printf("live_handler start");
     for(;;)
     {
         #ifdef CM7_LIVE_DEBUG_STACK

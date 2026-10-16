@@ -1,3 +1,5 @@
+#pragma once
+
 #include "main.h"
 
 #include "stm32h7xx.h"
@@ -23,3 +25,13 @@
 
 #define STM32H755_CLOCK_RATE 64000000
 #define DEBUG_PRINTF(tag, fmt, ...) printf("%s " fmt "\r\n", tag, ##__VA_ARGS__)
+
+typedef enum {
+    HARDWARE_INIT_SUCCESS,
+    HARDWARE_INIT_FAIL
+} HardwareInit_e;
+
+typedef enum {
+    RTOS_INIT_SUCCESS,
+    RTOS_INIT_FAIL
+} RtosInit_e;

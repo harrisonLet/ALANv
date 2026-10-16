@@ -50,7 +50,6 @@ typedef enum {
  */
 typedef struct {
     uint16_t raw_cell[BATTERY_CELL_COUNT]; /**< Raw ADC readings for each battery cell */
-    uint16_t voltage_cell[BATTERY_CELL_COUNT]; /**< Voltage readings for each battery cell */
 
     uint32_t timestamp; /**< Timestamp for when the measurement was taken, measured in ms */
     uint8_t valid; /**< Indicates if the measurement is valid */

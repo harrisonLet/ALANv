@@ -4,7 +4,7 @@
 /////////////////////////////////////////////////////////////////////////////
 // Main Sail
 char *TelemetryMainSail_toString(TelemetryMainSail_t *telemetry, char *str) {
-    snprintf(str, TELEMETRY_MAIN_SAIL_STR_SIZE, "ang_forward=%d [ %u | %u ]",
+    snprintf(str, TELEMETRY_MAIN_SAIL_STR_SIZE, "ang_forward=%03ddeg [ %05u | %05u ]deg",
              telemetry->ang_forward, telemetry->ang_starboard, telemetry->ang_port);
     return str;
 }

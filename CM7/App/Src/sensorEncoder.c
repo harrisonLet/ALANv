@@ -25,10 +25,9 @@
 // Averaging the unwrapped values gives ~2048 counts from forward = 180 deg, which is correct.
 /////////////////////////////////////////////////////////////////////////////////////////
 
-#include "system.h"
-
 #include "sensorEncoder.h"
 #include "objRing.h"
+#include "telemetry.h"
 
 #include "queue.h"
 
@@ -110,23 +109,9 @@ static HAL_StatusTypeDef AS5600_read(uint8_t seq, MetadataEncoder_t *metadata);
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-/**
-  * Initialize the hardware.
-  */
-void sensorEncoder_hardwareInit()
+HardwareInit_e sensorEncoder_hardwareInit(void)
 {
-    sensorEncoder_printf("Initializing Main Sail Encoder hardware and software.");
-
-    // Initialize the Queues used to share data
-    sensorEncoder_printf("    - init shared queues");
-    queue_metadata =  xQueueCreate(1, sizeof(MetadataEncoder_t));
-
-    // Initialize the windows used to integrate data
-    sensorEncoder_printf("    - init ring buffer for windowed sensor reading");
-    objRing_init(&ang_unwrapped_ring, ang_unwrapped_storage, sizeof(int32_t), SENSOR_ENCODER_WINDOW);
-    ang_unwrapped_sum = 0;
-    ang_unwrapped = 0;
-    metadata_angle_prev = ENCODER_FORWARD;
+    sensorEncoder_printf("sensorEncoder_hardwareInit start");
 
     // Initialize clocks
     sensorEncoder_printf("    - init hardware clocks");
@@ -172,26 +157,53 @@ void sensorEncoder_hardwareInit()
     sensorEncoder_printf("    - init AS5600 sensor");
     // AS5600 power-up time T_PU = 10ms max (datasheet p.8)
     HAL_Delay(10);
-    // AS5600 has no WHO_AM_I register, so an ACK on its address is the check
     if (HAL_I2C_IsDeviceReady(&i2c_handler, AS5600_ADDR << 1, 3, 100) != HAL_OK) {
         sensorEncoder_printf("ERROR: AS5600 not responding at 0x%02X, I2C error: 0x%lX\r\n", AS5600_ADDR, HAL_I2C_GetError(&i2c_handler));
-        return;
+        Error_Handler();
     }
     uint8_t status = 0;
     if (AS5600_readRegs(AS5600_STATUS, &status, 1) == HAL_OK) {
-        sensorEncoder_printf("AS5600 STATUS 0x%02X: MD=%d ML=%d MH=%d\r\n", status,
+        sensorEncoder_printf("    - AS5600 STATUS 0x%02X: MD=%d ML=%d MH=%d\r\n", status,
                !!(status & AS5600_STATUS_MD), !!(status & AS5600_STATUS_ML), !!(status & AS5600_STATUS_MH));
+    } else {
+        sensorEncoder_printf("ERROR: Failed to read AS5600 STATUS register\r\n");
+        Error_Handler();
     }
 
-    sensorEncoder_printf("AS5600 initialization complete");
+    sensorEncoder_printf("sensorEncoder_hardwareInit complete");
+    return HARDWARE_INIT_SUCCESS;
 }
 
-/**
-  * Handler for the task.
-  */
+
+
+RtosInit_e sensorEncoder_rtosInit(void)
+{
+    sensorEncoder_printf("sensorEncoder_rtosInit start");
+
+    // Initialize the Queues used to share data
+    sensorEncoder_printf("    - init shared RTOS structures");
+    if ((queue_metadata = xQueueCreate(1, sizeof(MetadataEncoder_t))) == NULL)
+    {
+        sensorEncoder_printf("ERROR: Failed to create queue for metadata");
+        return RTOS_INIT_FAIL;
+    }
+
+    // Initialize the windows used to integrate data
+    sensorEncoder_printf("    - init ring buffer for windowed sensor reading");
+    objRing_init(&ang_unwrapped_ring, ang_unwrapped_storage, sizeof(int32_t), SENSOR_ENCODER_WINDOW);
+    ang_unwrapped_sum = 0;
+    ang_unwrapped = 0;
+    metadata_angle_prev = ENCODER_FORWARD;
+
+    sensorEncoder_printf("sensorEncoder_rtosInit complete");
+    return RTOS_INIT_SUCCESS;
+}
+
+
+
 void sensorEncoder_handler(void *argument)
 {
-    sensorEncoder_printf("Starting sensor encoder task. Sensor will poll every %u ms", 1000 / SENSOR_ENCODER_FREQUENCY);
+    sensorEncoder_printf("sensorEncoder_handler start. Poll: %u ms", 1000 / SENSOR_ENCODER_FREQUENCY);
     TickType_t lastWake = xTaskGetTickCount();
     for(;;)
     {

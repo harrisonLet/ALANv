@@ -1,6 +1,7 @@
 #ifndef TELEMETRY_H
 #define TELEMETRY_H
 
+#include "system.h"
 #include "sharedBattery.h"
 #include "sharedBoat.h"
 #include "sharedRudder.h"
@@ -20,7 +21,8 @@
 
 extern TaskHandle_t telemetry_task;
 
-void telemetry_init(void);
+HardwareInit_e telemetry_hardwareInit(void);
+RtosInit_e telemetry_rtosInit(void);
 void telemetry_handler(void *argument);
 
 typedef enum {

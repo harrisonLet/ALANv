@@ -25,21 +25,46 @@ static QueueHandle_t TelemetryMainSail_queue;
 static QueueHandle_t TelemetryTailSail_queue;
 static QueueHandle_t TelemetryWind_queue;
 
+static QueueHandle_t telemetry_queueCreate(char* name, size_t itemSize);
+
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void telemetry_init(void) {
-    telemetry_printf("Initialize telemetry");
-
-    TelemetryBattery_queue = xQueueCreate(1, sizeof(TelemetryBattery_t));
-    TelemetryBoatRelativeOrientation_queue = xQueueCreate(1, sizeof(TelemetryBoatRelativeOrientation_t));
-    TelemetryBoatGlobalOrientation_queue = xQueueCreate(1, sizeof(TelemetryBoatGlobalOrientation_t));
-    TelemetryRudder_queue = xQueueCreate(1, sizeof(TelemetryRudder_t));
-    TelemetryMainSail_queue = xQueueCreate(1, sizeof(TelemetryMainSail_t));
-    TelemetryTailSail_queue = xQueueCreate(1, sizeof(TelemetryTailSail_t));
-    TelemetryWind_queue = xQueueCreate(1, sizeof(TelemetryWind_t));
-
-    telemetry_printf("Telemetry queues created");
+HardwareInit_e telemetry_hardwareInit(void)
+{
+    telemetry_printf("telemetry_hardwareInit start");
+    telemetry_printf("telemetry_hardwareInit complete");
+    return HARDWARE_INIT_SUCCESS;
 }
+
+
+
+RtosInit_e telemetry_rtosInit(void) {
+    telemetry_printf("telemetry_rtosInit start");
+
+    TelemetryBattery_queue = telemetry_queueCreate("TelemetryBattery_queue", sizeof(TelemetryBattery_t));
+    TelemetryBoatRelativeOrientation_queue = telemetry_queueCreate("TelemetryBoatRelativeOrientation_queue", sizeof(TelemetryBoatRelativeOrientation_t));
+    TelemetryBoatGlobalOrientation_queue = telemetry_queueCreate("TelemetryBoatGlobalOrientation_queue", sizeof(TelemetryBoatGlobalOrientation_t));
+    TelemetryRudder_queue = telemetry_queueCreate("TelemetryRudder_queue", sizeof(TelemetryRudder_t));
+    TelemetryMainSail_queue = telemetry_queueCreate("TelemetryMainSail_queue", sizeof(TelemetryMainSail_t));
+    TelemetryTailSail_queue = telemetry_queueCreate("TelemetryTailSail_queue", sizeof(TelemetryTailSail_t));
+    TelemetryWind_queue = telemetry_queueCreate("TelemetryWind_queue", sizeof(TelemetryWind_t));
+
+    telemetry_printf("telemetry_rtosInit complete");
+    return RTOS_INIT_SUCCESS;
+}
+static QueueHandle_t telemetry_queueCreate(char* name, size_t itemSize) {
+    QueueHandle_t queue = xQueueCreate(1, itemSize);
+    #ifdef CM7_TELEMETRY_DEBUG
+    if (queue == NULL) {
+        telemetry_printf("ERROR (%s): Failed to create telemetry queue, free heap=%u", name, (unsigned)xPortGetFreeHeapSize());
+    } else {
+        telemetry_printf("Telemetry queue (%s) created, free heap=%u", name, (unsigned)xPortGetFreeHeapSize());
+    }
+    #endif
+    return queue;
+}
+
+
 
 void telemetry_handler(void *argument) 
 {
@@ -55,7 +80,7 @@ void telemetry_handler(void *argument)
             TelemetryBattery_t telemetry;
             telemetry_getBattery(&telemetry);
             char telemetryStr[TELEMETRY_BATTERY_STR_SIZE];
-            live_printf("%s", TelemetryBattery_toString(&telemetry, telemetryStr));
+            telemetry_printf("%s", TelemetryBattery_toString(&telemetry, telemetryStr));
         }
         #endif
         #ifdef CM7_SENSOR_ENCODER_ENABLE
@@ -63,7 +88,7 @@ void telemetry_handler(void *argument)
             TelemetryMainSail_t telemetry;
             telemetry_getMainSail(&telemetry);
             char telemetryStr[TELEMETRY_MAIN_SAIL_STR_SIZE];
-            live_printf("%s", TelemetryMainSail_toString(&telemetry, telemetryStr));
+            telemetry_printf("%s", TelemetryMainSail_toString(&telemetry, telemetryStr));
         }
         #endif
         #endif

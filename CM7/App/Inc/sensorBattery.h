@@ -1,6 +1,7 @@
 #ifndef SENSOR_BATTERY_H
 #define SENSOR_BATTERY_H
 
+#include "system.h"
 #include "sharedBattery.h"
 #include "sharedSensor.h"
 
@@ -21,7 +22,8 @@
 
 extern TaskHandle_t sensorBattery_task;
 
-void sensorBattery_hardwareInit(void);
+HardwareInit_e sensorBattery_hardwareInit(void);
+RtosInit_e sensorBattery_rtosInit(void);
 void sensorBattery_handler(void *argument);
 
 bool sensorBattery_getMetadata(MetadataBattery_t *metadata);
