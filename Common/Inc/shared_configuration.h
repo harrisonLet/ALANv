@@ -27,8 +27,8 @@
 #define CM7_TELEMETRY_ENABLE
 #define CM7_SENSOR_BATTERY_ENABLE
 // #define CM7_SENSOR_ENCODER_ENABLE
-#define CM7_SENSOR_GPS_ENABLE
-// #define CM7_SENSOR_IMU_ENABLE
+// #define CM7_SENSOR_GPS_ENABLE
+#define CM7_SENSOR_IMU_ENABLE
 // #define CM7_SENSOR_WIND_ENABLE
 
 
@@ -51,15 +51,16 @@
 #endif
 
 #ifdef CM7_SENSOR_ENCODER_ENABLE
-#define CM7_SENSOR_ENCODER_DEBUG
+// #define CM7_SENSOR_ENCODER_DEBUG
 #endif
 
 #ifdef CM7_SENSOR_GPS_ENABLE
-#define CM7_SENSOR_GPS_DEBUG
+// #define CM7_SENSOR_GPS_DEBUG
 #endif
 
 #ifdef CM7_SENSOR_IMU_ENABLE
 #define CM7_SENSOR_IMU_DEBUG
+// #define CM7_SENSOR_IMU_CALIBRATE // If commented the IMU will used the hard-coded offsets
 #endif
 
 #ifdef CM7_SENSOR_WIND_ENABLE

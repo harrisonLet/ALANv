@@ -145,7 +145,7 @@ HardwareInit_e sensorEncoder_hardwareInit(void)
         (2 << 16) |   // SDADEL =  2 : SDA data hold   = 2   ticks = 0.5us
         (15 << 8) |   // SCLH   = 15 : SCL high period = 16  ticks = 4us
         (19 << 0);    // SCLL   = 19 : SCL low  period = 20  ticks = 5us
-    // f_SCL = 1 / (4us + 5us) ~= 111kHz (standard-mode 100kHz, rise/fall times account for the rest)
+                      // f_SCL = 1 / (4us + 5us) ~= 111kHz (standard-mode 100kHz, rise/fall times account for the rest)
     i2c_handler.Init.AddressingMode =  I2C_ADDRESSINGMODE_7BIT;
     i2c_handler.Init.OwnAddress1 = 0x1;
     i2c_handler.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;

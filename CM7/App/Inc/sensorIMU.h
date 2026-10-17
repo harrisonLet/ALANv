@@ -5,7 +5,7 @@
 #include "sharedSensor.h"
 
 #define SENSOR_IMU_TASK "[SIMU----]"
-#define SENSOR_IMU_PRIORITY osPriorityAboveNormal
+#define SENSOR_IMU_TASK_PRIORITY osPriorityAboveNormal
 
 #ifdef CM7_SENSOR_IMU_DEBUG
 #define SENSOR_IMU_TASK_HEAP 300

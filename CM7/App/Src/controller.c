@@ -10,7 +10,7 @@
 #include "sensorBattery.h"
 #include "sensorEncoder.h"
 #include "sensorGPS.h"
-#include "sensorMagnetometer.h"
+#include "sensorIMU.h"
 #include "sensorWind.h"
 
 #include "semphr.h"
@@ -41,6 +41,12 @@ void hardware_init(void) {
     #endif
     #ifdef CM7_SENSOR_GPS_ENABLE
     sensorGPS_hardwareInit();
+    #endif
+    #ifdef CM7_SENSOR_IMU_ENABLE
+    sensorIMU_hardwareInit();
+    #endif
+    #ifdef CM7_SENSOR_WIND_ENABLE
+    sensorWind_hardwareInit();
     #endif
 
 
@@ -91,6 +97,16 @@ void rtos_init()
     if (sensorGPS_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
     if (xTaskCreate(sensorGPS_handler, SENSOR_GPS_TASK, SENSOR_GPS_TASK_HEAP, NULL, SENSOR_GPS_TASK_PRIORITY, &sensorGPS_task) != pdPASS) { Error_Handler(); }
     totalStack += SENSOR_GPS_TASK_HEAP;
+    #endif
+    #ifdef CM7_SENSOR_IMU_ENABLE
+    if (sensorIMU_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(sensorIMU_handler, SENSOR_IMU_TASK, SENSOR_IMU_TASK_HEAP, NULL, SENSOR_IMU_TASK_PRIORITY, &sensorIMU_task) != pdPASS) { Error_Handler(); }
+    totalStack += SENSOR_IMU_TASK_HEAP;
+    #endif
+    #ifdef CM7_SENSOR_WIND_ENABLE
+    if (sensorWind_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(sensorWind_handler, SENSOR_WIND_TASK, SENSOR_WIND_TASK_HEAP, NULL, SENSOR_WIND_TASK_PRIORITY, &sensorWind_task) != pdPASS) { Error_Handler(); }
+    totalStack += SENSOR_WIND_TASK_HEAP;
     #endif
 
     #ifdef CM7_DEBUG
