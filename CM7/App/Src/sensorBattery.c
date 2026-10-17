@@ -157,7 +157,7 @@ RtosInit_e sensorBattery_rtosInit(void)
 void sensorBattery_handler(void *argument)
 {
     sensorBattery_printf("sensorBattery_handler start. Poll: %u ms.", (1000 / SENSOR_BATTERY_FREQUENCY));
-    vTaskDelay(pdMS_TO_TICKS(BATTERY_SETTLE_MS));
+    vTaskDelay(BATTERY_SETTLE_MS);
     TickType_t lastWake = xTaskGetTickCount();
     for (;;)
     {

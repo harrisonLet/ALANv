@@ -72,7 +72,7 @@ void telemetry_handler(void *argument)
     TickType_t lastWake = xTaskGetTickCount();
     for (;;)
     {
-        vTaskDelayUntil(&lastWake, pdMS_TO_TICKS(5000));
+        vTaskDelayUntil(&lastWake, 10000);
         
         #ifdef CM7_TELEMETRY_DEBUG
         #ifdef CM7_SENSOR_BATTERY_ENABLE

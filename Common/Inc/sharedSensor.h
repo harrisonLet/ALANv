@@ -131,13 +131,14 @@ char *MetadataGPS_toString(const MetadataGPS_t *metadata, char buf[METADATA_GPS_
 typedef struct {
     int16_t quat[4];   /**< Fused quaternion readings */
     int16_t lnAc[3];   /**< Fused linear acceleration readings */
+    int8_t tmp[1];     /**< Temperature reading */
     
     uint32_t timestamp; /**< Timestamp for when the measurement was taken, measured in ms */
     uint8_t valid; /**< Indicates if the measurement is valid */
     uint8_t sequence; /**< Sequence number of the measurement, used to ensure a measurment is actually new */
 } MetadataIMU_t;
 
-#define METADATA_IMU_STR_SIZE 70u
+#define METADATA_IMU_STR_SIZE 78u
 char *MetadataIMU_toString(const MetadataIMU_t *metadata, char buf[METADATA_IMU_STR_SIZE]);
 
 

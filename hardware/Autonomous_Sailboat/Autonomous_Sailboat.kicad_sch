@@ -4850,6 +4850,26 @@
 	)
 	(wire
 		(pts
+			(xy 330.2 175.26) (xy 342.9 175.26)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4ea42d23-0ad2-4ec5-923d-ee065b052586")
+	)
+	(wire
+		(pts
+			(xy 323.85 177.8) (xy 330.2 177.8)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "517222e7-55f8-4aa4-a8a2-df32a789350d")
+	)
+	(wire
+		(pts
 			(xy 323.85 109.22) (xy 331.47 109.22)
 		)
 		(stroke
@@ -5010,6 +5030,16 @@
 	)
 	(wire
 		(pts
+			(xy 330.2 177.8) (xy 330.2 175.26)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8ee94093-8253-40a7-a369-5e23af603319")
+	)
+	(wire
+		(pts
 			(xy 237.49 167.64) (xy 231.14 167.64)
 		)
 		(stroke
@@ -5107,6 +5137,16 @@
 			(type default)
 		)
 		(uuid "b6973d19-5e21-47d5-a3bf-b489a9da9ff2")
+	)
+	(wire
+		(pts
+			(xy 323.85 180.34) (xy 342.9 180.34)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "bce95b99-380c-49cc-926a-9bb5821bff26")
 	)
 	(wire
 		(pts
@@ -5248,6 +5288,16 @@
 		)
 		(uuid "0743df0e-422a-4b62-928b-c5b5156aafe4")
 	)
+	(label "sensorIMU_I2C2SDA"
+		(at 342.9 180.34 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "1adc7173-38ed-4ddf-ac9f-11461dc8b1cb")
+	)
 	(label "live_LEDGreen"
 		(at 342.9 152.4 0)
 		(effects
@@ -5307,6 +5357,16 @@
 			(justify right bottom)
 		)
 		(uuid "8855b327-c4eb-4f3f-91ae-4de9114b29af")
+	)
+	(label "sensorIMU_I2C2SCL"
+		(at 342.9 175.26 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "b5f5e103-d26b-409d-8d0e-c058df24aa9f")
 	)
 	(label "B1"
 		(at 381 96.52 0)
