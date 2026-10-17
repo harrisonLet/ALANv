@@ -19,3 +19,6 @@ Autonomous_Sailboat-backups/
 \#auto_saved_files\#
 _autosave-Autonomous_Sailboat.*
 *.lck
+
+tmp_*
+secret_*

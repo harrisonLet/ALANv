@@ -129,18 +129,15 @@ char *MetadataGPS_toString(const MetadataGPS_t *metadata, char buf[METADATA_GPS_
  * SENSOR: Inertial Measurement Unit (IMU)
  */
 typedef struct {
-    int16_t acc_x,  acc_y,  acc_z;  /**< Accelerometer readings in raw units */
-    int16_t gyro_x, gyro_y, gyro_z; /**< Gyroscope readings in raw units */
-    int16_t mag_x,  mag_y,  mag_z;  /**< Magnetometer readings in raw units */
-
-    int16_t w, x, y, z;             /**< Quaternion readings in raw units */
-
+    int16_t quat[4];   /**< Fused quaternion readings */
+    int16_t lnAc[3];   /**< Fused linear acceleration readings */
+    
     uint32_t timestamp; /**< Timestamp for when the measurement was taken, measured in ms */
     uint8_t valid; /**< Indicates if the measurement is valid */
     uint8_t sequence; /**< Sequence number of the measurement, used to ensure a measurment is actually new */
 } MetadataIMU_t;
 
-#define METADATA_IMU_STR_SIZE 128u
+#define METADATA_IMU_STR_SIZE 70u
 char *MetadataIMU_toString(const MetadataIMU_t *metadata, char buf[METADATA_IMU_STR_SIZE]);
 
 

@@ -149,11 +149,6 @@ typedef enum {
     BNO055_OPR_MODE_NDOF         = 0x0C
 } BNO055OprMode_e;
 
-typedef enum {
-    COM_RESULT_OK,
-    COM_RESULT_ERROR
-} ComResult_e;
-
 /////////////////////////////////////////////////////////////////////////////////////////
 
 TaskHandle_t sensorIMU_task;
@@ -164,28 +159,31 @@ static I2C_HandleTypeDef i2c_handler;
 
 static QueueHandle_t metadata_queue;
 
-static ComResult_e BNO055_read(char *reg, uint8_t addr, uint8_t *data, uint8_t len);
-static ComResult_e BNO055_readChipId(uint8_t id[1]) __attribute__((unused));
-static ComResult_e BNO055_readAccId(uint8_t id[1]) __attribute__((unused));
-static ComResult_e BNO055_readMagId(uint8_t id[1]) __attribute__((unused));
-static ComResult_e BNO055_readGyroId(uint8_t id[1]) __attribute__((unused));
-static ComResult_e BNO055_readAccXYZ(uint16_t accXYZ[3]) __attribute__((unused));
-static ComResult_e BNO055_readMagXYZ(int16_t magXYZ[3]) __attribute__((unused));
-static ComResult_e BNO055_readGyroXYZ(int16_t gyroXYZ[3]) __attribute__((unused));
-static ComResult_e BNO055_readEulerHRP(uint16_t eulerHRP[3]) __attribute__((unused));
-static ComResult_e BNO055_readQuatWXYZ(uint16_t quatWXYZ[4]) __attribute__((unused));
-static ComResult_e BNO055_readLinAccXYZ(int16_t linAccXYZ[3]) __attribute__((unused));
-static ComResult_e BNO055_readGravXYZ(int16_t gravXYZ[3]) __attribute__((unused));
-static ComResult_e BNO055_readTemp(uint8_t temp[1]) __attribute__((unused));
-static ComResult_e BNO055_readCalibState(BNO055CalibState_e *state) __attribute__((unused));
-static ComResult_e BNO055_readSTResult(BNO055STResult_e *result) __attribute__((unused));
-static ComResult_e BNO055_readSysStatus(BNO055SysStatus_e *status) __attribute__((unused));
-static ComResult_e BNO055_readSysErr(BNO055SysErr_e *err) __attribute__((unused));
-static ComResult_e BNO055_readOprMode(BNO055OprMode_e *mode) __attribute__((unused));
+static uint8_t metadata_sequence;
 
-static ComResult_e BNO055_write(char *reg, uint8_t addr, uint8_t *data, uint8_t len);
-static ComResult_e BNO055_writeOprMode(BNO055OprMode_e mode);
-static ComResult_e BNO055_writeCalibOffset(uint8_t offsets[BNO055_REG_CALIB_OFFSET_SIZE]);
+static HAL_StatusTypeDef BNO055_read(uint8_t addr, uint8_t *data, uint8_t len);
+static HAL_StatusTypeDef BNO055_readChipId(uint8_t id[1]) __attribute__((unused));
+static HAL_StatusTypeDef BNO055_readAccId(uint8_t id[1]) __attribute__((unused));
+static HAL_StatusTypeDef BNO055_readMagId(uint8_t id[1]) __attribute__((unused));
+static HAL_StatusTypeDef BNO055_readGyroId(uint8_t id[1]) __attribute__((unused));
+static HAL_StatusTypeDef BNO055_readAccXYZ(int16_t accXYZ[3]) __attribute__((unused));
+static HAL_StatusTypeDef BNO055_readMagXYZ(int16_t magXYZ[3]) __attribute__((unused));
+static HAL_StatusTypeDef BNO055_readGyroXYZ(int16_t gyroXYZ[3]) __attribute__((unused));
+static HAL_StatusTypeDef BNO055_readEulerHRP(int16_t eulerHRP[3]) __attribute__((unused));
+static HAL_StatusTypeDef BNO055_readQuatWXYZ(int16_t quatWXYZ[4]) __attribute__((unused));
+static HAL_StatusTypeDef BNO055_readLinAccXYZ(int16_t linAccXYZ[3]) __attribute__((unused));
+static HAL_StatusTypeDef BNO055_readGravXYZ(int16_t gravXYZ[3]) __attribute__((unused));
+static HAL_StatusTypeDef BNO055_readTemp(int8_t temp[1]) __attribute__((unused)) __attribute__((unused));
+static HAL_StatusTypeDef BNO055_readCalibState(BNO055CalibState_e *state) __attribute__((unused));
+static HAL_StatusTypeDef BNO055_readSTResult(BNO055STResult_e *result) __attribute__((unused));
+static HAL_StatusTypeDef BNO055_readSysStatus(BNO055SysStatus_e *status) __attribute__((unused));
+static HAL_StatusTypeDef BNO055_readSysErr(BNO055SysErr_e *err) __attribute__((unused));
+static HAL_StatusTypeDef BNO055_readOprMode(BNO055OprMode_e *mode) __attribute__((unused));
+static HAL_StatusTypeDef BNO055_readAllSensors(int16_t accXYZ[3], int16_t magXYZ[3], int16_t gyroXYZ[3], int16_t eulerHRP[3], int16_t quatWXYZ[4], int16_t linAccXYZ[3], int16_t gravXYZ[3], int8_t temp[1]);
+
+static HAL_StatusTypeDef BNO055_write(uint8_t addr, uint8_t *data, uint8_t len);
+static HAL_StatusTypeDef BNO055_writeOprMode(BNO055OprMode_e mode);
+static HAL_StatusTypeDef BNO055_writeCalibOffset(uint8_t offsets[BNO055_REG_CALIB_OFFSET_SIZE]);
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -237,29 +235,29 @@ HardwareInit_e sensorIMU_hardwareInit(void)
     sensorIMU_printf("    - init BNO055 sensor");
     HAL_Delay(pdMS_TO_TICKS(700)); // The BNO055 requires a power-up delay of 650ms
     uint8_t chip_id;
-    if (BNO055_readChipId(&chip_id) != COM_RESULT_OK || chip_id != BNO055_CHIP_ID) {
+    if (BNO055_readChipId(&chip_id) != HAL_OK || chip_id != BNO055_CHIP_ID) {
         sensorIMU_printf("ERROR: BNO055 not detected or wrong chip ID: 0x%02X", chip_id);
         return HARDWARE_INIT_FAIL;
     }
     BNO055STResult_e st;
-    if (BNO055_readSTResult(&st) != COM_RESULT_OK || st != BNO055_ST_RESULT_FUL_SUCCESS) {
+    if (BNO055_readSTResult(&st) != HAL_OK || st != BNO055_ST_RESULT_FUL_SUCCESS) {
         sensorIMU_printf("ERROR: Failed to read BNO055 self-test result: 0x%02X", st);
         return HARDWARE_INIT_FAIL;
     }
 
     // Check BNO055 calibration state
     sensorIMU_printf("    - check BNO055 calibration state");
-    ComResult_e result;
+    HAL_StatusTypeDef result;
     uint16_t calibration_attempts;
     uint16_t calibration_hz;
     #ifdef CM7_SENSOR_IMU_PRE_CALIBRATED
     // The following steps can be found on pg 53 of the BNO055 datasheet
-    if ((result = BNO055_writeOprMode(BNO055_OPR_MODE_CONFIG)) != COM_RESULT_OK) {
+    if ((result = BNO055_writeOprMode(BNO055_OPR_MODE_CONFIG)) != HAL_OK) {
         sensorIMU_printf("ERROR: Failed to set BNO055 to CONFIG mode");
         return HARDWARE_INIT_FAIL;
     }
     HAL_Delay(pdMS_TO_TICKS(25)); // Delay for the BNO055 to switch to CONFIG mode
-    if ((result = BNO055_writeCalibOffset(BNO055_CALIB_OFFSETS)) != COM_RESULT_OK) {
+    if ((result = BNO055_writeCalibOffset(BNO055_CALIB_OFFSETS)) != HAL_OK) {
         sensorIMU_printf("ERROR: Failed to write BNO055 calibration offsets");
         return HARDWARE_INIT_FAIL;
     }
@@ -271,7 +269,7 @@ HardwareInit_e sensorIMU_hardwareInit(void)
     calibration_hz = 1;
     // Calibration can take up to 6 minutes
     #endif
-    if ((result = BNO055_writeOprMode(BNO055_OPR_MODE_NDOF)) != COM_RESULT_OK) {
+    if ((result = BNO055_writeOprMode(BNO055_OPR_MODE_NDOF)) != HAL_OK) {
         sensorIMU_printf("ERROR: Failed to set BNO055 to NDOF mode");
         return HARDWARE_INIT_FAIL;
     }
@@ -279,7 +277,7 @@ HardwareInit_e sensorIMU_hardwareInit(void)
     BNO055CalibState_e calib_state = BNO055_CALIB_NONE;
     uint8_t count = 0;
     while (count < calibration_attempts) {
-        if ((result = BNO055_readCalibState(&calib_state)) != COM_RESULT_OK) {
+        if ((result = BNO055_readCalibState(&calib_state)) != HAL_OK) {
             sensorIMU_printf("ERROR: Failed to read BNO055 calibration state");
             return HARDWARE_INIT_FAIL;
         }
@@ -301,11 +299,15 @@ RtosInit_e sensorIMU_rtosInit(void)
 
     // Initialize the Queues used to share data
     sensorIMU_printf("    - init shared RTOS structures");
-    if ((metadata_queue = xQueueCreate(1, sizeof(MetadataEncoder_t))) == NULL)
+    if ((metadata_queue = xQueueCreate(1, sizeof(MetadataIMU_t))) == NULL)
     {
         sensorIMU_printf("ERROR: Failed to create queue for metadata");
         return RTOS_INIT_FAIL;
     }
+
+    // Initialize global variables
+    sensorIMU_printf("    - init global variables");
+    metadata_sequence = 0;
 
     sensorIMU_printf("sensorIMU_rtosInit complete");
     return RTOS_INIT_SUCCESS;
@@ -315,7 +317,52 @@ RtosInit_e sensorIMU_rtosInit(void)
 
 void sensorIMU_handler(void *argument)
 {
+    sensorIMU_printf("sensorIMU_handler start. Poll: %d ms", 1000 / SENSOR_IMU_FREQUENCY);
+    TickType_t lastWake = xTaskGetTickCount();
+    for(;;)
+    {
+        // Read Frequency
+        vTaskDelayUntil(&lastWake, pdMS_TO_TICKS(1000 / SENSOR_IMU_FREQUENCY));
 
+        // Metdata
+        MetadataIMU_t metadata = {0};
+        metadata.valid = VALIDITY_UNKNOWN;
+        metadata.sequence = metadata_sequence++;
+        metadata.timestamp = HAL_GetTick();
+
+        #ifdef CM7_SENSOR_IMU_FULL_DATA
+        int16_t acc[3];
+        int16_t mag[3];
+        int16_t gyr[3];
+        int16_t eulr[3];
+        int16_t grav[3];
+        int8_t tmp[1];
+        HAL_StatusTypeDef status = BNO055_readAllSensors(acc, mag, gyr, eulr, metadata.quat, metadata.lnAc, grav, tmp);
+        #else
+        int16_t _waste[4];
+        HAL_StatusTypeDef status = BNO055_readAllSensors(_waste,_waste, _waste, _waste, metadata.quat, metadata.lnAc, _waste, _waste);
+        #endif
+        
+        if (status != HAL_OK) {
+            sensorIMU_printf("ERROR: Failed to read all sensors, HAL status: %d", status);
+            metadata.valid = VALIDITY_ERROR_UNREACHABLE;
+        }
+        else {}
+        #ifdef CM7_SENSOR_IMU_DEBUG
+        char metadata_str[METADATA_IMU_STR_SIZE];
+        sensorIMU_printf("%s", MetadataIMU_toString(&metadata, metadata_str));
+        #ifdef CM7_SENSOR_IMU_FULL_DATA
+        sensorIMU_printf("    acc: %04d, %04d, %04d\r\n   mag: %04d, %04d, %04d\r\n   gyr: %04d, %04d, %04d\r\n   eulr: %04d, %04d, %04d\r\n   grav: %04d, %04d, %04d\r\n   tmp: %04d",
+                         acc[0], acc[1], acc[2],
+                         mag[0], mag[1], mag[2],
+                         gyr[0], gyr[1], gyr[2],
+                         eulr[0], eulr[1], eulr[2],
+                         grav[0], grav[1], grav[2],
+                         tmp[0]);
+        #endif
+        #endif
+        xQueueOverwrite(metadata_queue, &metadata);
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -324,140 +371,150 @@ bool sensorIMU_getMetadata(MetadataIMU_t *metadata) { return xQueueReceive(metad
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-static ComResult_e BNO055_read(uint8_t addr, uint8_t *buf, uint8_t len)
+static HAL_StatusTypeDef BNO055_read(uint8_t addr, uint8_t *buf, uint8_t len)
 {
     HAL_StatusTypeDef status = HAL_I2C_Mem_Read(&i2c_handler, BNO055_ADDR << 1, addr, I2C_MEMADD_SIZE_8BIT, buf, len, len*2);
     
     if (status != HAL_OK) {
         sensorIMU_printf("ERROR: BNO055 read 0x%02X failed, HAL status: %d, I2C error: 0x%lX\r\n",
                addr, status, HAL_I2C_GetError(&i2c_handler));
-        return COM_RESULT_FAIL;
     }
 
-    return COM_RESULT_OK;
+    return status;
 }
 
-static ComResult_e BNO055_readChipId(uint8_t id[1]) { return BNO055_read(BNO055_REG_CHIP_ID, id, 1); }
-static ComResult_e BNO055_readAccId(uint8_t id[1])  { return BNO055_read(BNO055_REG_ACC_ID, id, 1); }
-static ComResult_e BNO055_readMagId(uint8_t id[1])  { return BNO055_read(BNO055_REG_MAG_ID, id, 1); }
-static ComResult_e BNO055_readGyroId(uint8_t id[1]) { return BNO055_read(BNO055_REG_GYRO_ID, id, 1); }
+static HAL_StatusTypeDef BNO055_readChipId(uint8_t id[1]) { return BNO055_read(BNO055_REG_CHIP_ID, id, 1); }
+static HAL_StatusTypeDef BNO055_readAccId(uint8_t id[1])  { return BNO055_read(BNO055_REG_ACC_ID, id, 1); }
+static HAL_StatusTypeDef BNO055_readMagId(uint8_t id[1])  { return BNO055_read(BNO055_REG_MAG_ID, id, 1); }
+static HAL_StatusTypeDef BNO055_readGyroId(uint8_t id[1]) { return BNO055_read(BNO055_REG_GYRO_ID, id, 1); }
 
-static ComResult_e BNO055_readAccXYZ(uint16_t accXYZ[3]) 
+static HAL_StatusTypeDef BNO055_readAccXYZ(int16_t accXYZ[3]) 
 {
     uint8_t buf[6];
-    ComResult_e result = BNO055_read(BNO055_REG_ACC, buf, 6);
-    if (result != COM_RESULT_OK) {
-        return result;
-    }
-    accXYZ[0] = (uint16_t)(buf[1] << 8 | buf[0]);
-    accXYZ[1] = (uint16_t)(buf[3] << 8 | buf[2]);
-    accXYZ[2] = (uint16_t)(buf[5] << 8 | buf[4]);
-    return COM_RESULT_OK;
+    HAL_StatusTypeDef result = BNO055_read(BNO055_REG_ACC, buf, 6);
+    accXYZ[0] = (int16_t)(buf[1] << 8 | buf[0]);
+    accXYZ[1] = (int16_t)(buf[3] << 8 | buf[2]);
+    accXYZ[2] = (int16_t)(buf[5] << 8 | buf[4]);
+    return result;
 }
-static ComResult_e BNO055_readMagXYZ(int16_t magXYZ[3])
+static HAL_StatusTypeDef BNO055_readMagXYZ(int16_t magXYZ[3])
 {
     uint8_t buf[6];
-    ComResult_e result = BNO055_read(BNO055_REG_MAG, buf, 6);
-    if (result != COM_RESULT_OK) {
-        return result;
-    }
+    HAL_StatusTypeDef result = BNO055_read(BNO055_REG_MAG, buf, 6);
     magXYZ[0] = (int16_t)(buf[1] << 8 | buf[0]);
     magXYZ[1] = (int16_t)(buf[3] << 8 | buf[2]);
     magXYZ[2] = (int16_t)(buf[5] << 8 | buf[4]);
-    return COM_RESULT_OK;
+    return result;
 }
-static ComResult_e BNO055_readGyroXYZ(int16_t gyroXYZ[3])
+static HAL_StatusTypeDef BNO055_readGyroXYZ(int16_t gyroXYZ[3])
 {
     uint8_t buf[6];
-    ComResult_e result = BNO055_read(BNO055_REG_GYRO, buf, 6);
-    if (result != COM_RESULT_OK) {
-        return result;
-    }
+    HAL_StatusTypeDef result = BNO055_read(BNO055_REG_GYRO, buf, 6);
     gyroXYZ[0] = (int16_t)(buf[1] << 8 | buf[0]);
     gyroXYZ[1] = (int16_t)(buf[3] << 8 | buf[2]);
     gyroXYZ[2] = (int16_t)(buf[5] << 8 | buf[4]);
-    return COM_RESULT_OK;
+    return result;
 }
-static ComResult_e BNO055_readEulerHRP(uint16_t eulerHRP[3])
+static HAL_StatusTypeDef BNO055_readEulerHRP(int16_t eulerHRP[3])
 {
     uint8_t buf[6];
-    ComResult_e result = BNO055_read(BNO055_REG_EUL, buf, 6);
-    if (result != COM_RESULT_OK) {
-        return result;
-    }
-    eulerHRP[0] = (uint16_t)(buf[1] << 8 | buf[0]);
-    eulerHRP[1] = (uint16_t)(buf[3] << 8 | buf[2]);
-    eulerHRP[2] = (uint16_t)(buf[5] << 8 | buf[4]);
-    return COM_RESULT_OK;
+    HAL_StatusTypeDef result = BNO055_read(BNO055_REG_EUL, buf, 6);
+    eulerHRP[0] = (int16_t)(buf[1] << 8 | buf[0]);
+    eulerHRP[1] = (int16_t)(buf[3] << 8 | buf[2]);
+    eulerHRP[2] = (int16_t)(buf[5] << 8 | buf[4]);
+    return result;
 }
-static ComResult_e BNO055_readQuatWXYZ(uint16_t quatWXYZ[4])
+static HAL_StatusTypeDef BNO055_readQuatWXYZ(int16_t quatWXYZ[4])
 {
     uint8_t buf[8];
-    ComResult_e result = BNO055_read(BNO055_REG_QUATERNION, buf, 8);
-    if (result != COM_RESULT_OK) {
-        return result;
-    }
-    quatWXYZ[0] = (uint16_t)(buf[1] << 8 | buf[0]);
-    quatWXYZ[1] = (uint16_t)(buf[3] << 8 | buf[2]);
-    quatWXYZ[2] = (uint16_t)(buf[5] << 8 | buf[4]);
-    quatWXYZ[3] = (uint16_t)(buf[7] << 8 | buf[6]);
-    return COM_RESULT_OK;
+    HAL_StatusTypeDef result = BNO055_read(BNO055_REG_QUATERNION, buf, 8);
+    quatWXYZ[0] = (int16_t)(buf[1] << 8 | buf[0]);
+    quatWXYZ[1] = (int16_t)(buf[3] << 8 | buf[2]);
+    quatWXYZ[2] = (int16_t)(buf[5] << 8 | buf[4]);
+    quatWXYZ[3] = (int16_t)(buf[7] << 8 | buf[6]);
+    return result;
 }
-static ComResult_e BNO055_readLinAccXYZ(int16_t linAccXYZ[3])
+static HAL_StatusTypeDef BNO055_readLinAccXYZ(int16_t linAccXYZ[3])
 {
     uint8_t buf[6];
-    ComResult_e result = BNO055_read(BNO055_REG_LINEAR_ACC, buf, 6);
-    if (result != COM_RESULT_OK) {
-        return result;
-    }
+    HAL_StatusTypeDef result = BNO055_read(BNO055_REG_LINEAR_ACC, buf, 6);
     linAccXYZ[0] = (int16_t)(buf[1] << 8 | buf[0]);
     linAccXYZ[1] = (int16_t)(buf[3] << 8 | buf[2]);
     linAccXYZ[2] = (int16_t)(buf[5] << 8 | buf[4]);
-    return COM_RESULT_OK;
+    return result;
 }
-static ComResult_e BNO055_readGravXYZ(int16_t gravXYZ[3])
+static HAL_StatusTypeDef BNO055_readGravXYZ(int16_t gravXYZ[3])
 {
     uint8_t buf[6];
-    ComResult_e result = BNO055_read(BNO055_REG_GRAVITY, buf, 6);
-    if (result != COM_RESULT_OK) {
-        return result;
-    }
+    HAL_StatusTypeDef result = BNO055_read(BNO055_REG_GRAVITY, buf, 6);
     gravXYZ[0] = (int16_t)(buf[1] << 8 | buf[0]);
     gravXYZ[1] = (int16_t)(buf[3] << 8 | buf[2]);
     gravXYZ[2] = (int16_t)(buf[5] << 8 | buf[4]);
-    return COM_RESULT_OK;
+    return result;
 }
-static ComResult_e BNO055_readTemp(uint8_t temp[1])
+static HAL_StatusTypeDef BNO055_readTemp(int8_t temp[1])
 {
     uint8_t buf[1];
-    ComResult_e result = BNO055_read(BNO055_REG_TEMP, buf, 1);
-    if (result != COM_RESULT_OK) {
-        return result;
-    }
+    HAL_StatusTypeDef result = BNO055_read(BNO055_REG_TEMP, buf, 1);
     temp[0] = (int8_t)buf[0];
-    return COM_RESULT_OK;
+    return result;
 }
 
-static ComResult_e BNO055_readCalibState(BNO055CalibState_e *state) { return BNO055_read(BNO055_REG_CALIB_STATE, (uint8_t *)state, sizeof(BNO055CalibState_e)); }
-static ComResult_e BNO055_readSTResult(BNO055STResult_e *result)    { return BNO055_read(BNO055_REG_ST_RESULT, (uint8_t *)result, sizeof(BNO055STResult_e)); }
-static ComResult_e BNO055_readSysStatus(BNO055SysStatus_e *status)  { return BNO055_read(BNO055_REG_SYS_STATUS, (uint8_t *)status, sizeof(BNO055SysStatus_e)); }
-static ComResult_e BNO055_readSysErr(BNO055SysErr_e *err)           { return BNO055_read(BNO055_REG_SYS_ERROR, (uint8_t *)err, sizeof(BNO055SysErr_e)); }
-static ComResult_e BNO055_readOprMode(BNO055OprMode_e *mode)        { return BNO055_read(BNO055_REG_OPR_MODE, (uint8_t *)mode, sizeof(BNO055OprMode_e)); }
+static HAL_StatusTypeDef BNO055_readAllSensors(int16_t accXYZ[3], int16_t magXYZ[3], int16_t gyroXYZ[3], int16_t eulerHRP[3], int16_t quatWXYZ[4], int16_t linAccXYZ[3], int16_t gravXYZ[3], int8_t temp[1])
+{
+    uint8_t buf[45] = {0};
+    #ifdef CM7_SENSOR_IMU_FULL_DATA
+    HAL_StatusTypeDef result = BNO055_read(BNO055_REG_ACC, &buf[0], 45);
+    #else
+    HAL_StatusTypeDef result = BNO055_read(BNO055_REG_QUATERNION, &buf[24], 14);
+    #endif
+    if (result != HAL_OK) { return result; }
+    accXYZ[0] =    (int16_t)(buf[1] << 8  | buf[0]);
+    accXYZ[1] =    (int16_t)(buf[3] << 8  | buf[2]);
+    accXYZ[2] =    (int16_t)(buf[5] << 8  | buf[4]);
+    magXYZ[0] =    (int16_t)(buf[7] << 8  | buf[6]);
+    magXYZ[1] =    (int16_t)(buf[9] << 8  | buf[8]);
+    magXYZ[2] =    (int16_t)(buf[11] << 8 | buf[10]);
+    gyroXYZ[0] =   (int16_t)(buf[13] << 8 | buf[12]);
+    gyroXYZ[1] =   (int16_t)(buf[15] << 8 | buf[14]);
+    gyroXYZ[2] =   (int16_t)(buf[17] << 8 | buf[16]);
+    eulerHRP[0] =  (int16_t)(buf[19] << 8 | buf[18]);
+    eulerHRP[1] =  (int16_t)(buf[21] << 8 | buf[20]);
+    eulerHRP[2] =  (int16_t)(buf[23] << 8 | buf[22]);
+    quatWXYZ[0] =  (int16_t)(buf[25] << 8 | buf[24]);
+    quatWXYZ[1] =  (int16_t)(buf[27] << 8 | buf[26]);
+    quatWXYZ[2] =  (int16_t)(buf[29] << 8 | buf[28]);
+    quatWXYZ[3] =  (int16_t)(buf[31] << 8 | buf[30]);
+    linAccXYZ[0] = (int16_t)(buf[33] << 8 | buf[32]);
+    linAccXYZ[1] = (int16_t)(buf[35] << 8 | buf[34]);
+    linAccXYZ[2] = (int16_t)(buf[37] << 8 | buf[36]);
+    gravXYZ[0] =   (int16_t)(buf[39] << 8 | buf[38]);
+    gravXYZ[1] =   (int16_t)(buf[41] << 8 | buf[40]);
+    gravXYZ[2] =   (int16_t)(buf[43] << 8 | buf[42]);
+    temp[0] =       (int8_t)(buf[44]);
+
+    return result;
+}
+
+static HAL_StatusTypeDef BNO055_readCalibState(BNO055CalibState_e *state) { return BNO055_read(BNO055_REG_CALIB_STATE, (uint8_t *)state, sizeof(BNO055CalibState_e)); }
+static HAL_StatusTypeDef BNO055_readSTResult(BNO055STResult_e *result)    { return BNO055_read(BNO055_REG_ST_RESULT, (uint8_t *)result, sizeof(BNO055STResult_e)); }
+static HAL_StatusTypeDef BNO055_readSysStatus(BNO055SysStatus_e *status)  { return BNO055_read(BNO055_REG_SYS_STATUS, (uint8_t *)status, sizeof(BNO055SysStatus_e)); }
+static HAL_StatusTypeDef BNO055_readSysErr(BNO055SysErr_e *err)           { return BNO055_read(BNO055_REG_SYS_ERROR, (uint8_t *)err, sizeof(BNO055SysErr_e)); }
+static HAL_StatusTypeDef BNO055_readOprMode(BNO055OprMode_e *mode)        { return BNO055_read(BNO055_REG_OPR_MODE, (uint8_t *)mode, sizeof(BNO055OprMode_e)); }
 
 
 
-static ComResult_e BNO055_write(uint8_t addr, uint8_t *data, uint8_t len)
+static HAL_StatusTypeDef BNO055_write(uint8_t addr, uint8_t *data, uint8_t len)
 {
     HAL_StatusTypeDef status = HAL_I2C_Mem_Write(&i2c_handler, BNO055_ADDR << 1, addr, I2C_MEMADD_SIZE_8BIT, data, len, 3);
     
     if (status != HAL_OK) {
         sensorIMU_printf("ERROR: BNO055 write 0x%02X failed, HAL status: %d, I2C error: 0x%lX\r\n",
                addr, status, HAL_I2C_GetError(&i2c_handler));
-        return COM_RESULT_ERROR;
     }
     
-    return COM_RESULT_OK;
+    return status;
 }
 
-static ComResult_e BNO055_writeOprMode(BNO055OprMode_e mode) { return BNO055_write(BNO055_REG_OPR_MODE, (uint8_t *)&mode, sizeof(BNO055OprMode_e)); }
-static ComResult_e BNO055_writeCalibOffset(uint8_t offsets[BNO055_REG_CALIB_OFFSET_SIZE]) { return BNO055_write(BNO055_REG_CALIB_OFFSET, offsets, BNO055_REG_CALIB_OFFSET_SIZE); }
+static HAL_StatusTypeDef BNO055_writeOprMode(BNO055OprMode_e mode) { return BNO055_write(BNO055_REG_OPR_MODE, (uint8_t *)&mode, sizeof(BNO055OprMode_e)); }
+static HAL_StatusTypeDef BNO055_writeCalibOffset(uint8_t offsets[BNO055_REG_CALIB_OFFSET_SIZE]) { return BNO055_write(BNO055_REG_CALIB_OFFSET, offsets, BNO055_REG_CALIB_OFFSET_SIZE); }

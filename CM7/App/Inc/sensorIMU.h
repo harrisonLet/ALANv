@@ -15,7 +15,7 @@
 #define sensorIMU_printf(...) ((void)0)
 #endif
 
-#define SENSOR_IMU_FREQUENCY 100u // Hz, this value is primarily limited by the i2c bus speed, max: ~300Hz
+#define SENSOR_IMU_FREQUENCY 100u // Hz, this value is maxed at 100Hz because of limitations in the BNO055 chip (see data sheet pg 33)
 #define SENSOR_IMU_WINDOW 10u // num readings
 #define SENSOR_IMU_STALE 100u // ms before data is considered stale
 
