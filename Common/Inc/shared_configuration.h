@@ -60,7 +60,7 @@
 
 #ifdef CM7_SENSOR_IMU_ENABLE
 #define CM7_SENSOR_IMU_DEBUG
-// #define CM7_SENSOR_IMU_CALIBRATE // If commented the IMU will used the hard-coded offsets
+#define CM7_SENSOR_IMU_PRE_CALIBRATED // If active the IMU will use the hard-coded calibration offsets
 #endif
 
 #ifdef CM7_SENSOR_WIND_ENABLE

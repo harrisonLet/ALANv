@@ -249,41 +249,45 @@ HardwareInit_e sensorIMU_hardwareInit(void)
 
     // Check BNO055 calibration state
     sensorIMU_printf("    - check BNO055 calibration state");
-    #ifdef CM7_SENSOR_IMU_CALIBRATE
-    {
-
+    ComResult_e result;
+    uint16_t calibration_attempts;
+    uint16_t calibration_hz;
+    #ifdef CM7_SENSOR_IMU_PRE_CALIBRATED
+    // The following steps can be found on pg 53 of the BNO055 datasheet
+    if ((result = BNO055_writeOprMode(BNO055_OPR_MODE_CONFIG)) != COM_RESULT_OK) {
+        sensorIMU_printf("ERROR: Failed to set BNO055 to CONFIG mode");
+        return HARDWARE_INIT_FAIL;
     }
+    HAL_Delay(pdMS_TO_TICKS(25)); // Delay for the BNO055 to switch to CONFIG mode
+    if ((result = BNO055_writeCalibOffset(BNO055_CALIB_OFFSETS)) != COM_RESULT_OK) {
+        sensorIMU_printf("ERROR: Failed to write BNO055 calibration offsets");
+        return HARDWARE_INIT_FAIL;
+    }
+    calibration_attempts = 100;
+    calibration_hz = 10;
+    // Calibration can take up to 10 seconds
     #else
-    {
-        // The following steps can be found on pg 53 of the BNO055 datasheet
-        ComResult_e result;
-        if ((result = BNO055_writeOprMode(BNO055_OPR_MODE_CONFIG)) != COM_RESULT_OK) {
-            sensorIMU_printf("ERROR: Failed to set BNO055 to CONFIG mode");
-            return HARDWARE_INIT_FAIL;
-        }
-        HAL_Delay(pdMS_TO_TICKS(25)); // Delay for the BNO055 to switch to CONFIG mode
-        if ((result = BNO055_writeCalibOffset(BNO055_CALIB_OFFSETS)) != COM_RESULT_OK) {
-            sensorIMU_printf("ERROR: Failed to write BNO055 calibration offsets");
-            return HARDWARE_INIT_FAIL;
-        }
-        if ((result = BNO055_writeOprMode(BNO055_OPR_MODE_NDOF)) != COM_RESULT_OK) {
-            sensorIMU_printf("ERROR: Failed to set BNO055 to NDOF mode");
-            return HARDWARE_INIT_FAIL;
-        }
-        HAL_Delay(pdMS_TO_TICKS(25)); // Delay for the BNO055 to switch to NDOF mode
-        BNO055CalibState_e calib_state = BNO055_CALIB_NONE;
-        uint8_t count = 0;
-        while (count < 1000) { // If calibration does not succeed within 1000 attempts or 10 seconds continue anyways
-            if ((result = BNO055_readCalibState(&calib_state)) != COM_RESULT_OK) {
-                sensorIMU_printf("ERROR: Failed to read BNO055 calibration state");
-                return HARDWARE_INIT_FAIL;
-            }
-            if (calib_state == BNO055_CALIB_SUCCESS) { sensorIMU_printf("        - BNO055 calibration successful"); break; }
-            count++;
-            HAL_Delay(pdMS_TO_TICKS(10)); // Delay before next calibration state read
-        }
-    }
+    calibration_attempts = 600;
+    calibration_hz = 1;
+    // Calibration can take up to 6 minutes
     #endif
+    if ((result = BNO055_writeOprMode(BNO055_OPR_MODE_NDOF)) != COM_RESULT_OK) {
+        sensorIMU_printf("ERROR: Failed to set BNO055 to NDOF mode");
+        return HARDWARE_INIT_FAIL;
+    }
+    HAL_Delay(pdMS_TO_TICKS(25)); // Delay for the BNO055 to switch to NDOF mode
+    BNO055CalibState_e calib_state = BNO055_CALIB_NONE;
+    uint8_t count = 0;
+    while (count < calibration_attempts) {
+        if ((result = BNO055_readCalibState(&calib_state)) != COM_RESULT_OK) {
+            sensorIMU_printf("ERROR: Failed to read BNO055 calibration state");
+            return HARDWARE_INIT_FAIL;
+        }
+        if (calib_state == BNO055_CALIB_SUCCESS) { sensorIMU_printf("        - BNO055 calibration successful (attempt %03d)", count); break; }
+        else { sensorIMU_printf("        - BNO055 calibration in progress (attempt %03d): %02X", count, calib_state); }
+        count++;
+        HAL_Delay(pdMS_TO_TICKS(1000 / calibration_hz)); // Delay before next calibration state read
+    }
 
     sensorIMU_printf("sensorIMU_hardwareInit complete");
     return HARDWARE_INIT_SUCCESS;
