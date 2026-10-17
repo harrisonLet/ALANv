@@ -36,6 +36,8 @@ typedef enum {
     VALIDITY_INVALID_ENCODER                = 0x90, /**< Generic validity failure for the encoder sensor */
     VALIDITY_INVALID_GPS                    = 0xA0, /**< Generic validity failure for the GPS sensor */
     VALIDITY_INVALID_GPS_STALE              = 0xA1, /**< GPS data has not been updated recently (stale) */
+    VALIDITY_INVALID_GPS_NO_FIX             = 0xA2, /**< GPS has no fix */
+    VALIDITY_INVALID_GPS_CHECKSUM           = 0xA3, /**< GPS sentence checksum failed */
     VALIDITY_INVALID_IMU                    = 0xB0, /**< Generic validity failure for the IMU sensor */
     VALIDITY_INVALID_WIND                   = 0xC0, /**< Generic validity failure for the wind sensor */
 } Validity_e;
@@ -90,6 +92,7 @@ char *MetadataEncoder_toString(const MetadataEncoder_t *metadata, char buf[METAD
 
 /////////////////////////////////////////////////////////////////////////////
 // GPS Sensor
+#define METADATA_GPS_RAW_STR_SIZE 128u
 
 /**
  * Represents metadata associated with the GPS readings.
@@ -97,7 +100,7 @@ char *MetadataEncoder_toString(const MetadataEncoder_t *metadata, char buf[METAD
  * SENSOR: Global Positioning System (GPS)
  */
 typedef struct {
-    char raw[128]; /**< Raw NMEA string from the GPS module */
+    char raw[METADATA_GPS_RAW_STR_SIZE]; /**< Raw NMEA string from the GPS module */
     double latitude;  /**< Latitude in degrees */
     double longitude; /**< Longitude in degrees */
     float altitude;   /**< Altitude in meters */
