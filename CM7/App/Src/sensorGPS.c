@@ -537,3 +537,7 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 
 void UART7_IRQHandler(void) { HAL_UART_IRQHandler(&uart_handler); }
 void DMA1_Stream0_IRQHandler(void) { HAL_DMA_IRQHandler(&uart_dma_handler); }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+bool sensorGPS_getMetadata(MetadataGPS_t *metadata) { return xQueuePeek(metadata_queue, metadata, 0) == pdTRUE; }

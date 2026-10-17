@@ -1,11 +1,30 @@
-#ifndef SENSORWIND_H
-#define SENSORWIND_H
+#ifndef SENSOR_WIND_H
+#define SENSOR_WIND_H
 
-#define SENSOR_WIND_TASK "[SENSOR_WIND]"
+#include "system.h"
+#include "sharedSensor.h"
 
-extern TaskHandle_t task_sensorWind;
+#define SENSOR_WIND_TASK "[SWIND---]"
+#define SENSOR_WIND_PRIORITY osPriorityAboveNormal
 
-void sensorWind_hardwareInit();
+#ifdef CM7_SENSOR_WIND_DEBUG
+#define SENSOR_WIND_TASK_HEAP 300
+#define sensorWind_printf(fmt, ...) DEBUG_PRINTF(SENSOR_WIND_TASK, fmt, ##__VA_ARGS__)
+#else
+#define SENSOR_WIND_TASK_HEAP 100
+#define sensorWind_printf(...) ((void)0)
+#endif
+
+#define SENSOR_WIND_FREQUENCY 100u // Hz, this value is primarily limited by the i2c bus speed, max: ~300Hz
+#define SENSOR_WIND_WINDOW 10u // num readings
+#define SENSOR_WIND_STALE 100u // ms before data is considered stale
+
+extern TaskHandle_t sensorWind_task;
+
+HardwareInit_e sensorWind_hardwareInit(void);
+RtosInit_e sensorWind_rtosInit(void);
 void sensorWind_handler(void *argument);
 
-#endif
+bool sensorWind_getMetadata(MetadataWind_t *metadata);
+
+#endif // SENSOR_WIND_H

@@ -27,7 +27,4 @@ void sensorGPS_handler(void *argument);
 
 bool sensorGPS_getMetadata(MetadataGPS_t *metadata);
 
-// Copies up to max bytes received since the last call out of the DMA buffer
-size_t sensorGPS_readBytes(uint8_t *dst, size_t max);
-
 #endif
