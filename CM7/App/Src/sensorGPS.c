@@ -70,6 +70,7 @@ static double metadata_latitude;
 static double metadata_longitude;
 static float metadata_altitude;
 static uint8_t metadata_satellites;
+static uint8_t metadata_fix_valid;
 static uint8_t metadata_hours;
 static uint8_t metadata_minutes;
 static uint8_t metadata_seconds;
@@ -83,7 +84,7 @@ static ParseResult_e parseGGA_LATITUDE(const char *str, double *latitude);
 static ParseResult_e parseGGA_LATITUDE_DIR(const char *str, double *latitude);
 static ParseResult_e parseGGA_LONGITUDE(const char *str, double *longitude);
 static ParseResult_e parseGGA_LONGITUDE_DIR(const char *str, double *longitude);
-static ParseResult_e parseGGA_FIX_VALID(const char *str, Validity_e *validity);
+static ParseResult_e parseGGA_FIX_VALID(const char *str, uint8_t *fix_valid);
 static ParseResult_e parseGGA_SATELLITES(const char *str, uint8_t *satellites);
 static ParseResult_e parseGGA_ALTITUDE(const char *str, float *altitude);
 
@@ -183,6 +184,19 @@ RtosInit_e sensorGPS_rtosInit(void)
     metadata.timestamp = HAL_GetTick();
     xQueueOverwrite(metadata_queue, &metadata);
 
+    sensorGPS_printf("    - init metadata cache");
+    metadata_raw_head = 0;
+    metadata_latitude = 0;
+    metadata_longitude = 0;
+    metadata_altitude = 0;
+    metadata_satellites = 0;
+    metadata_fix_valid = 0;
+    metadata_hours = 0;
+    metadata_minutes = 0;
+    metadata_seconds = 0;
+    metadata_sequence = 0;
+
+
     sensorGPS_printf("sensorGPS_rtosInit complete");
     return RTOS_INIT_SUCCESS;
 }
@@ -268,6 +282,7 @@ void sensorGPS_handler(void *argument)
                     metadata.longitude = metadata_longitude;
                     metadata.altitude = metadata_altitude;
                     metadata.satellites = metadata_satellites;
+                    metadata.fix_valid = metadata_fix_valid;
                     metadata.hours = metadata_hours;
                     metadata.minutes = metadata_minutes;
                     metadata.seconds = metadata_seconds;
@@ -324,8 +339,8 @@ static Validity_e parseGGA(const char *gga)
     double latitude = 0;
     double longitude = 0;
     float altitude = 0;
-    Validity_e validity = VALIDITY_UNKNOWN;
     uint8_t satellites = 0;
+    uint8_t fix_valid = 0;
 
     GGAField_e field = GGA_ID;
     while (*gga != '\0')
@@ -347,10 +362,10 @@ static Validity_e parseGGA(const char *gga)
                     case GGA_LATITUDE_DIR:  r = parseGGA_LATITUDE_DIR(token, &latitude); break;
                     case GGA_LONGITUDE:     r = parseGGA_LONGITUDE(token, &longitude); break;
                     case GGA_LONGITUDE_DIR: r = parseGGA_LONGITUDE_DIR(token, &longitude); break;
-                    case GGA_FIX_VALID:     r = parseGGA_FIX_VALID(token, &validity); break;
+                    case GGA_FIX_VALID:     r = parseGGA_FIX_VALID(token, &fix_valid); break;
                     case GGA_SATELLITES:    r = parseGGA_SATELLITES(token, &satellites); break;
                     case GGA_ALTITUDE:      r = parseGGA_ALTITUDE(token, &altitude); break;
-                    default: break;
+                    default: r = PARSE_SKIP; break;
                 }
                 if (r != PARSE_SUCCESS && r != PARSE_SKIP)
                 {
@@ -375,18 +390,19 @@ static Validity_e parseGGA(const char *gga)
     if (strnlen(token, sizeof(token)) != 2) { return VALIDITY_INVALID_GPS_CHECKSUM; }
     if (parseUint8Hex(token, &rx_crc) != PARSE_SUCCESS) { return VALIDITY_INVALID_GPS_CHECKSUM; }
 
-    if (rx_crc != crc)                      { return VALIDITY_INVALID_GPS_CHECKSUM; }
-    else if (validity != VALIDITY_VALID)    { return validity; }
+    if (rx_crc != crc)       { return VALIDITY_INVALID_GPS_CHECKSUM; }
+    else if (fix_valid == 0) { return VALIDITY_INVALID_GPS_NO_FIX; }
     
     metadata_latitude = latitude;
     metadata_longitude = longitude;
     metadata_altitude = altitude;
     metadata_satellites = satellites;
+    metadata_fix_valid = fix_valid;
     metadata_hours = hour;
     metadata_minutes = minute;
     metadata_seconds = second;
     
-    return validity;
+    return VALIDITY_VALID;
 }
 
 static ParseResult_e parseGGA_TIME(const char *str, uint8_t *hour, uint8_t *minute, uint8_t *second)
@@ -424,17 +440,7 @@ static ParseResult_e parseGGA_LONGITUDE(const char *str, double *longitude)
     return PARSE_SUCCESS;
 }
 static ParseResult_e parseGGA_LONGITUDE_DIR(const char *str, double *longitude) { *longitude = (str[0] == 'E') ? *longitude : -*longitude; return PARSE_SUCCESS; }
-static ParseResult_e parseGGA_FIX_VALID(const char *str, Validity_e *validity)
-{
-    if (str == NULL || *str == '\0') { return PARSE_ERROR_NULL; }
-    if (str[0] == '0') { *validity = VALIDITY_INVALID_GPS_NO_FIX; }
-    else if (str[0] == '1') { *validity = VALIDITY_VALID; }
-    else if (str[0] == '2') { *validity = VALIDITY_VALID; }
-    else if (str[0] == '4') { *validity = VALIDITY_VALID; }
-    else if (str[0] == '5') { *validity = VALIDITY_VALID; }
-    else { return PARSE_ERROR_INVALID; }
-    return PARSE_SUCCESS;
-}
+static ParseResult_e parseGGA_FIX_VALID(const char *str, uint8_t *fix_valid) { return parseUint8(str, fix_valid); }
 static ParseResult_e parseGGA_SATELLITES(const char *str, uint8_t *satellites) { return parseUint8(str, satellites); }
 static ParseResult_e parseGGA_ALTITUDE(const char *str, float *altitude) { return parseFloat(str, altitude); }
 
