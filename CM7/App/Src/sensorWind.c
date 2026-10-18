@@ -15,7 +15,7 @@
 
 #define WIND_COUNTS     3600
 #define WIND_HALF_TURN  1800
-#define WIND_FORWARD    1800
+#define WIND_FORWARD    3500
 
 #define ANG_WRAP(angle) (int16_t)(((((angle) + 180) % 360 + 360) % 360) - 180)
 
@@ -200,7 +200,7 @@ static HAL_StatusTypeDef wind_read(uint16_t *angle)
 
     // Read response (7 bytes: addr, func (0x03), byte count (0x02), data_hi, data_lo, crc_lo, crc_hi)
     uint8_t resp[7];
-    if (HAL_UART_Receive(&uart_handler, resp, 7, 30) != HAL_OK) {
+    if (HAL_UART_Receive(&uart_handler, resp, 7, 50) != HAL_OK) {
         sensorWind_printf("ERROR: Failed to read wind sensor response");
         return HAL_ERROR;
     }
@@ -239,3 +239,5 @@ static uint16_t wind_crc16(const uint8_t *buf, int len)
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
+
+bool sensorWind_getMetadata(MetadataWind_t *metadata) { return xQueuePeek(metadata_queue, metadata, 0) == pdTRUE; }

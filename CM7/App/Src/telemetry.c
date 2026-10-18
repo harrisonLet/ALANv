@@ -91,6 +91,14 @@ void telemetry_handler(void *argument)
             telemetry_printf("%s", TelemetryMainSail_toString(&telemetry, telemetryStr));
         }
         #endif
+        #ifdef CM7_SENSOR_WIND_ENABLE
+        {
+            TelemetryWind_t telemetry;
+            telemetry_getWind(&telemetry);
+            char telemetryStr[TELEMETRY_WIND_STR_SIZE];
+            telemetry_printf("%s", TelemetryWind_toString(&telemetry, telemetryStr));
+        }
+        #endif
         #endif
     }
 }

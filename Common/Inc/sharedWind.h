@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 /////////////////////////////////////////////////////////////////////////////
-// Wind Vane
+// Wind
 #define WIND_OP_ANGLE_MIN -180
 #define WIND_OP_ANGLE_MAX 180
 
@@ -54,3 +54,6 @@ typedef struct {
      */
     int16_t ang_wind_r;
 } TelemetryWind_t;
+
+#define TELEMETRY_WIND_STR_SIZE 64
+char *TelemetryWind_toString(TelemetryWind_t *telemetry, char *buffer);
