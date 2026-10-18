@@ -91,12 +91,14 @@
 
 #define BNO055_REG_CALIB_OFFSET 0x55
 #define BNO055_REG_CALIB_OFFSET_SIZE 22u
+#ifdef CM7_SENSOR_IMU_PRE_CALIBRATED
 static uint8_t BNO055_CALIB_OFFSETS[BNO055_REG_CALIB_OFFSET_SIZE] = {
     0xDD, 0xFF, 0xCC, 0xFF, 0xDD, 0xFF,   // accel X, Y, Z
     0xE2, 0xFF, 0x01, 0x00, 0xEF, 0xFD,   // mag   X, Y, Z
     0xFE, 0xFF, 0x01, 0x00, 0x00, 0x00,   // gyro  X, Y, Z
     0xE8, 0x03, 0xE5, 0x01                // accel radius, mag radius
 };
+#endif
 
 typedef enum { // The calibration status register is actually split into 4 fields
     BNO055_CALIB_NONE        = 0x00, // 0b00000000
@@ -181,11 +183,14 @@ static HAL_StatusTypeDef BNO055_readSTResult(BNO055STResult_e *result) __attribu
 static HAL_StatusTypeDef BNO055_readSysStatus(BNO055SysStatus_e *status) __attribute__((unused));
 static HAL_StatusTypeDef BNO055_readSysErr(BNO055SysErr_e *err) __attribute__((unused));
 static HAL_StatusTypeDef BNO055_readOprMode(BNO055OprMode_e *mode) __attribute__((unused));
-static HAL_StatusTypeDef BNO055_readAllSensors(int16_t accXYZ[3], int16_t magXYZ[3], int16_t gyroXYZ[3], int16_t eulerHRP[3], int16_t quatWXYZ[4], int16_t linAccXYZ[3], int16_t gravXYZ[3], int8_t temp[1]);
+static HAL_StatusTypeDef BNO055_readAllSensors(int16_t accXYZ[3], int16_t magXYZ[3], int16_t gyroXYZ[3], int16_t eulerHRP[3], int16_t quatWXYZ[4], int16_t linAccXYZ[3], int16_t gravXYZ[3], int8_t temp[1], uint8_t cal[1]);
 
 static HAL_StatusTypeDef BNO055_write(uint8_t addr, uint8_t *data, uint8_t len);
-static HAL_StatusTypeDef BNO055_writeOprMode(BNO055OprMode_e mode);
-static HAL_StatusTypeDef BNO055_writeCalibOffset(uint8_t offsets[BNO055_REG_CALIB_OFFSET_SIZE]);
+static HAL_StatusTypeDef BNO055_writeOprMode(BNO055OprMode_e mode) __attribute__((unused));
+static HAL_StatusTypeDef BNO055_writeCalibOffset(uint8_t offsets[BNO055_REG_CALIB_OFFSET_SIZE]) __attribute__((unused));
+
+static void BNO055_printSystem(void) __attribute__((unused));
+static void BNO055_printCalibOffset(void) __attribute__((unused));
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -252,54 +257,63 @@ HardwareInit_e sensorIMU_hardwareInit(void)
         return HARDWARE_INIT_FAIL;
     }
     HAL_Delay(25); // Delay for the BNO055 to switch to CONFIG mode
-    // AI said that using the external crystal was more accurate then the internal 
-    // oscillator, and the AdaFruit break out supposedly has a crystal on board, so 
-    // this code enables it.
-    uint8_t sys_trigger = 0x80;
-    if ((result = BNO055_write(BNO055_REG_SYS_TRIGGER, &sys_trigger, 1)) != HAL_OK) { 
-        sensorIMU_printf("ERROR: Failed to enable BNO055 external crystal: %d", result);
-        return HARDWARE_INIT_FAIL;
-    }
-    HAL_Delay(10); // Let the clock source switch settle
 
-    // Check BNO055 calibration state
-    sensorIMU_printf("    - check BNO055 calibration state");
-    uint16_t calibration_attempts;
-    uint16_t calibration_hz;
+    // Prep BNO055 calibration state
+    sensorIMU_printf("    - prep BNO055 calibration state");
     #ifdef CM7_SENSOR_IMU_PRE_CALIBRATED // Steps for pre-calibrating the BNO055 are found on pg 53 of the BNO055 datasheet
     if ((result = BNO055_writeCalibOffset(BNO055_CALIB_OFFSETS)) != HAL_OK) {
         sensorIMU_printf("ERROR: Failed to write BNO055 calibration offsets: %d", result);
         return HARDWARE_INIT_FAIL;
     }
-    calibration_attempts = 100;
-    calibration_hz = 10;
-    // Calibration can take up to 10 seconds
-    #else
-    calibration_attempts = 600;
-    calibration_hz = 1;
-    // Calibration can take up to 6 minutes
+    sensorIMU_printf("        - wrote BNO055 calibration offsets");
     #endif
     if ((result = BNO055_writeOprMode(BNO055_OPR_MODE_NDOF)) != HAL_OK) {
         sensorIMU_printf("ERROR: Failed to set BNO055 to NDOF mode: %d", result);
         return HARDWARE_INIT_FAIL;
     }
     HAL_Delay(25); // Delay for the BNO055 to switch to NDOF mode
+    BNO055_printSystem();
+
+    #ifndef CM7_SENSOR_IMU_PRE_CALIBRATED
+    sensorIMU_printf("    - start BNO055 calibration");
     BNO055CalibState_e calib_state = BNO055_CALIB_NONE;
     uint16_t count = 0;
-    while (count < calibration_attempts) {
+    uint8_t count_success = 0;
+    while (count < 600) { // Try for up to 600 seconds (10 minutes)
         if ((result = BNO055_readCalibState(&calib_state)) != HAL_OK) {
             sensorIMU_printf("ERROR: Failed to read BNO055 calibration state: %d", result);
             return HARDWARE_INIT_FAIL;
         }
-        if (calib_state == BNO055_CALIB_SUCCESS) { sensorIMU_printf("        - BNO055 calibration successful (attempt %03d)", count); break; }
-        else { sensorIMU_printf("        - BNO055 calibration in progress (attempt %03d): %02X", count, calib_state); }
+        if ((calib_state & 0x3F) == (BNO055_CALIB_MAG_SUCCESS | BNO055_CALIB_ACC_SUCCESS | BNO055_CALIB_GYR_SUCCESS)) { count_success++; }
+        else { 
+            sensorIMU_printf("        - BNO055 calibration in progress (attempt %03d): %02X", count, calib_state); 
+            count_success = 0; 
+        }
+        if (count_success >= 5) { break; }
         count++;
-        HAL_Delay(1000 / calibration_hz); // Delay before next calibration state read
+        HAL_Delay(1000); // Delay before next calibration state read
     }
-    if (count == calibration_attempts) {
+    if (count == 600) {
         sensorIMU_printf("ERROR: BNO055 calibration failed after %03d attempts", count);
         return HARDWARE_INIT_FAIL;
     }
+    else
+    {
+        sensorIMU_printf("        - BNO055 calibration successful after %03d attempts", count);
+        if ((result = BNO055_writeOprMode(BNO055_OPR_MODE_CONFIG)) != HAL_OK) {
+            sensorIMU_printf("ERROR: Failed to set BNO055 to CONFIG mode: %d", result);
+            return HARDWARE_INIT_FAIL;
+        }
+        HAL_Delay(25); // Delay for the BNO055 to switch to CONFIG mode
+        BNO055_printCalibOffset();
+        if ((result = BNO055_writeOprMode(BNO055_OPR_MODE_NDOF)) != HAL_OK) {
+            sensorIMU_printf("ERROR: Failed to set BNO055 to NDOF mode: %d", result);
+            return HARDWARE_INIT_FAIL;
+        }
+        HAL_Delay(25); // Delay for the BNO055 to switch to NDOF mode
+        BNO055_printSystem();
+    }
+    #endif
 
     sensorIMU_printf("sensorIMU_hardwareInit complete");
     return HARDWARE_INIT_SUCCESS;
@@ -345,15 +359,15 @@ void sensorIMU_handler(void *argument)
         metadata.timestamp = HAL_GetTick();
 
         #ifdef CM7_SENSOR_IMU_FULL_DATA
-        int16_t acc[3];
-        int16_t mag[3];
-        int16_t gyr[3];
-        int16_t eulr[3];
-        int16_t grav[3];
-        HAL_StatusTypeDef status = BNO055_readAllSensors(acc, mag, gyr, eulr, metadata.quat, metadata.lnAc, grav, metadata.tmp);
+        int16_t acc[3]; // measured in cm/s^2, so just imagine the number as being 1/100 of it's display value
+        int16_t mag[3]; // convert to micro tesla by dividing by 16, not a clue how to make that useful
+        int16_t gyr[3]; // convert to degrees/s by dividing by 16
+        int16_t eulr[3]; // convert to degrees by dividing by 16
+        int16_t grav[3]; // measured in cm/s^2 but the combination of all values has to equal 9.8m/s
+        HAL_StatusTypeDef status = BNO055_readAllSensors(acc, mag, gyr, eulr, metadata.quat, metadata.lnAc, grav, metadata.tmp, metadata.cal);
         #else
         int16_t _waste[4];
-        HAL_StatusTypeDef status = BNO055_readAllSensors(_waste,_waste, _waste, _waste, metadata.quat, metadata.lnAc, _waste, metadata.tmp);
+        HAL_StatusTypeDef status = BNO055_readAllSensors(_waste,_waste, _waste, _waste, metadata.quat, metadata.lnAc, _waste, metadata.tmp, metadata.cal);
         #endif
         
         if (status != HAL_OK) {
@@ -367,11 +381,11 @@ void sensorIMU_handler(void *argument)
         char metadata_str[METADATA_IMU_STR_SIZE];
         sensorIMU_printf("%s", MetadataIMU_toString(&metadata, metadata_str));
         #ifdef CM7_SENSOR_IMU_FULL_DATA
-        sensorIMU_printf("    acc: %04d, %04d, %04d\r\n   mag: %04d, %04d, %04d\r\n   gyr: %04d, %04d, %04d\r\n   eulr: %04d, %04d, %04d\r\n   grav: %04d, %04d, %04d",
+        sensorIMU_printf("\r\n    acc: %+04d, %+04d, %+04d\r\n    mag: %+04d, %+04d, %+04d\r\n    gyr: %+04d, %+04d, %+04d\r\n    eulr: %+04d, %+04d, %+04d\r\n    grav: %+04d, %+04d, %+04d",
                          acc[0], acc[1], acc[2],
                          mag[0], mag[1], mag[2],
-                         gyr[0], gyr[1], gyr[2],
-                         eulr[0], eulr[1], eulr[2],
+                         gyr[0]/16, gyr[1]/16, gyr[2]/16,
+                         eulr[0]/16, eulr[1]/16, eulr[2]/16,
                          grav[0], grav[1], grav[2]);
         #endif
         #endif
@@ -474,15 +488,15 @@ static HAL_StatusTypeDef BNO055_readTemp(int8_t temp[1])
     return result;
 }
 
-static HAL_StatusTypeDef BNO055_readAllSensors(int16_t accXYZ[3], int16_t magXYZ[3], int16_t gyroXYZ[3], int16_t eulerHRP[3], int16_t quatWXYZ[4], int16_t linAccXYZ[3], int16_t gravXYZ[3], int8_t temp[1])
+static HAL_StatusTypeDef BNO055_readAllSensors(int16_t accXYZ[3], int16_t magXYZ[3], int16_t gyroXYZ[3], int16_t eulerHRP[3], int16_t quatWXYZ[4], int16_t linAccXYZ[3], int16_t gravXYZ[3], int8_t temp[1], uint8_t cal[1])
 {
-    uint8_t buf[45] = {0};
+    uint8_t buf[46] = {0};
     #ifdef CM7_SENSOR_IMU_FULL_DATA
-    HAL_StatusTypeDef result = BNO055_read(BNO055_REG_ACC, &buf[0], 45);
+    HAL_StatusTypeDef result = BNO055_read(BNO055_REG_ACC, &buf[0], 46);
     if (result != HAL_OK) { return result; }
     #else
     HAL_StatusTypeDef result = BNO055_read(BNO055_REG_QUATERNION, &buf[24], 14);
-    HAL_StatusTypeDef result2 = BNO055_read(BNO055_REG_TEMP, &buf[44], 1);
+    HAL_StatusTypeDef result2 = BNO055_read(BNO055_REG_TEMP, &buf[44], 2);
     if (result != HAL_OK) { return result; }
     if (result2 != HAL_OK) { return result2; }
     #endif
@@ -509,6 +523,7 @@ static HAL_StatusTypeDef BNO055_readAllSensors(int16_t accXYZ[3], int16_t magXYZ
     gravXYZ[1] =   (int16_t)(buf[41] << 8 | buf[40]);
     gravXYZ[2] =   (int16_t)(buf[43] << 8 | buf[42]);
     temp[0] =       (int8_t)(buf[44]);
+    cal[0] =        (uint8_t)(buf[45]);
 
     return result;
 }
@@ -535,3 +550,38 @@ static HAL_StatusTypeDef BNO055_write(uint8_t addr, uint8_t *data, uint8_t len)
 
 static HAL_StatusTypeDef BNO055_writeOprMode(BNO055OprMode_e mode) { return BNO055_write(BNO055_REG_OPR_MODE, (uint8_t *)&mode, 1); }
 static HAL_StatusTypeDef BNO055_writeCalibOffset(uint8_t offsets[BNO055_REG_CALIB_OFFSET_SIZE]) { return BNO055_write(BNO055_REG_CALIB_OFFSET, offsets, BNO055_REG_CALIB_OFFSET_SIZE); }
+
+
+
+static void BNO055_printSystem(void) 
+{
+    #ifdef CM7_SENSOR_IMU_DEBUG
+    BNO055OprMode_e mode = 0;      
+    BNO055_readOprMode(&mode);      
+    BNO055SysStatus_e sys_sta = 0; 
+    BNO055_readSysStatus(&sys_sta); 
+    BNO055SysErr_e sys_err = 0;    
+    BNO055_readSysErr(&sys_err);   
+    sensorIMU_printf("        - BNO055: [ %02X | %02X | %02X ]", mode, sys_sta, sys_err);
+    #endif
+}
+static void BNO055_printCalibOffset(void) 
+{
+    #ifdef CM7_SENSOR_IMU_DEBUG
+    HAL_StatusTypeDef result;
+    uint8_t calib_offsets[BNO055_REG_CALIB_OFFSET_SIZE];
+
+    if ((result = BNO055_read(BNO055_REG_CALIB_OFFSET, calib_offsets, BNO055_REG_CALIB_OFFSET_SIZE)) != HAL_OK) 
+    {
+        sensorIMU_printf("ERROR: Failed to read BNO055 calibration offsets: %d", result);
+        return;
+    }
+
+    sensorIMU_printf("        - read BNO055 calibration offsets\r\n    {\r\n    0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X,\r\n    0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X,\r\n    0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X,\r\n    0x%02X, 0x%02X, 0x%02X, 0x%02X\r\n    }",
+        calib_offsets[0], calib_offsets[1], calib_offsets[2], calib_offsets[3], calib_offsets[4], calib_offsets[5],
+        calib_offsets[6], calib_offsets[7], calib_offsets[8], calib_offsets[9], calib_offsets[10], calib_offsets[11],
+        calib_offsets[12], calib_offsets[13], calib_offsets[14], calib_offsets[15], calib_offsets[16], calib_offsets[17],
+        calib_offsets[18], calib_offsets[19], calib_offsets[20], calib_offsets[21]
+    );
+    #endif
+}

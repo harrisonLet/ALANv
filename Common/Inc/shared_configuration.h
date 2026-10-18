@@ -24,8 +24,8 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 #define CM7_ENABLE
 #define CM7_LIVE_ENABLE
-#define CM7_TELEMETRY_ENABLE
-#define CM7_SENSOR_BATTERY_ENABLE
+// #define CM7_TELEMETRY_ENABLE
+// #define CM7_SENSOR_BATTERY_ENABLE
 // #define CM7_SENSOR_ENCODER_ENABLE
 // #define CM7_SENSOR_GPS_ENABLE
 #define CM7_SENSOR_IMU_ENABLE
@@ -59,9 +59,9 @@
 #endif
 
 #ifdef CM7_SENSOR_IMU_ENABLE
-#define CM7_SENSOR_IMU_DEBUG
+// #define CM7_SENSOR_IMU_DEBUG
 #define CM7_SENSOR_IMU_PRE_CALIBRATED // If active the IMU will use the hard-coded calibration offsets
-#define CM7_SENSOR_IMU_FULL_DATA // If active the IMU will provide data for all individual sensors in additon to the fused data, if inactive it will provide only fused data
+// #define CM7_SENSOR_IMU_FULL_DATA // If active the IMU will provide data for all individual sensors in additon to the fused data, if inactive it will provide only fused data
 #endif
 
 #ifdef CM7_SENSOR_WIND_ENABLE

@@ -53,10 +53,12 @@ char *MetadataGPS_toString(const MetadataGPS_t *metadata, char buf[METADATA_GPS_
 // IMU Sensor
 char *MetadataIMU_toString(const MetadataIMU_t *metadata, char buf[METADATA_IMU_STR_SIZE])
 {
-    snprintf(buf, METADATA_IMU_STR_SIZE, "MetadataIMU (%08lu, %02X, %03u): [ %+05d | %+05d | %+05d | %+05d ] ( %+03d )",
+    snprintf(buf, METADATA_IMU_STR_SIZE, "MetadataIMU (%08lu, %02X, %03u): [ %+05d | %+05d | %+05d | %+05d ] [ %+05d | %+05d | %+05d ] ( %+03d ) { %02X }",
         (unsigned long)metadata->timestamp, (unsigned)metadata->valid, (unsigned)metadata->sequence,
         metadata->quat[0], metadata->quat[1], metadata->quat[2], metadata->quat[3],
-        metadata->tmp[0]
+        metadata->lnAc[0], metadata->lnAc[1], metadata->lnAc[2],
+        metadata->tmp[0],
+        (unsigned)metadata->cal[0]
     );
     return buf;
 }
