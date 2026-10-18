@@ -11,11 +11,13 @@
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+#define WIND_ADDR 0x02
+
 #define WIND_COUNTS     3600
 #define WIND_HALF_TURN  1800
 #define WIND_FORWARD    1800
 
-#define ANG_WRAP(angle) (int16_t)((((angle + 180) % 360 + 360) % 360) - 180)
+#define ANG_WRAP(angle) (int16_t)(((((angle) + 180) % 360 + 360) % 360) - 180)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -37,6 +39,7 @@ static uint16_t metadata_angle_prev;
 static uint8_t metadata_sequence;
 
 static HAL_StatusTypeDef wind_read(uint16_t *angle);
+static uint16_t wind_crc16(const uint8_t *buf, int len);
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -49,7 +52,7 @@ HardwareInit_e sensorWind_hardwareInit(void)
     __HAL_RCC_GPIOC_CLK_ENABLE();
     __HAL_RCC_UART4_CLK_ENABLE();
 
-    // Initialize GPIOs, 
+    // Initialize GPIOs
     sensorWind_printf("    - init hardware GPIO pins");
     GPIO_InitTypeDef GPIO_InitStruct = {0};
     GPIO_InitStruct.Pin       = GPIO_PIN_10 | GPIO_PIN_11;
@@ -82,7 +85,7 @@ HardwareInit_e sensorWind_hardwareInit(void)
     uart_handler.Init.OverSampling = UART_OVERSAMPLING_16;
     if (HAL_UART_Init(&uart_handler) != HAL_OK) { Error_Handler(); }
 
-    sensorWind_printf("    - UART7 initialized: SYSCLK:%lu, APB1:%lu, expected baud rate: 9600", 
+    sensorWind_printf("    - UART4 initialized: SYSCLK:%lu, APB1:%lu, expected baud rate: 9600", 
         HAL_RCC_GetSysClockFreq(), HAL_RCC_GetPCLK1Freq());
 
     sensorWind_printf("sensorWind_hardwareInit complete");
@@ -165,7 +168,7 @@ void sensorWind_handler(void *argument)
         xQueueOverwrite(metadata_queue, &metadata);
 
         // Telemetry
-        if (ang_unwrapped_ring.count == 0) { continue; }
+        if (ang_unwrapped_ring.count == 0 || metadata.valid != VALIDITY_VALID) { continue; }
         TelemetryWind_t telemetry;
         int32_t degrees = ((ang_unwrapped_sum / (int32_t)ang_unwrapped_ring.count) * 360) / WIND_COUNTS;
         telemetry.ang_wind = ANG_WRAP(degrees);
@@ -178,7 +181,61 @@ void sensorWind_handler(void *argument)
 
 static HAL_StatusTypeDef wind_read(uint16_t *angle)
 {
-    return HAL_ERROR;
+    uint8_t cmd[8] = {WIND_ADDR, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00};
+    uint16_t crc = wind_crc16(cmd, 6);
+    cmd[6] = crc & 0xFF;
+    cmd[7] = (crc >> 8) & 0xFF;
+    
+    // Abort any ongoing receive and clear the UART RX FIFO/shift register
+    HAL_UART_AbortReceive(&uart_handler);
+    uint8_t dummy;
+    while (HAL_UART_Receive(&uart_handler, &dummy, 1, 1) == HAL_OK) {}
+
+    // Transmit command to wind sensor
+    if (HAL_UART_Transmit(&uart_handler, cmd, 8, 100) != HAL_OK) 
+    {
+        sensorWind_printf("ERROR: Failed to transmit wind sensor command");
+        return HAL_ERROR;
+    }
+
+    // Read response (7 bytes: addr, func (0x03), byte count (0x02), data_hi, data_lo, crc_lo, crc_hi)
+    uint8_t resp[7];
+    if (HAL_UART_Receive(&uart_handler, resp, 7, 100) != HAL_OK) {
+        sensorWind_printf("ERROR: Failed to read wind sensor response");
+        return HAL_ERROR;
+    }
+
+    // Verify
+    if (resp[0] != WIND_ADDR || resp[1] != 0x03 || resp[2] != 0x02) {
+        sensorWind_printf("ERROR: Invalid wind sensor response header");
+        return HAL_ERROR;
+    }
+    uint16_t crc_calc = wind_crc16(resp, 5);
+    uint16_t crc_recv = (uint16_t)resp[5] | ((uint16_t)resp[6] << 8);
+    if (crc_calc != crc_recv) {
+        sensorWind_printf("ERROR: CRC mismatch in wind sensor response");
+        return HAL_ERROR;
+    }
+
+    // Extract angle
+    *angle = ((uint16_t)resp[3] << 8) | (uint16_t)resp[4];
+    return HAL_OK;
 }
+
+static uint16_t wind_crc16(const uint8_t *buf, int len)
+{
+    uint16_t crc = 0xFFFF;
+    for (int i = 0; i < len; i++)
+    {
+        crc ^= (uint16_t)buf[i];
+        for (int b = 8; b != 0; b--)
+        {
+            if (crc & 0x0001) { crc >>= 1; crc ^= 0xA001; }
+            else              { crc >>= 1; }
+        }
+    }
+    return crc;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////////

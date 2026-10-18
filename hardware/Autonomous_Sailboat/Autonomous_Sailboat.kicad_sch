@@ -4890,6 +4890,16 @@
 	)
 	(wire
 		(pts
+			(xy 323.85 220.98) (xy 330.2 220.98)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "59cb0da1-7386-4d9a-a128-9d8cccc5fc33")
+	)
+	(wire
+		(pts
 			(xy 218.44 170.18) (xy 237.49 170.18)
 		)
 		(stroke
@@ -5140,6 +5150,16 @@
 	)
 	(wire
 		(pts
+			(xy 323.85 223.52) (xy 342.9 223.52)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b8b6553d-f1d2-4c5a-a679-bd5646da2f20")
+	)
+	(wire
+		(pts
 			(xy 323.85 180.34) (xy 342.9 180.34)
 		)
 		(stroke
@@ -5230,6 +5250,16 @@
 	)
 	(wire
 		(pts
+			(xy 330.2 220.98) (xy 330.2 218.44)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d6be3689-c59f-46e4-a4f1-eec46897a3b5")
+	)
+	(wire
+		(pts
 			(xy 50.8 50.8) (xy 558.8 50.8)
 		)
 		(stroke
@@ -5247,6 +5277,16 @@
 			(type default)
 		)
 		(uuid "e29dd2eb-2e1e-4489-b0b5-adf26eb89758")
+	)
+	(wire
+		(pts
+			(xy 330.2 218.44) (xy 342.9 218.44)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e2a20d93-7571-451d-919c-f38a1cac9452")
 	)
 	(wire
 		(pts
@@ -5308,6 +5348,16 @@
 		)
 		(uuid "1bbf9151-5e29-45cb-abb9-0c6bf2c303f8")
 	)
+	(label "sensorWind_UART4Tx"
+		(at 342.9 218.44 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "274adcb7-7df4-4c34-9c83-ff25fab9ac5a")
+	)
 	(label "sensorGPS_UART7Rx"
 		(at 218.44 165.1 180)
 		(effects
@@ -5317,6 +5367,16 @@
 			(justify right bottom)
 		)
 		(uuid "36d6739d-cdf0-4802-a755-b6b1ba7c1a19")
+	)
+	(label "sensorWind_UART4Rx"
+		(at 342.9 223.52 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "4f47bdf0-c65c-4487-8198-7043d2f57a9a")
 	)
 	(label "B3"
 		(at 406.4 96.52 0)
