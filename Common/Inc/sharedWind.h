@@ -28,44 +28,29 @@
  */
 typedef struct {
     /**
-     * Angle at which the wind is attacking the boat.
+     * Angle of the measured wind relative to the center line of the vessel.
      *
-     * Measured in degrees this value represents the angle between the
-     * straight on "no sail zone" of the wind and the true heading of the 
-     * vessel. AKA This is the angle measured between a line going from stern
-     * to bow of the vessel and a line going directly up wind. Positive 
-     * values represent the wind is coming at the vessel from the starboard
-     * side. Negative values represent the wind is coming at the vessel from the 
-     * port side.
+     * Measured in degrees this value represents the angle of the center line of
+     * the vessel from stern to bow relative to a line going directly up wind. 
+     * Positive values represent the vessel being turned port out of the wind. Negative
+     * values represent the vessel being turned starboard out of the wind. To
+     * put it another way, positive values mean the wind is coming from the starboard
+     * side, and negative values mean the wind is coming from the port side.
      *
      * - Operational Range: -180 to 180 degrees
      * - Precision: 1 degree
      */
     int16_t ang_wind;
     /**
-     * Angle at which the wind is attacking the boat but with the frame reversed
-     * from ang_wind.
+     * Angle of the measured wind relative to the vessel, but with the frame reversed.
      *
-     * Measured in degrees this value represents the same overall value as ang_wind
-     * however it measures the angle at which the wind is attacking the boat where
-     * the running position represents 0. Positive values represent the wind attacking
-     * the vessel from the starboard side. Negative values represent the wind
-     * attakcing the vessel from the port side.
+     * Measured in degrees this value represents the angle at which the wind is 
+     * attacking the boat where the running position represents 0. Positive values 
+     * represent the wind attacking the vessel from the starboard side. Negative 
+     * values represent the wind attacking the vessel from the port side.
      *
      * - Operational Range: -180 to 180 degrees
      * - Precision: 1 degree
      */
     int16_t ang_wind_r;
-    /**
-     * Angle of the measured wind relative to the center line of the vessel.
-     *
-     * Measured in degrees this value represents the angle of the center line of
-     * the vessel relative to a line going directly up wind. Positive values
-     * represent the vessel being turned starboard out of the wind. Negative
-     * values represent the vessel being turned port out of the wind.
-     *
-     * - Operational Range: -180 to 180 degrees
-     * - Precision: 1 degree
-     */
-    int16_t ang_boat;
 } TelemetryWind_t;

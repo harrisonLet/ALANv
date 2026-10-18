@@ -5,7 +5,7 @@
 #include "sharedSensor.h"
 
 #define SENSOR_WIND_TASK "[SWIND---]"
-#define SENSOR_WIND_PRIORITY osPriorityAboveNormal
+#define SENSOR_WIND_TASK_PRIORITY osPriorityAboveNormal
 
 #ifdef CM7_SENSOR_WIND_DEBUG
 #define SENSOR_WIND_TASK_HEAP 300
@@ -15,7 +15,7 @@
 #define sensorWind_printf(...) ((void)0)
 #endif
 
-#define SENSOR_WIND_FREQUENCY 100u // Hz, this value is primarily limited by the i2c bus speed, max: ~300Hz
+#define SENSOR_WIND_FREQUENCY 1u // Hz, 
 #define SENSOR_WIND_WINDOW 10u // num readings
 #define SENSOR_WIND_STALE 100u // ms before data is considered stale
 

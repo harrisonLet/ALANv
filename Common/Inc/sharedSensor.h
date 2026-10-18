@@ -153,11 +153,12 @@ char *MetadataIMU_toString(const MetadataIMU_t *metadata, char buf[METADATA_IMU_
  * SENSOR: Wind Sensor
  */
 typedef struct {
+    uint16_t angle;   /**< Wind angle reading, fixed point representation with 1/10th of a degree precision, ie 65 represents 6.5 degrees */
 
     uint32_t timestamp; /**< Timestamp for when the measurement was taken, measured in ms */
     uint8_t valid; /**< Indicates if the measurement is valid */
     uint8_t sequence; /**< Sequence number of the measurement, used to ensure a measurment is actually new */
 } MetadataWind_t;
 
-#define METADATA_WIND_STR_SIZE 128u
+#define METADATA_WIND_STR_SIZE 46u
 char *MetadataWind_toString(const MetadataWind_t *metadata, char buf[METADATA_WIND_STR_SIZE]);

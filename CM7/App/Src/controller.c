@@ -155,6 +155,15 @@ void live_handler(void *argument)
         #ifdef CM7_SENSOR_ENCODER_ENABLE
         live_printf("StackHW (sensorEncoder)=%u", (unsigned)uxTaskGetStackHighWaterMark(sensorEncoder_task));
         #endif
+        #ifdef CM7_SENSOR_GPS_ENABLE
+        live_printf("StackHW (sensorGPS)=%u", (unsigned)uxTaskGetStackHighWaterMark(sensorGPS_task));
+        #endif
+        #ifdef CM7_SENSOR_IMU_ENABLE
+        live_printf("StackHW (sensorIMU)=%u", (unsigned)uxTaskGetStackHighWaterMark(sensorIMU_task));
+        #endif
+        #ifdef CM7_SENSOR_WIND_ENABLE
+        live_printf("StackHW (sensorWind)=%u", (unsigned)uxTaskGetStackHighWaterMark(sensorWind_task));
+        #endif
         #endif
 
         HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0);

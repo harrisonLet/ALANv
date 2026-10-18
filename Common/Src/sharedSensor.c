@@ -69,5 +69,9 @@ char *MetadataIMU_toString(const MetadataIMU_t *metadata, char buf[METADATA_IMU_
 // Wind Sensor
 char *MetadataWind_toString(const MetadataWind_t *metadata, char buf[METADATA_WIND_STR_SIZE])
 {
+    snprintf(buf, METADATA_WIND_STR_SIZE, "MetadataWind (%08lu, %02X, %03u): [ %05u ]",
+        (unsigned long)metadata->timestamp, (unsigned)metadata->valid, (unsigned)metadata->sequence,
+        (unsigned)metadata->angle
+    );
     return buf;
 }
