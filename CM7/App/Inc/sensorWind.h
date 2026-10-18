@@ -15,7 +15,7 @@
 #define sensorWind_printf(...) ((void)0)
 #endif
 
-#define SENSOR_WIND_FREQUENCY 1u // Hz, 
+#define SENSOR_WIND_FREQUENCY 1u // Hz, This is mostly limited by the UART timeout, max is about 30Hz
 #define SENSOR_WIND_WINDOW 10u // num readings
 #define SENSOR_WIND_STALE 100u // ms before data is considered stale
 

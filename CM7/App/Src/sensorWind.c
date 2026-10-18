@@ -143,7 +143,8 @@ void sensorWind_handler(void *argument)
         }
         else 
         {
-            metadata.valid = VALIDITY_VALID;
+            if (metadata.angle >= WIND_COUNTS) { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
+            else { metadata.valid = VALIDITY_VALID; }
 
             if (metadata.valid == VALIDITY_VALID)
             {
@@ -186,13 +187,12 @@ static HAL_StatusTypeDef wind_read(uint16_t *angle)
     cmd[6] = crc & 0xFF;
     cmd[7] = (crc >> 8) & 0xFF;
     
-    // Abort any ongoing receive and clear the UART RX FIFO/shift register
-    HAL_UART_AbortReceive(&uart_handler);
-    uint8_t dummy;
-    while (HAL_UART_Receive(&uart_handler, &dummy, 1, 1) == HAL_OK) {}
+    // Clear overrun flag and flush the RX data register
+    __HAL_UART_CLEAR_OREFLAG(&uart_handler);
+    __HAL_UART_FLUSH_DRREGISTER(&uart_handler);
 
     // Transmit command to wind sensor
-    if (HAL_UART_Transmit(&uart_handler, cmd, 8, 100) != HAL_OK) 
+    if (HAL_UART_Transmit(&uart_handler, cmd, 8, 30) != HAL_OK) 
     {
         sensorWind_printf("ERROR: Failed to transmit wind sensor command");
         return HAL_ERROR;
@@ -200,7 +200,7 @@ static HAL_StatusTypeDef wind_read(uint16_t *angle)
 
     // Read response (7 bytes: addr, func (0x03), byte count (0x02), data_hi, data_lo, crc_lo, crc_hi)
     uint8_t resp[7];
-    if (HAL_UART_Receive(&uart_handler, resp, 7, 100) != HAL_OK) {
+    if (HAL_UART_Receive(&uart_handler, resp, 7, 30) != HAL_OK) {
         sensorWind_printf("ERROR: Failed to read wind sensor response");
         return HAL_ERROR;
     }
