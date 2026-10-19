@@ -7,9 +7,16 @@
 #define HSEM_DOORBELL_MASK (__HAL_HSEM_SEMID_TO_MASK(IPC_HSEM_CMD_BELL))
 #define DOORBELL_IRQ_PRIORITY (6U)
 
-static TaskHandle_t command_task = NULL;
+// How many times the CM7 should try and send telemetry before issuing a warning
+#define TELEM_BUSY_WARN_COUNT (5U)
 
-// MUST BE CALLED BY TASK THAT HANDLES CM7 COMS NOT HWINIT()
+static TaskHandle_t command_task = NULL;
+static uint32_t telem_busy_count = 0;
+
+/* NOTE: Only ONE task can use these commands as the HWSEM allows
+multiple threads to 'take' the same semaphore. */
+
+// Must be called by the specific single task mentioned above, not before
 void ipc_cm7_init(void) {
     command_task = xTaskGetCurrentTaskHandle();
     
@@ -37,13 +44,30 @@ void HAL_HSEM_FreeCallback(uint32_t SemMask) {
     }
 }
 
-bool ipc_cm7_pop_command(ipc_cmd_t *cmd) {
-    return ipc_cmd_pop(cmd);
+ipc_status_t ipc_cm7_pop_command(ipc_cmd_t *cmd) {
+    ipc_status_t status = ipc_cmd_pop(cmd);
+
+    // EMPTY is the normal end of a drain loop, only CORRUPT is an error
+    if (status == IPC_STATUS_CORRUPT) {
+        printf("%s ERROR: %s command record (len %u > max %u), command ring flushed\r\n",
+        IPC_TASK, ipc_status_str(status), (unsigned)cmd->hdr.len, (unsigned)IPC_CMD_MAX_PAYLOAD);
+    }
+    return status;
 }
 
-bool ipc_cm7_publish_telemetry(ipc_telemetry_t *telem) {
-    return ipc_telem_write(telem);
+ipc_status_t ipc_cm7_publish_telemetry(ipc_telemetry_t *telem) {
+    ipc_status_t status = ipc_telem_write(telem);
+
+    if (status == IPC_STATUS_OK) {
+        if (telem_busy_count >= TELEM_BUSY_WARN_COUNT) {
+            printf("%s Telemetry publish recovered after %lu skipped rounds\r\n",
+                   IPC_TASK, (unsigned long)telem_busy_count);
+        }
+        telem_busy_count = 0;
+    }
+    else if (++telem_busy_count == TELEM_BUSY_WARN_COUNT) {
+        printf("%s ERROR: Telemetry publish %s %lu times in a row, CM4 may be stuck holding HSEM %u\r\n",
+               IPC_TASK, ipc_status_str(status), (unsigned long)telem_busy_count, (unsigned)IPC_HSEM_TELEM);
+    }
+    return status;
 }
-
-
-

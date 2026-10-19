@@ -4,8 +4,10 @@
 #include <stdbool.h>
 #include "ipc.h"
 
+#define IPC_TASK "[IPC]"
+
 void ipc_cm7_init(void);
-bool ipc_cm7_publish_telemetry(ipc_telemetry_t *telem);
-bool ipc_cm7_pop_command(ipc_cmd_t *cmd);
+ipc_status_t ipc_cm7_publish_telemetry(ipc_telemetry_t *telem);
+ipc_status_t ipc_cm7_pop_command(ipc_cmd_t *cmd);
 
 #endif

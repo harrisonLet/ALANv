@@ -161,7 +161,7 @@ int main(void)
 
   #if defined(IPC_ENABLE)
   // Initialize IPC and wait 5s for Cm7 to setup shared memory 
-  if (!ipc_cm4_attach(5000U)) {
+  if (ipc_cm4_attach(5000U) != IPC_STATUS_OK) {
     // Set Red LED if IPC handshake with CM7 fails
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
   }

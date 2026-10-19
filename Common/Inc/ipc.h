@@ -12,7 +12,7 @@
 
 #define IPC_SHARED_BASE         (0x38000000UL)
 #define IPC_SHARED_SIZE         (64UL * 1024UL)
-#define IPC_MAGIC               (0x12345678UL)
+#define IPC_MAGIC               (0x414C414EUL) // ALAN in ASCII
 #define IPC_REV                 (1U)
 
 #define IPC_CMD_RING_SIZE       (2048U)
@@ -25,6 +25,18 @@
 enum { IPC_MODE_MANUAL, IPC_MODE_AUTO, IPC_MODE_SAFE };
 enum { IPC_CMD_MANUAL_STEP = 1, IPC_CMD_SHUTDOWN, IPC_CMD_WAYPOINT, IPC_CMD_ROUTE_COMMIT };
 enum { IPC_RESULT_NONE, IPC_RESULT_OK, IPC_RESULT_UNSUPPORTED, IPC_RESULT_BAD_LEN };
+
+// Return codes for the IPC API. Separate from IPC_RESULT_*, which is telemetry data sent to the ground station
+typedef enum {
+    IPC_STATUS_OK = 0,
+    IPC_STATUS_BUSY,                // Other core holds the HSEM, try next round
+    IPC_STATUS_EMPTY,               // Nothing to pop (normal, not a failure)
+    IPC_STATUS_FULL,                // Not enough ring space
+    IPC_STATUS_BAD_LEN,             // Payload longer than IPC_CMD_MAX_PAYLOAD
+    IPC_STATUS_CORRUPT,             // Bad record header, ring was flushed
+    IPC_STATUS_TIMEOUT,             // Attach: magic never appeared
+    IPC_STATUS_VERSION_MISMATCH,    // Attach: cores built with different layouts
+} ipc_status_t;
 
 typedef struct {
     uint32_t uptime_ms;
@@ -104,18 +116,20 @@ _Static_assert(offsetof(ipc_cmd_t, payload) == sizeof(ipc_cmd_hdr_t), "payload m
 _Static_assert(IPC_CMD_RECORD_SIZE(IPC_CMD_MAX_PAYLOAD) <= IPC_CMD_RING_SIZE, "max command does not fit in ring");
 _Static_assert(sizeof(ipc_shared_t) <= IPC_SHARED_SIZE, "ipc_shared_t does not fit in SRAM4");
 
+const char *ipc_status_str(ipc_status_t status);
+
 bool ipc_lock(uint32_t hsem_id);
 void ipc_unlock(uint32_t hsem_id);
 
 #ifdef CORE_CM4
-bool ipc_cmd_push(const ipc_cmd_t *cmd);
-bool ipc_telem_read(ipc_telemetry_t *telem, uint32_t *telem_seq);
+ipc_status_t ipc_cmd_push(const ipc_cmd_t *cmd);
+ipc_status_t ipc_telem_read(ipc_telemetry_t *telem, uint32_t *telem_seq);
 #endif
 
 #ifdef CORE_CM7
 void ipc_init(void);
-bool ipc_cmd_pop(ipc_cmd_t *cmd);
-bool ipc_telem_write(ipc_telemetry_t *telem);
+ipc_status_t ipc_cmd_pop(ipc_cmd_t *cmd);
+ipc_status_t ipc_telem_write(ipc_telemetry_t *telem);
 #endif
 
 #endif

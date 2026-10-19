@@ -4,8 +4,8 @@
 #include <stdbool.h>
 #include "ipc.h"
 
-bool ipc_cm4_attach(uint32_t timeout_ms);
-bool ipc_cm4_read_telemetry(ipc_telemetry_t *telem, uint32_t *seq);
-bool ipc_cm4_push_command(ipc_cmd_t *cmd);
+ipc_status_t ipc_cm4_attach(uint32_t timeout_ms);
+ipc_status_t ipc_cm4_read_telemetry(ipc_telemetry_t *telem, uint32_t *seq);
+ipc_status_t ipc_cm4_push_command(ipc_cmd_t *cmd);
 
 #endif
