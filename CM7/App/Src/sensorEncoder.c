@@ -224,9 +224,11 @@ void sensorEncoder_handler(void *argument)
         }
         else
         {
-            if      (metadata.status & AS5600_STATUS_MH) { metadata.valid = VALIDITY_UNTRUSTED_OVER_SATURATION; }
-            else if (metadata.status & AS5600_STATUS_ML) { metadata.valid = VALIDITY_UNTRUSTED_UNDER_SATURATION; }
-            else                                         { metadata.valid = VALIDITY_VALID; }
+            if      (metadata.status & AS5600_STATUS_MH)  { metadata.valid = VALIDITY_UNTRUSTED_OVER_SATURATION; }
+            else if (metadata.status & AS5600_STATUS_ML)  { metadata.valid = VALIDITY_UNTRUSTED_UNDER_SATURATION; }
+            else if (metadata.raw_angle > ENCODER_COUNTS) { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
+            else if (metadata.angle > 360)                { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
+            else                                          { metadata.valid = VALIDITY_VALID; }
             
             if (metadata.valid == VALIDITY_VALID) {
                 int32_t delta = (int32_t)metadata.angle - metadata_angle_prev;
@@ -251,7 +253,7 @@ void sensorEncoder_handler(void *argument)
 
         // Telemetry
         if (ang_unwrapped_ring.count == 0) { continue; }
-        TelemetryMainSail_t telemetry;
+        TelemetryMainSail_t telemetry = {0};
         int32_t degrees = ((ang_unwrapped_sum / (int32_t)ang_unwrapped_ring.count) * 360) / ENCODER_COUNTS;
         telemetry.ang_forward = (int16_t)((((degrees + 180) % 360) + 360) % 360 - 180);
         if      (degrees > 0) { telemetry.ang_starboard = degrees; telemetry.ang_port = 0; }
