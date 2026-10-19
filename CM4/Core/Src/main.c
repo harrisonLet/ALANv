@@ -19,7 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "shared_configuration.h"
-#include "crossCoreComCM4.h"
+#include "ipcCM4.h"
 
 #include "lora.h"
 #include "servoRudder.h"
@@ -160,8 +160,8 @@ int main(void)
   Debug_LED_Init();
 
   #if defined(IPC_ENABLE)
-  // Initialize CrossCoreCom and wait 5s for Cm7 to setup shared memory 
-  if (!crossCoreComCM4_attach(5000U)) {
+  // Initialize IPC and wait 5s for Cm7 to setup shared memory 
+  if (!ipc_cm4_attach(5000U)) {
     // Set Red LED if IPC handshake with CM7 fails
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
   }

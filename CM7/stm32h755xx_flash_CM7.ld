@@ -220,7 +220,7 @@ SECTIONS
     . = ALIGN(8);
   } >RAM
 
-  /* Setup allocation for ipc_shared - Defined in crossCoreCom.c */
+  /* Setup allocation for ipc_shared - Defined in ipc.c */
   .ipc_shared (NOLOAD) :
   {
     . = ALIGN(4);

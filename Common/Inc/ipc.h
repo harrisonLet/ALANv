@@ -1,5 +1,5 @@
-#ifndef CROSS_CORE_COM_H
-#define CROSS_CORE_COM_H
+#ifndef IPC_H
+#define IPC_H
 
 #include <stdint.h>
 #include <stddef.h>

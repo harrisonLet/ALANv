@@ -63,7 +63,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/sysmem.c
     Core/Src/syscalls.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../Common/Src/system_stm32h7xx_dualcore_boot_cm4_cm7.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../Common/Src/crossCoreCom.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../Common/Src/ipc.c
     ${COMMON_DRIVER_SOURCES}
 )
 

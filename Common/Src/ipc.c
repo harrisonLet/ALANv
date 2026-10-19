@@ -1,4 +1,4 @@
-#include "crossCoreCom.h"
+#include "ipc.h"
 #include <string.h>
 #include "stm32h7xx_hal.h"
 

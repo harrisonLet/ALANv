@@ -1,7 +1,7 @@
 #include "system.h"
 #include "controller.h"
 #include "shared_configuration.h"
-#include "crossCoreCom.h"
+#include "ipc.h"
 
 #include "servoShared.h"
 #include "servoSail.h"
@@ -10,7 +10,7 @@
 #include "sensorMagnetometer.h"
 #include "sensorEncoder.h"
 #include "sensorGPS.h"
-#include "crossCoreComCM7.h"
+#include "ipcCM7.h"
 
 #include "semphr.h"
 
@@ -64,7 +64,7 @@ void hardware_init(void) {
     sensorGPS_hardwareInit();
     #endif
 
-    #ifdef IPC_MAGIC
+    #ifdef IPC_ENABLE
     ipc_init(); // Common Shared Memory (SRAM4) init
     #endif
 }

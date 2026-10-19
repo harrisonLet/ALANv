@@ -1,4 +1,4 @@
-#include <crossCoreComCM7.h>
+#include "ipcCM7.h"
 
 #include "shared_configuration.h"
 #include "system.h"
@@ -10,7 +10,7 @@
 static TaskHandle_t command_task = NULL;
 
 // MUST BE CALLED BY TASK THAT HANDLES CM7 COMS NOT HWINIT()
-void crossCoreComCM7_init(void) {
+void ipc_cm7_init(void) {
     command_task = xTaskGetCurrentTaskHandle();
     
     // Set up Interrut Callbacks for HSEM 2 (CM4's command doorbell)
@@ -37,11 +37,11 @@ void HAL_HSEM_FreeCallback(uint32_t SemMask) {
     }
 }
 
-bool crossCoreComCM7_popCommand(ipc_cmd_t *cmd) {
+bool ipc_cm7_pop_command(ipc_cmd_t *cmd) {
     return ipc_cmd_pop(cmd);
 }
 
-bool crossCoreComCM7_publishTelemetry(ipc_telemetry_t *telem) {
+bool ipc_cm7_publish_telemetry(ipc_telemetry_t *telem) {
     return ipc_telem_write(telem);
 }
 
