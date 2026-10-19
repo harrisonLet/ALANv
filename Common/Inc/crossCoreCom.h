@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #define IPC_HSEM_TELEM          (1U)
 #define IPC_HSEM_CMD_BELL       (2U)

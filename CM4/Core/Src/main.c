@@ -134,7 +134,10 @@ int main(void)
   /* USER CODE BEGIN Init */
 
   // Initialize CrossCoreCom and wait 5s for Cm7 to setup shared memory 
-  crossCoreComCM4_attach(5000U); 
+  if (!crossCoreComCM4_attach(5000U)) {
+    // Toggle Red LED if IPC handshake with CM7 fails
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
+  }
 
   /* USER CODE END Init */
 
