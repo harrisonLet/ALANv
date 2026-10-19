@@ -2,11 +2,7 @@
 #include <string.h>
 #include "stm32h7xx_hal.h"
 
-/* NOTE: The ring buffer used to store commands will rarely exceed 1 command due to the LORA send rate 
-being much slower than the CM7 task that will drain the entire ring buffer on every interrupt. 
-The buffer is implemented incase the CM7 gets caught or slightly lags. */
-
-// Allocate both memory structs into SRAM4 (.ld IPC_SHARED section handles actual allocation)
+// Allocate both memory structs into SRAM4 (.ipc_shared section in both .ld files handles actual allocation)
 ipc_shared_t ipc_shared __attribute__((section(".ipc_shared")));
 
 const char *ipc_status_str(ipc_status_t status) {
@@ -23,7 +19,6 @@ const char *ipc_status_str(ipc_status_t status) {
     return "UNKNOWN";
 }
 
-// Attempt to take hardware semaphore
 bool ipc_lock(uint32_t hsem_id) {
     if (HAL_HSEM_FastTake(hsem_id) != HAL_OK) {
         return false;
@@ -38,7 +33,13 @@ void ipc_unlock(uint32_t hsem_id) {
 }
 
 #ifdef CORE_CM4 // Block these functions if CM4 is not configured
-// pos is a free-running byte count, wraps to the start of data[] when needed
+/**
+  * @brief  Copy bytes into the command ring, splitting across the end of data[] if needed.
+  * @param  pos        Free-running byte count (head), wraps to the start of data[].
+  * @param  src        Bytes to copy.
+  * @param  num_bytes  Number of bytes to copy.
+  * @retval None
+  */
 static void ipc_buf_write(uint32_t pos, const void *src, uint32_t num_bytes) {
     // MOD 2048 to get the data's 'index' in the buffer
     uint32_t buf_index = pos & (IPC_CMD_RING_SIZE - 1U);
@@ -72,6 +73,10 @@ ipc_status_t ipc_cmd_push(const ipc_cmd_t *cmd) {
     ipc_buf_write(head, cmd, sizeof(ipc_cmd_hdr_t) + cmd->hdr.len);
     __DMB(); // Complete all write operations before updating head and returning
     ipc_shared.cmd.head = head + record_size;
+
+    // Trigger CM7s task interrupt (ring the doorbell)
+    ipc_lock(IPC_HSEM_CMD_BELL);
+    ipc_unlock(IPC_HSEM_CMD_BELL);
     return IPC_STATUS_OK;
 }
 
@@ -128,6 +133,13 @@ void ipc_init(void) {
     ipc_shared.magic = IPC_MAGIC;
 }
 
+/**
+  * @brief  Copy bytes out of the command ring, splitting across the end of data[] if needed.
+  * @param  pos        Free-running byte count (tail), wraps to the start of data[].
+  * @param  dst        Destination for the bytes.
+  * @param  num_bytes  Number of bytes to copy.
+  * @retval None
+  */
 static void ipc_buf_read(uint32_t pos, void *dst, uint32_t num_bytes) {
     // Mod 2048 (struct is 2048 Bytes) to get its index
     uint32_t buf_index = pos & (IPC_CMD_RING_SIZE - 1U);
@@ -155,8 +167,9 @@ ipc_status_t ipc_cmd_pop(ipc_cmd_t *cmd) {
     __DMB(); // Make sure reading is done with updated head/tail
 
     ipc_buf_read(tail, &cmd->hdr, sizeof(ipc_cmd_hdr_t));
+    // Check for corrupt record, clear ring buffer if so 
     if (cmd->hdr.len > IPC_CMD_MAX_PAYLOAD) {
-        // Corrupt record, drop everything currently in the ring
+        // setting tail to head marks all data as free (clears ring buffer)
         ipc_shared.cmd.tail = head;
         return IPC_STATUS_CORRUPT;
     }

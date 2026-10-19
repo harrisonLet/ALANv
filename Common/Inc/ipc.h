@@ -1,3 +1,27 @@
+/*
+ * ipc.h - Inter-processor communication between the CM7 and CM4
+ *
+ * Shared layout and low-level functions. Application code should use the
+ * per-core APIs instead: ipcCM7.h on the CM7, ipcCM4.h on the CM4.
+ *
+ * Both channels live in one block, ipc_shared, in SRAM4 (0x38000000):
+ *   - Telemetry (CM7 -> CM4): one latest-value copy guarded by HSEM 1. Only the
+ *     newest value matters, so a BUSY read or write is skipped, not retried.
+ *   - Commands (CM4 -> CM7): a lock-free byte ring (CM4 only writes, CM7 only
+ *     reads) plus HSEM 2 as a doorbell interrupt that wakes the CM7. The ring
+ *     rarely holds more than one command, since LoRa delivers commands far slower
+ *     than the CM7 drains them. It only buffers if the CM7 lags.
+ *
+ * Rules:
+ *   - HSEM 0 is the CubeMX boot handshake. Do not reuse it.
+ *   - After changing ipc_shared_t, bump IPC_REV and reflash BOTH cores.
+ *     IPC_VERSION catches size changes automatically, but not same-size ones.
+ *   - Shared structs use fixed-width integer fields, never enum types
+ *     (enum size depends on compiler flags).
+ *   - ipc_shared must be at 0x38000000 in both images. The .ipc_shared section
+ *     and its ASSERT in both .ld files enforce this.
+ */
+
 #ifndef IPC_H
 #define IPC_H
 
@@ -116,19 +140,73 @@ _Static_assert(offsetof(ipc_cmd_t, payload) == sizeof(ipc_cmd_hdr_t), "payload m
 _Static_assert(IPC_CMD_RECORD_SIZE(IPC_CMD_MAX_PAYLOAD) <= IPC_CMD_RING_SIZE, "max command does not fit in ring");
 _Static_assert(sizeof(ipc_shared_t) <= IPC_SHARED_SIZE, "ipc_shared_t does not fit in SRAM4");
 
+/**
+  * @brief  Get a printable name for a status code, e.g. "CORRUPT".
+  * @param  status  Status code to convert.
+  * @retval Constant string, "UNKNOWN" for values outside ipc_status_t.
+  */
 const char *ipc_status_str(ipc_status_t status);
 
+/**
+  * @brief  Try once to take a hardware semaphore. Never spins.
+  * @param  hsem_id  HSEM to take (IPC_HSEM_*).
+  * @retval true   Taken.
+  * @retval false  Held by the other core.
+  * @note   Only locks out the other core: a second task on the same core would also succeed.
+  */
 bool ipc_lock(uint32_t hsem_id);
+
+/**
+  * @brief  Release a hardware semaphore taken with ipc_lock().
+  * @param  hsem_id  HSEM to release (IPC_HSEM_*).
+  * @retval None
+  */
 void ipc_unlock(uint32_t hsem_id);
 
 #ifdef CORE_CM4
+/**
+  * @brief  Copy a command into the command ring and ring the HSEM 2 doorbell to wake the CM7.
+  * @param  cmd  Command to queue. Only the header and hdr.len payload bytes are copied.
+  * @retval IPC_STATUS_OK       Queued.
+  * @retval IPC_STATUS_FULL     Not enough room, nothing queued.
+  * @retval IPC_STATUS_BAD_LEN  hdr.len > IPC_CMD_MAX_PAYLOAD, nothing queued.
+  */
 ipc_status_t ipc_cmd_push(const ipc_cmd_t *cmd);
+
+/**
+  * @brief  Copy the latest telemetry and its sequence number.
+  * @param  telem      Destination for the telemetry.
+  * @param  telem_seq  Destination for the sequence number.
+  * @retval IPC_STATUS_OK    Copied.
+  * @retval IPC_STATUS_BUSY  CM7 is mid-write, nothing copied.
+  */
 ipc_status_t ipc_telem_read(ipc_telemetry_t *telem, uint32_t *telem_seq);
 #endif
 
 #ifdef CORE_CM7
+/**
+  * @brief  Prepare SRAM4: make it non-cacheable, clear ipc_shared, then write version and magic.
+  * @retval None
+  * @note   Call once at boot, before releasing the CM4 from HSEM 0.
+  * @note   Uses MPU region 0.
+  */
 void ipc_init(void);
+
+/**
+  * @brief  Copy the oldest command out of the ring and free its space.
+  * @param  cmd  Destination for the command.
+  * @retval IPC_STATUS_OK       Command copied into cmd.
+  * @retval IPC_STATUS_EMPTY    Nothing queued.
+  * @retval IPC_STATUS_CORRUPT  Bad record header, all queued commands dropped.
+  */
 ipc_status_t ipc_cmd_pop(ipc_cmd_t *cmd);
+
+/**
+  * @brief  Copy telemetry into shared memory and increment telem_seq.
+  * @param  telem  Telemetry to publish.
+  * @retval IPC_STATUS_OK    Published.
+  * @retval IPC_STATUS_BUSY  CM4 is mid-read, nothing written.
+  */
 ipc_status_t ipc_telem_write(ipc_telemetry_t *telem);
 #endif
 

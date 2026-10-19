@@ -13,10 +13,6 @@
 static TaskHandle_t command_task = NULL;
 static uint32_t telem_busy_count = 0;
 
-/* NOTE: Only ONE task can use these commands as the HWSEM allows
-multiple threads to 'take' the same semaphore. */
-
-// Must be called by the specific single task mentioned above, not before
 void ipc_cm7_init(void) {
     command_task = xTaskGetCurrentTaskHandle();
     
@@ -27,10 +23,20 @@ void ipc_cm7_init(void) {
     HAL_NVIC_EnableIRQ(HSEM1_IRQn);
 }
 
+/**
+  * @brief  CM7's HSEM interrupt line. HAL clears and disables the notifications that fired,
+  *         then calls HAL_HSEM_FreeCallback().
+  * @retval None
+  */
 void HSEM1_IRQHandler(void) {
     HAL_HSEM_IRQHandler();
 }
 
+/**
+  * @brief  Re-arm the doorbell and wake the comms task. Runs in interrupt context.
+  * @param  SemMask  Mask of the semaphores that were released.
+  * @retval None
+  */
 void HAL_HSEM_FreeCallback(uint32_t SemMask) {
     if (SemMask & HSEM_DOORBELL_MASK) {
         HAL_HSEM_ActivateNotification(HSEM_DOORBELL_MASK);
