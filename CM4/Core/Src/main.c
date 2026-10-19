@@ -133,12 +133,6 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 
-  // Initialize CrossCoreCom and wait 5s for Cm7 to setup shared memory 
-  if (!crossCoreComCM4_attach(5000U)) {
-    // Toggle Red LED if IPC handshake with CM7 fails
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
-  }
-
   /* USER CODE END Init */
 
   /* USER CODE BEGIN SysInit */
@@ -164,6 +158,14 @@ int main(void)
   MX_TIM6_Init();
 
   Debug_LED_Init();
+
+  #if defined(IPC_ENABLE)
+  // Initialize CrossCoreCom and wait 5s for Cm7 to setup shared memory 
+  if (!crossCoreComCM4_attach(5000U)) {
+    // Set Red LED if IPC handshake with CM7 fails
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
+  }
+  #endif
 
   #if defined(CM4_SERVOS_ENABLE)
   servoRudder_init();

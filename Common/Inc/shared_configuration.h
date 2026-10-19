@@ -2,12 +2,13 @@
 // Shared Configuration
 /////////////////////////////////////////////////////////////////////////////////////////
 #define DUAL_CORE_BOOT_SYNC_SEQUENCE
+#define IPC_ENABLE // Cross Core Communication
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // CM4 Configuration
 /////////////////////////////////////////////////////////////////////////////////////////
-// #define CM4_ENABLE
+#define CM4_ENABLE
 // #define CM4_SERVOS_ENABLE
 
 
@@ -15,10 +16,10 @@
 // CM7 Configuration
 /////////////////////////////////////////////////////////////////////////////////////////
 #define CM7_ENABLE
-#define CM7_LIVE_ENABLE
+// #define CM7_LIVE_ENABLE
 // #define CM7_BUTTON_ENABLE
-#define CM7_SERVO_SAIL_ENABLE
-#define CM7_SERVO_RUDDER_ENABLE
+// #define CM7_SERVO_SAIL_ENABLE
+// #define CM7_SERVO_RUDDER_ENABLE
 // #define CM7_SENSOR_WIND_ENABLE
 // #define CM7_SENSOR_MAGNETOMETER_ENABLE
 // #define CM7_SENSOR_ENCODER_ENABLE

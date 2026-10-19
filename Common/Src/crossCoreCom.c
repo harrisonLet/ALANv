@@ -2,7 +2,7 @@
 #include <string.h>
 #include "stm32h7xx_hal.h"
 
-// Allocate both memory structs into SRAM4 (linker handles actual allocation)
+// Allocate both memory structs into SRAM4 (.ld IPC_SHARED section handles actual allocation)
 ipc_shared_t ipc_shared __attribute__((section(".ipc_shared")));
 
 // Attempt to take hardware semaphore

@@ -11,12 +11,11 @@ bool crossCoreComCM4_attach(uint32_t timeout_ms) {
         if (ipc_shared.magic == IPC_MAGIC) {
             __DMB();
             if (ipc_shared.version == IPC_VERSION) {
-                printf("IPC Init Complete and Version Verified");
+                // IPC Init Complete and Version Verified
                 return true;
             } 
             else {
-                printf("ERROR: IPC setup but version mismatch, CM7: %lu | CM4: %lu", 
-                    (unsigned long)ipc_shared.version, (unsigned long)IPC_VERSION);
+                // ERROR: IPC setup but version mismatch
                 return false;
             }
         }
