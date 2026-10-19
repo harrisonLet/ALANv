@@ -1,4 +1,5 @@
 #include "main.h"
+#include "projdefs.h"
 #include "system.h"
 #include "controller.h"
 #include "telemetry.h"
@@ -149,6 +150,10 @@ void live_handler(void *argument)
     {
         #ifdef CM7_LIVE_DEBUG_STACK
         live_printf("StackHW (Live): %u", (unsigned)uxTaskGetStackHighWaterMark(NULL));
+        #ifdef CM7_TELEMETRY_ENABLE
+        live_printf("StackHW (telemetry)=%u", (unsigned)uxTaskGetStackHighWaterMark(telemetry_task));
+        #endif
+
         #ifdef CM7_SENSOR_BATTERY_ENABLE
         live_printf("StackHW (sensorBattery)=%u", (unsigned)uxTaskGetStackHighWaterMark(sensorBattery_task));
         #endif
@@ -164,10 +169,11 @@ void live_handler(void *argument)
         #ifdef CM7_SENSOR_WIND_ENABLE
         live_printf("StackHW (sensorWind)=%u", (unsigned)uxTaskGetStackHighWaterMark(sensorWind_task));
         #endif
+        
         #endif
 
         HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0);
-        vTaskDelay(1000 * portTICK_PERIOD_MS);
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 

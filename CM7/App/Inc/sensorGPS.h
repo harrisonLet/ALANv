@@ -5,13 +5,13 @@
 #include "sharedSensor.h"
 
 #define SENSOR_GPS_TASK "[SGPS----]"
-#define SENSOR_GPS_TASK_PRIORITY osPriorityNormal
+#define SENSOR_GPS_TASK_PRIORITY osPriorityLow
 
 #ifdef CM7_SENSOR_GPS_DEBUG
-#define SENSOR_GPS_TASK_HEAP 500
+#define SENSOR_GPS_TASK_HEAP 350 // ~64B of extra, tested without a a GPS lock so it might be too small
 #define sensorGPS_printf(fmt, ...) DEBUG_PRINTF(SENSOR_GPS_TASK, fmt, ##__VA_ARGS__)
 #else
-#define SENSOR_GPS_TASK_HEAP 250
+#define SENSOR_GPS_TASK_HEAP 170 // ~64B of extra, tested without a GPS lock so it might be too small
 #define sensorGPS_printf(...) ((void)0)
 #endif
 

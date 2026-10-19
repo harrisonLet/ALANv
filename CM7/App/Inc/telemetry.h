@@ -15,8 +15,8 @@
 #define TELEMETRY_TASK_HEAP 500
 #define telemetry_printf(fmt, ...) DEBUG_PRINTF(TELEMETRY_TASK, fmt, ##__VA_ARGS__)
 #else
-#define TELEMETRY_TASK_HEAP 250
-#define telemetry_printf(fmt, ...) 
+#define TELEMETRY_TASK_HEAP 200
+#define telemetry_printf(fmt, ...) ((void)0)
 #endif
 
 extern TaskHandle_t telemetry_task;

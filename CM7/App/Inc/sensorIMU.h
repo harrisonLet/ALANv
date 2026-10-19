@@ -5,13 +5,13 @@
 #include "sharedSensor.h"
 
 #define SENSOR_IMU_TASK "[SIMU----]"
-#define SENSOR_IMU_TASK_PRIORITY osPriorityAboveNormal
+#define SENSOR_IMU_TASK_PRIORITY osPriorityNormal
 
 #ifdef CM7_SENSOR_IMU_DEBUG
-#define SENSOR_IMU_TASK_HEAP 300
+#define SENSOR_IMU_TASK_HEAP 280 // ~64B of extra
 #define sensorIMU_printf(fmt, ...) DEBUG_PRINTF(SENSOR_IMU_TASK, fmt, ##__VA_ARGS__)
 #else
-#define SENSOR_IMU_TASK_HEAP 100
+#define SENSOR_IMU_TASK_HEAP 140 // ~32B of extra
 #define sensorIMU_printf(...) ((void)0)
 #endif
 

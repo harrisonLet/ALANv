@@ -6,17 +6,17 @@
 #include "sharedSail.h"
 
 #define SENSOR_ENCODER_TASK "[SENCODER]"
-#define SENSOR_ENCODER_TASK_PRIORITY osPriorityAboveNormal
+#define SENSOR_ENCODER_TASK_PRIORITY osPriorityNormal
 
 #ifdef CM7_SENSOR_ENCODER_DEBUG
-#define SENSOR_ENCODER_TASK_HEAP 500
+#define SENSOR_ENCODER_TASK_HEAP 220 // ~64B of extra
 #define sensorEncoder_printf(fmt, ...) DEBUG_PRINTF(SENSOR_ENCODER_TASK, fmt, ##__VA_ARGS__)
 #else
-#define SENSOR_ENCODER_TASK_HEAP 200
+#define SENSOR_ENCODER_TASK_HEAP 120 // ~32B of extra
 #define sensorEncoder_printf(...) ((void)0)
 #endif
 
-#define SENSOR_ENCODER_FREQUENCY 100u // Hz, this value is primarily limited by the i2c bus speed, max: ~300Hz
+#define SENSOR_ENCODER_FREQUENCY 50u // Hz, this value is primarily limited by the i2c bus speed, max: ~300Hz
 #define SENSOR_ENCODER_WINDOW 10u // num readings
 #define SENSOR_ENCODER_STALE 100u // ms before data is considered stale
 

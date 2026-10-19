@@ -60,7 +60,7 @@ typedef struct {
     uint8_t sequence; /**< Sequence number of the measurement, used to ensure a measurment is actually new */
 } MetadataBattery_t;
 
-#define METADATA_BATTERY_STR_SIZE 128u
+#define METADATA_BATTERY_STR_SIZE 73u
 char *MetadataBattery_toString(const MetadataBattery_t *metadata, char buf[METADATA_BATTERY_STR_SIZE]);
 
 
@@ -85,7 +85,7 @@ typedef struct {
     uint8_t sequence;     /**< Sequence number of the measurement, used to ensure a measurment is actually new */
 } MetadataEncoder_t;
 
-#define METADATA_ENCODER_STR_SIZE 128u
+#define METADATA_ENCODER_STR_SIZE 75u
 char *MetadataEncoder_toString(const MetadataEncoder_t *metadata, char buf[METADATA_ENCODER_STR_SIZE]);
 
 
