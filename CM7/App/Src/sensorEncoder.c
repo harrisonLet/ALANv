@@ -255,7 +255,7 @@ void sensorEncoder_handler(void *argument)
         if (ang_unwrapped_ring.count == 0) { continue; }
         TelemetryMainSail_t telemetry = {0};
         int32_t degrees = ((ang_unwrapped_sum / (int32_t)ang_unwrapped_ring.count) * 360) / ENCODER_COUNTS;
-        telemetry.ang_forward = (int16_t)((((degrees + 180) % 360) + 360) % 360 - 180);
+        telemetry.ang_forward = ANG_WRAP_180(degrees);
         if      (degrees > 0) { telemetry.ang_starboard = degrees; telemetry.ang_port = 0; }
         else if (degrees < 0) { telemetry.ang_starboard = 0;       telemetry.ang_port = -degrees; }
         else                  { telemetry.ang_starboard = 0;       telemetry.ang_port = 0; }

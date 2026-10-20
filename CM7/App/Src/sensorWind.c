@@ -17,8 +17,6 @@
 #define WIND_HALF_TURN  1800
 #define WIND_FORWARD    3500
 
-#define ANG_WRAP(angle) (int16_t)(((((angle) + 180) % 360 + 360) % 360) - 180)
-
 /////////////////////////////////////////////////////////////////////////////////////////
 
 TaskHandle_t sensorWind_task;
@@ -172,8 +170,8 @@ void sensorWind_handler(void *argument)
         if (ang_unwrapped_ring.count == 0 || metadata.valid != VALIDITY_VALID) { continue; }
         TelemetryWind_t telemetry;
         int32_t degrees = ((ang_unwrapped_sum / (int32_t)ang_unwrapped_ring.count) * 360) / WIND_COUNTS;
-        telemetry.ang_wind = ANG_WRAP(degrees);
-        telemetry.ang_wind_r = ANG_WRAP(180 - telemetry.ang_wind);
+        telemetry.ang_wind = ANG_WRAP_180(degrees);
+        telemetry.ang_wind_r = ANG_WRAP_180(180 - telemetry.ang_wind);
         telemetry_setWind(&telemetry);
     }
 }

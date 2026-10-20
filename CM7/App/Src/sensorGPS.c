@@ -215,6 +215,7 @@ void sensorGPS_handler(void *argument)
         uart_dma_error = HAL_UART_ERROR_DMA;
     }
     else { sensorGPS_printf("UART DMA reception started"); }
+    
     for (;;)
     {
         // Error handling for UART DMA. The HAL has already stopped the DMA before the error callback runs.

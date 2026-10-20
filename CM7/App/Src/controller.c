@@ -13,6 +13,7 @@
 #include "sensorGPS.h"
 #include "sensorIMU.h"
 #include "sensorWind.h"
+#include "fusionOrientation.h"
 
 #include "semphr.h"
 
@@ -48,6 +49,9 @@ void hardware_init(void) {
     #endif
     #ifdef CM7_SENSOR_WIND_ENABLE
     sensorWind_hardwareInit();
+    #endif
+    #if defined(CM7_FUSION_ORIENTATION_ENABLE) && defined(CM7_SENSOR_IMU_ENABLE) && defined(CM7_SENSOR_GPS_ENABLE)
+    fusionOrientation_hardwareInit();
     #endif
 
 
@@ -109,6 +113,11 @@ void rtos_init()
     if (xTaskCreate(sensorWind_handler, SENSOR_WIND_TASK, SENSOR_WIND_TASK_HEAP, NULL, SENSOR_WIND_TASK_PRIORITY, &sensorWind_task) != pdPASS) { Error_Handler(); }
     totalStack += SENSOR_WIND_TASK_HEAP;
     #endif
+    #if defined(CM7_FUSION_ORIENTATION_ENABLE) && defined(CM7_SENSOR_IMU_ENABLE) && defined(CM7_SENSOR_GPS_ENABLE)
+    if (fusionOrientation_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(fusionOrientation_handler, FUSION_ORIENTATION_TASK, FUSION_ORIENTATION_TASK_HEAP, NULL, FUSION_ORIENTATION_TASK_PRIORITY, &fusionOrientation_task) != pdPASS) { Error_Handler(); }
+    totalStack += FUSION_ORIENTATION_TASK_HEAP;
+    #endif
 
     #ifdef CM7_DEBUG
     printf("Total stack allocated: %u B / %u B\r\n", (uint)(totalStack * 4), (uint)configTOTAL_HEAP_SIZE);
@@ -149,6 +158,7 @@ void live_handler(void *argument)
     for(;;)
     {
         #ifdef CM7_LIVE_DEBUG_STACK
+        
         live_printf("StackHW (Live): %u", (unsigned)uxTaskGetStackHighWaterMark(NULL));
         #ifdef CM7_TELEMETRY_ENABLE
         live_printf("StackHW (telemetry)=%u", (unsigned)uxTaskGetStackHighWaterMark(telemetry_task));
@@ -169,7 +179,10 @@ void live_handler(void *argument)
         #ifdef CM7_SENSOR_WIND_ENABLE
         live_printf("StackHW (sensorWind)=%u", (unsigned)uxTaskGetStackHighWaterMark(sensorWind_task));
         #endif
-        
+        #if defined(CM7_FUSION_ORIENTATION_ENABLE) && defined(CM7_SENSOR_IMU_ENABLE) && defined(CM7_SENSOR_GPS_ENABLE)
+        live_printf("StackHW (fusionOrientation)=%u", (unsigned)uxTaskGetStackHighWaterMark(fusionOrientation_task));
+        #endif
+
         #endif
 
         HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0);

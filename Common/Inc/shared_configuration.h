@@ -30,6 +30,7 @@
 #define CM7_SENSOR_GPS_ENABLE
 #define CM7_SENSOR_IMU_ENABLE
 #define CM7_SENSOR_WIND_ENABLE
+#define CM7_FUSION_ORIENTATION_ENABLE // This module requires data from the SENSOR_GPS and SENSOR_IMU tasks, it will not run if they are not also enabled
 
 
 
@@ -66,4 +67,8 @@
 
 #ifdef CM7_SENSOR_WIND_ENABLE
 // #define CM7_SENSOR_WIND_DEBUG
+#endif
+
+#ifdef CM7_FUSION_ORIENTATION_ENABLE
+#define CM7_FUSION_ORIENTATION_DEBUG
 #endif

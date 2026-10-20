@@ -5,8 +5,7 @@
 // Boat Relative Orientation
 char *telemetryBoatRelativeOrientation_toString(const TelemetryBoatRelativeOrientation_t *telemetry, char buffer[TELEMETRY_BOAT_RELATIVE_ORIENTATION_STR_SIZE])
 {
-    snprintf(buffer, TELEMETRY_BOAT_RELATIVE_ORIENTATION_STR_SIZE, "TelemetryBoatRelative: angV[ %05d | %05d | %05d ] linV[ %05d | %05d | %05d ], linA[ %05d | %05d | %05d ]",
-             telemetry->angV_roll, telemetry->angV_pitch, telemetry->angV_yaw,
+    snprintf(buffer, TELEMETRY_BOAT_RELATIVE_ORIENTATION_STR_SIZE, "TelemetryBoatRelative: linV[ %05d | %05d | %05d ], linA[ %05d | %05d | %05d ]",
              telemetry->linV_heave, telemetry->linV_surge, telemetry->linV_sway,
              telemetry->linA_heave, telemetry->linA_surge, telemetry->linA_sway);
     return buffer;

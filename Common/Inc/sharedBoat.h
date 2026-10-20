@@ -23,19 +23,6 @@
  */
 typedef struct {
     /**
-     * Angular velocity around the roll axis. Measured in degrees per second.
-     */
-    int16_t angV_roll;
-    /**
-     * Angular velocity around the pitch axis. Measured in degrees per second.
-     */
-    int16_t angV_pitch;
-    /**
-     * Angular velocity around the yaw axis. Measured in degrees per second.
-     */
-    int16_t angV_yaw;
-
-    /**
      * Linear velocity along the heave axis. Measured in millimeters per second.
      */
     int16_t linV_heave;
