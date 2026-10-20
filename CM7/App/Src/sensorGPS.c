@@ -3,6 +3,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 
 #include "sensorGPS.h"
+#include "fusionOrientation.h"
 
 #include "main.h"
 #include "projdefs.h"
@@ -292,6 +293,12 @@ void sensorGPS_handler(void *argument)
                     sensorGPS_printf("%s", MetadataGPS_toString(&metadata, metadata_str));
                     #endif
                     xQueueOverwrite(metadata_queue, &metadata);
+                    if (fusionOrientation_task != NULL)
+                    {
+                        BaseType_t woken = pdFALSE;
+                        vTaskNotifyGiveFromISR(fusionOrientation_task, &woken);
+                        portYIELD_FROM_ISR(woken);
+                    }
                     
                     metadata_raw_head = 0; // Reset for the next sentence
                 }

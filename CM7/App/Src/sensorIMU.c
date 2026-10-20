@@ -3,6 +3,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 
 #include "sensorIMU.h"
+#include "fusionOrientation.h"
 
 #include "main.h"
 #include "projdefs.h"
@@ -391,6 +392,12 @@ void sensorIMU_handler(void *argument)
         #endif
         #endif
         xQueueOverwrite(metadata_queue, &metadata);
+        if (fusionOrientation_task != NULL)
+        {
+            BaseType_t woken = pdFALSE;
+            vTaskNotifyGiveFromISR(fusionOrientation_task, &woken);
+            portYIELD_FROM_ISR(woken);
+        }
     }
 }
 
