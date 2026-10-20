@@ -65,6 +65,9 @@ typedef struct {
     int16_t linA_sway;
 } TelemetryBoatRelativeOrientation_t;
 
+#define TELEMETRY_BOAT_RELATIVE_ORIENTATION_STR_SIZE 128u
+char *telemetryBoatRelativeOrientation_toString(const TelemetryBoatRelativeOrientation_t *telemetry, char buffer[TELEMETRY_BOAT_RELATIVE_ORIENTATION_STR_SIZE]);
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -162,3 +165,5 @@ typedef struct {
     double longitude;
 } TelemetryBoatGlobalOrientation_t;
 
+#define TELEMETRY_BOAT_GLOBAL_ORIENTATION_STR_SIZE 128u
+char *telemetryBoatGlobalOrientation_toString(const TelemetryBoatGlobalOrientation_t *telemetry, char buffer[TELEMETRY_BOAT_GLOBAL_ORIENTATION_STR_SIZE]);
