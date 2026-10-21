@@ -41,6 +41,8 @@ FLASH (rx)      : ORIGIN = 0x08000000, LENGTH = 1024K
 RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 128K
 ITCMRAM (xrw)      : ORIGIN = 0x00000000, LENGTH = 64K
 AXI_SRAM (xrw)     : ORIGIN = 0x24000000, LENGTH = 512K
+/* No x flag (execute code) since its only used to r/w data */
+RAM_D3 (rw) : ORIGIN = 0x38000000, LENGTH = 64K
 }
 /* Highest address of the user mode stack */
 _estack = 0x20020000;    /* end of RAM */
@@ -226,6 +228,15 @@ SECTIONS
     *(.axi_sram*)
     . = ALIGN(32);
   } >AXI_SRAM
+  
+  /* Setup allocation for ipc_shared - Defined in ipc.c */
+  .ipc_shared (NOLOAD) :
+  {
+    . = ALIGN(4);
+    KEEP(*(.ipc_shared))
+  } >RAM_D3 /* SRAM4 in Ram D3 */
+  /* Makes sure each core allocates same address for ipc_shared */
+  ASSERT(ipc_shared == 0x38000000, "ipc_shared is not at 0x38000000")
 
   /* Remove information from the standard libraries */
   /DISCARD/ :

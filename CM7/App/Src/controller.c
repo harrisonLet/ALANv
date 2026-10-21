@@ -2,6 +2,8 @@
 #include "projdefs.h"
 #include "system.h"
 #include "controller.h"
+#include "shared_configuration.h"
+#include "ipc.h"
 #include "telemetry.h"
 
 #include "servoShared.h"
@@ -14,6 +16,7 @@
 #include "sensorIMU.h"
 #include "sensorWind.h"
 #include "fusionOrientation.h"
+#include "ipcCM7.h"
 
 #include "semphr.h"
 
@@ -66,6 +69,10 @@ void hardware_init(void) {
     
     #ifdef CM7_SERVO_RUDDER_ENABLE
     servoRudder_hardwareInit();
+    #endif
+
+    #ifdef IPC_ENABLE
+    ipc_init(); // Common Shared Memory (SRAM4) init
     #endif
 }
 
