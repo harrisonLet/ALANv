@@ -5,7 +5,7 @@
 
 /*
  * Telemetry record sent from the boat to the ground station over LoRa.
- * Packed so the layout on the wire matches the struct exactly (72 bytes).
+ * Packed so the layout on the wire matches the struct exactly (74 bytes).
  *
  * Copy of CM4/Core/Src/telemetry.h on main-lora. Keep the two identical.
  */
@@ -55,6 +55,7 @@ typedef struct __attribute__((packed)) {
     /* Control */
     uint8_t  mode;                   /* current mode from the control task */
     uint16_t desired_heading;        /* 0..359 deg, from LTP */
+    int16_t  desired_sail_angle;     /* -180..180 deg vs hull centerline, from LSP */
     uint8_t  route_segment;          /* index of the active nautical vector */
     int16_t  drift_distance;         /* cross-track distance from the segment, m, + = starboard of path */
     uint16_t last_cmd_seq;           /* sequence number of the last command received */
