@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ALANv Ground Station</title>
+<style>
+:root {
+  --bg: #0d1117; --panel: #161b22; --panel2: #1c2330; --line: #2a3340;
+  --text: #e6edf3; --dim: #8b949e; --faint: #4b5563;
+  --ok: #3fb950; --warn: #d29922; --fail: #f85149;
+  --wind: #39c5cf; --sail: #3fb950; --boat: #e3b341; --desired: #bc8cff; --water: #0f2a3f;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text);
+  font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+.mono, .val { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+header { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 10px 16px;
+  background: var(--panel); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
+header h1 { font-size: 16px; margin: 0; letter-spacing: .08em; }
+.pill { padding: 3px 10px; border-radius: 999px; font-weight: 700; font-size: 12px; letter-spacing: .05em; }
+.pill.ok { background: #12391e; color: var(--ok); }
+.pill.warn { background: #3b2e0a; color: var(--warn); }
+.pill.fail { background: #3d1214; color: var(--fail); }
+.pill.idle { background: #262c36; color: var(--dim); }
+.stats { display: flex; gap: 14px; color: var(--dim); font-size: 13px; }
+.stats b { color: var(--text); font-weight: 600; }
+.conn { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+select, input[type=text], button { background: var(--panel2); color: var(--text); border: 1px solid var(--line);
+  border-radius: 6px; padding: 5px 9px; font: inherit; }
+input[type=text] { width: 220px; font-family: var(--mono); font-size: 12px; }
+button { cursor: pointer; }
+button:hover { border-color: var(--dim); }
+
+main { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; padding: 12px 16px 24px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; min-width: 0; }
+.card h2 { margin: 0 0 8px; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--dim); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.span3 { grid-column: span 3; } .span4 { grid-column: span 4; } .span5 { grid-column: span 5; }
+.span6 { grid-column: span 6; } .span7 { grid-column: span 7; } .span8 { grid-column: span 8; } .span12 { grid-column: span 12; }
+@media (max-width: 1200px) { .span3, .span4, .span5 { grid-column: span 6; } .span7, .span8 { grid-column: span 12; } }
+@media (max-width: 760px) { main > .card { grid-column: span 12; } .conn { margin-left: 0; } }
+
+.badge { font-size: 10px; padding: 2px 7px; border-radius: 4px; letter-spacing: .06em; font-family: var(--mono); }
+.badge.ok { background: #12391e; color: var(--ok); }
+.badge.warn { background: #3b2e0a; color: var(--warn); }
+.badge.fail { background: #3d1214; color: var(--fail); }
+
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; font-size: 13px; }
+.kv span:nth-child(odd) { color: var(--dim); }
+.kv span:nth-child(even) { font-family: var(--mono); text-align: right; }
+.big { font-family: var(--mono); font-size: 26px; font-weight: 700; }
+.big small { font-size: 13px; color: var(--dim); font-weight: 400; }
+
+.subsys { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; grid-column: span 12; }
+@media (max-width: 1400px) { .subsys { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 760px) { .subsys { grid-template-columns: 1fr; } }
+
+.cells { display: flex; gap: 6px; margin-top: 8px; }
+.cell { flex: 1; text-align: center; font-size: 11px; color: var(--dim); }
+.cell .bar { height: 46px; background: var(--panel2); border-radius: 4px; position: relative; overflow: hidden; margin-bottom: 3px; }
+.cell .bar i { position: absolute; left: 0; right: 0; bottom: 0; background: var(--ok); }
+.flags { display: flex; gap: 5px; margin-top: 8px; }
+.flag { font-family: var(--mono); font-size: 11px; padding: 2px 6px; border-radius: 4px; background: var(--panel2); color: var(--faint); }
+.flag.on { color: var(--bg); background: var(--dim); }
+.flag.on.good { background: var(--ok); } .flag.on.bad { background: var(--fail); }
+.cal { display: flex; gap: 6px; margin-top: 8px; }
+.cal div { flex: 1; text-align: center; font-size: 11px; color: var(--dim); }
+.cal .pips { display: flex; gap: 2px; margin-bottom: 3px; }
+.cal .pips i { flex: 1; height: 8px; border-radius: 2px; background: var(--panel2); }
+.cal .pips i.on { background: var(--ok); }
+
+.dials { display: flex; align-items: center; justify-content: space-around; gap: 8px; flex-wrap: wrap; }
+.dials svg { max-width: 100%; height: auto; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--dim); justify-content: center; margin-top: 4px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+
+.servo { margin: 8px 0 14px; }
+.servo .head { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
+.track { height: 18px; background: var(--panel2); border-radius: 5px; position: relative; }
+.track .fill { position: absolute; top: 3px; bottom: 3px; background: var(--boat); border-radius: 3px; opacity: .85; }
+.track .mid { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--dim); }
+.scale { display: flex; justify-content: space-between; font-size: 10px; color: var(--faint); font-family: var(--mono); margin-top: 2px; }
+
+.cmdgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.cmdgrid h3 { margin: 0 0 6px; font-size: 12px; color: var(--dim); font-weight: 600; }
+.btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.btns button { padding: 8px 0; font-family: var(--mono); font-weight: 700; }
+.btns button kbd { display: block; font-size: 10px; color: var(--dim); font-weight: 400; }
+.btns button.flash { background: var(--boat); color: var(--bg); }
+.ack { display: flex; gap: 18px; margin: 12px 0 8px; font-size: 13px; }
+.ack b { font-family: var(--mono); font-size: 18px; }
+.ack .bad { color: var(--fail); }
+.log { font-family: var(--mono); font-size: 12px; max-height: 150px; overflow: auto; border-top: 1px solid var(--line); padding-top: 6px; }
+.log div { padding: 1px 0; color: var(--dim); }
+.log div:first-child { color: var(--text); }
+
+canvas { width: 100%; display: block; }
+.chart canvas { height: 110px; }
+#c-track { height: 300px; }
+.charts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 760px) { .charts { grid-template-columns: 1fr; } }
+.chart h3 { margin: 0 0 3px; font-size: 12px; color: var(--dim); font-weight: 600; display: flex; justify-content: space-between; }
+.chart h3 span { font-family: var(--mono); color: var(--text); }
+.raw { font-family: var(--mono); font-size: 12px; color: var(--dim); word-break: break-all; }
+
+body.stale main .live { opacity: .45; filter: grayscale(.6); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>ALANv GROUND STATION</h1>
+  <span class="pill idle" id="link-pill">CONNECTING</span>
+  <div class="stats">
+    <span>last <b id="st-age">–</b></span>
+    <span>pkts <b id="st-pkts">0</b></span>
+    <span>lost <b id="st-lost">0</b></span>
+    <span>junk <b id="st-junk">0</b></span>
+    <span>seq <b id="st-seq">–</b></span>
+    <span>uptime <b id="st-up">–</b></span>
+  </div>
+  <div class="conn">
+    <select id="port-select" title="Detected serial ports"></select>
+    <input type="text" id="port-input" placeholder="or type a path" title="Any serial device path">
+    <button onclick="loadPorts()" title="Rescan ports">&#8635;</button>
+    <button id="conn-btn" onclick="toggleConnect()">Connect</button>
+  </div>
+</header>
+
+<main>
+  <!-- Wind / sail dial -->
+  <section class="card span5 live">
+    <h2>Wind &amp; Sail <span class="mono" id="pos-name" style="color:var(--text)">–</span></h2>
+    <div class="dials">
+      <svg id="dial" viewBox="-125 -125 250 250" width="330" height="330">
+        <circle r="104" fill="var(--water)" stroke="var(--line)"/>
+        <path id="nogo" fill="var(--fail)" opacity=".13"/>
+        <g id="dial-ticks"></g>
+        <text x="0" y="-111" text-anchor="middle" fill="var(--dim)" font-size="10">BOW</text>
+        <text x="113" y="4" text-anchor="middle" fill="var(--dim)" font-size="10">S</text>
+        <text x="-113" y="4" text-anchor="middle" fill="var(--dim)" font-size="10">P</text>
+        <path d="M0,-74 C24,-46 28,14 19,66 L-19,66 C-28,14 -24,-46 0,-74Z" fill="#2b2410" stroke="var(--boat)" stroke-width="2"/>
+        <g id="sail" transform="translate(0,-14)">
+          <path d="M0,-16 C7,-11 6,12 0,52 C-6,12 -7,-11 0,-16Z" fill="var(--sail)" opacity=".9"/>
+        </g>
+        <g id="dsail" transform="translate(0,-14)">
+          <line x1="0" y1="-22" x2="0" y2="58" stroke="var(--desired)" stroke-width="2.5" stroke-dasharray="6 4" stroke-linecap="round"/>
+        </g>
+        <circle cx="0" cy="-14" r="3.5" fill="var(--text)"/>
+        <g id="dhdg">
+          <polygon points="0,-105 -7,-121 7,-121" fill="var(--desired)"/>
+        </g>
+        <g id="wind">
+          <line x1="0" y1="-118" x2="0" y2="-66" stroke="var(--wind)" stroke-width="4" stroke-linecap="round"/>
+          <polygon points="0,-56 -9,-72 9,-72" fill="var(--wind)"/>
+        </g>
+      </svg>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--wind)"></i>wind <b class="val" id="d-wind">–</b></span>
+      <span><i style="background:var(--sail)"></i>sail <b class="val" id="d-sail">–</b></span>
+      <span><i style="background:var(--desired)"></i>desired sail <b class="val" id="d-dsail">–</b></span>
+      <span><i style="background:var(--desired)"></i>desired hdg (rim) <b class="val" id="d-dhdg">–</b></span>
+      <span><i style="background:var(--fail);opacity:.5"></i>no-go zone</span>
+      <span>bow up, starboard right</span>
+    </div>
+  </section>
+
+  <!-- Compass + attitude -->
+  <section class="card span4 live">
+    <h2>Heading &amp; Attitude</h2>
+    <div class="dials">
+      <svg viewBox="-110 -110 220 220" width="210" height="210">
+        <circle r="100" fill="var(--panel2)" stroke="var(--line)"/>
+        <g id="rose"></g>
+        <g id="bug"><polygon points="0,-100 -8,-86 8,-86" fill="var(--desired)"/></g>
+        <polygon points="0,-104 -7,-118 7,-118" fill="var(--boat)" transform="translate(0,14)"/>
+        <path d="M0,-30 L12,20 L0,12 L-12,20Z" fill="var(--boat)"/>
+        <text y="56" text-anchor="middle" font-size="22" font-weight="700" fill="var(--text)" class="val" id="hdg-text">–</text>
+      </svg>
+      <svg viewBox="-80 -80 160 160" width="160" height="160">
+        <defs><clipPath id="att-clip"><circle r="72"/></clipPath></defs>
+        <g clip-path="url(#att-clip)">
+          <rect x="-80" y="-80" width="160" height="80" fill="#1b2a3a"/>
+          <rect x="-80" y="0" width="160" height="80" fill="var(--water)"/>
+          <line x1="-80" x2="80" y1="0" y2="0" stroke="var(--dim)"/>
+          <g id="hull-x">
+            <path d="M-38,-6 L38,-6 L26,16 L-26,16Z" fill="#2b2410" stroke="var(--boat)" stroke-width="2"/>
+            <line x1="0" y1="-6" x2="0" y2="-58" stroke="var(--sail)" stroke-width="4"/>
+            <line x1="0" y1="16" x2="0" y2="40" stroke="var(--boat)" stroke-width="3"/>
+          </g>
+        </g>
+        <circle r="72" fill="none" stroke="var(--line)" stroke-width="2"/>
+        <text y="-60" text-anchor="middle" font-size="9" fill="var(--dim)">VIEW FROM ASTERN</text>
+      </svg>
+    </div>
+    <div class="kv" style="margin-top:6px">
+      <span>heading</span><span id="o-hdg">–</span>
+      <span>desired heading</span><span id="o-dhdg" style="color:var(--desired)">–</span>
+      <span>roll (heel)</span><span id="o-roll">–</span>
+      <span>pitch</span><span id="o-pitch">–</span>
+    </div>
+  </section>
+
+  <!-- Control -->
+  <section class="card span3 live">
+    <h2>Control</h2>
+    <div class="kv">
+      <span>mode</span><span id="c-mode">–</span>
+      <span>desired heading</span><span id="c-dhdg">–</span>
+      <span>desired sail</span><span id="c-dsail">–</span>
+      <span>route segment</span><span id="c-seg">–</span>
+      <span>drift</span><span id="c-drift">–</span>
+      <span>last cmd seq</span><span id="c-cmdseq">–</span>
+      <span>boat uptime</span><span id="c-up">–</span>
+    </div>
+    <div class="servo" style="margin-top:14px">
+      <div class="head"><span>drift from path</span><span class="val" id="c-drift2">–</span></div>
+      <div class="track"><div class="mid"></div><div class="fill" id="drift-fill" style="background:var(--desired)"></div></div>
+      <div class="scale"><span>-20 m port</span><span>0</span><span>stbd +20 m</span></div>
+    </div>
+  </section>
+
+  <!-- Subsystems -->
+  <div class="subsys live">
+    <section class="card">
+      <h2>Battery <span class="badge" id="b-battery">–</span></h2>
+      <div class="big" id="bat-v">– <small>V</small></div>
+      <div class="cells" id="bat-cells"></div>
+    </section>
+    <section class="card">
+      <h2>Sail encoder <span class="badge" id="b-encoder">–</span></h2>
+      <div class="big" id="enc-ang">–</div>
+      <div class="kv"><span>magnitude</span><span id="enc-mag">–</span></div>
+      <div class="flags">
+        <span class="flag" id="f-md" title="Magnet detected">MD</span>
+        <span class="flag" id="f-ml" title="Magnet too weak">ML</span>
+        <span class="flag" id="f-mh" title="Magnet too strong">MH</span>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Wind vane <span class="badge" id="b-wind">–</span></h2>
+      <div class="big" id="wind-ang">–</div>
+      <div class="kv"><span>from</span><span id="wind-side">–</span><span>point of sail</span><span id="wind-pos">–</span></div>
+    </section>
+    <section class="card">
+      <h2>GPS <span class="badge" id="b-gps">–</span></h2>
+      <div class="kv">
+        <span>lat</span><span id="gps-lat">–</span>
+        <span>lon</span><span id="gps-lon">–</span>
+        <span>alt</span><span id="gps-alt">–</span>
+        <span>sats / fix</span><span id="gps-sats">–</span>
+        <span>UTC</span><span id="gps-utc">–</span>
+      </div>
+    </section>
+    <section class="card">
+      <h2>IMU <span class="badge" id="b-imu">–</span></h2>
+      <div class="kv"><span>temperature</span><span id="imu-temp">–</span></div>
+      <div class="cal" id="imu-cal"></div>
+    </section>
+    <section class="card">
+      <h2>Orientation <span class="badge" id="b-orientation">–</span></h2>
+      <div class="kv">
+        <span>heading</span><span id="or-hdg">–</span>
+        <span>roll</span><span id="or-roll">–</span>
+        <span>pitch</span><span id="or-pitch">–</span>
+      </div>
+    </section>
+  </div>
+
+  <!-- Servos -->
+  <section class="card span4 live">
+    <h2>Servos <span style="text-transform:none;letter-spacing:0;font-weight:400">as driven by the boat</span></h2>
+    <div class="servo">
+      <div class="head"><span>rudder</span><span class="val" id="sv-rudder">–</span></div>
+      <div class="track"><div class="mid"></div><div class="fill" id="sv-rudder-fill"></div></div>
+      <div class="scale"><span>-135</span><span>0</span><span>+135</span></div>
+    </div>
+    <div class="servo">
+      <div class="head"><span>sail tail</span><span class="val" id="sv-sail">–</span></div>
+      <div class="track"><div class="mid"></div><div class="fill" id="sv-sail-fill" style="background:var(--sail)"></div></div>
+      <div class="scale"><span>-135</span><span>0</span><span>+135</span></div>
+    </div>
+  </section>
+
+  <!-- Commands -->
+  <section class="card span8">
+    <h2>Manual commands <span style="text-transform:none;letter-spacing:0;font-weight:400">keys work anywhere on the page</span></h2>
+    <div class="cmdgrid">
+      <div><h3>Rudder</h3><div class="btns" id="btns-rudder"></div></div>
+      <div><h3>Sail</h3><div class="btns" id="btns-sail"></div></div>
+    </div>
+    <div class="ack">
+      <span>sent <b id="ack-sent">0</b></span>
+      <span>boat received <b id="ack-recv">–</b></span>
+      <span id="ack-note" style="color:var(--dim)"></span>
+    </div>
+    <div class="log" id="cmd-log"></div>
+  </section>
+
+  <!-- Charts -->
+  <section class="card span7 live">
+    <h2>History <span style="text-transform:none;letter-spacing:0;font-weight:400">last 5 min</span></h2>
+    <div class="charts">
+      <div class="chart"><h3>heading / desired <span id="ch-hdg">–</span></h3><canvas id="c-hdg" height="110"></canvas></div>
+      <div class="chart"><h3>apparent wind <span id="ch-wind">–</span></h3><canvas id="c-wind" height="110"></canvas></div>
+      <div class="chart"><h3>roll <span id="ch-roll">–</span></h3><canvas id="c-roll" height="110"></canvas></div>
+      <div class="chart"><h3>battery <span id="ch-bat">–</span></h3><canvas id="c-bat" height="110"></canvas></div>
+    </div>
+  </section>
+
+  <!-- Track -->
+  <section class="card span5 live">
+    <h2>GPS track <span class="mono" style="text-transform:none;letter-spacing:0" id="trk-info">–</span></h2>
+    <canvas id="c-track" height="300"></canvas>
+  </section>
+
+  <!-- Raw -->
+  <section class="card span12">
+    <h2>Last raw packet</h2>
+    <div class="raw" id="raw">–</div>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const NO_SIGNAL_MS = 3000;
+const CHART_SPAN_S = 300;
+const POINTS_OF_SAIL = [[30, 'IN IRONS'], [50, 'CLOSE HAULED'], [75, 'CLOSE REACH'], [105, 'BEAM REACH'],
+                        [130, 'BROAD REACH'], [150, 'TRAINING RUN'], [181, 'RUNNING']];
+
+let VALIDITY = {}, telem = null, link = null, history = [], cmdLog = [];
+
+// ── helpers ────────────────────────────────────────────────────────────────
+const sgn = v => (v > 0 ? '+' : '') + v;
+const deg = v => sgn(v) + '°';
+const vclass = v => (v >= 0x01 && v < 0x10) ? 'ok' : (v >= 0x10 && v < 0x20) ? 'warn' : 'fail';
+const vname = v => VALIDITY[v] || ('0x' + v.toString(16).padStart(2, '0'));
+const side = (v, pos, neg, zero) => v > 0 ? pos : v < 0 ? neg : zero;
+const pointOfSail = w => POINTS_OF_SAIL.find(([lim]) => Math.abs(w) < lim)[1];
+const hms = s => [s / 3600, (s / 60) % 60, s % 60].map(x => String(Math.floor(x)).padStart(2, '0')).join(':');
+const pad2 = n => String(n).padStart(2, '0');
+const wrap180 = a => ((a % 360) + 540) % 360 - 180;
+
+function setBadge(id, v) {
+  const el = $(id);
+  el.className = 'badge ' + vclass(v);
+  el.textContent = vname(v);
+}
+
+function polar(r, a) {   // a in degrees clockwise from up
+  const t = a * Math.PI / 180;
+  return [r * Math.sin(t), -r * Math.cos(t)];
+}
+
+// ── static SVG parts ───────────────────────────────────────────────────────
+(function buildDial() {
+  let s = '';
+  for (let a = 0; a < 360; a += 10) {
+    const major = a % 30 === 0;
+    const [x1, y1] = polar(104, a), [x2, y2] = polar(major ? 94 : 99, a);
+    s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--dim)" stroke-width="${major ? 1.5 : .7}"/>`;
+  }
+  $('dial-ticks').innerHTML = s;
+
+  s = '';
+  for (let a = 0; a < 360; a += 10) {
+    const major = a % 30 === 0;
+    const [x1, y1] = polar(100, a), [x2, y2] = polar(major ? 88 : 94, a);
+    s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--dim)" stroke-width="${major ? 1.5 : .7}"/>`;
+    if (major) {
+      const [tx, ty] = polar(76, a);
+      const label = {0: 'N', 90: 'E', 180: 'S', 270: 'W'}[a] || a;
+      s += `<text x="${tx}" y="${ty + 4}" text-anchor="middle" font-size="${typeof label === 'string' ? 13 : 9}"
+              font-weight="${typeof label === 'string' ? 700 : 400}" fill="${a === 0 ? 'var(--fail)' : 'var(--dim)'}"
+              transform="rotate(${a},${tx},${ty})">${label}</text>`;
+    }
+  }
+  $('rose').innerHTML = s;
+})();
+
+function arcPath(r, a0, a1) {
+  const [x0, y0] = polar(r, a0), [x1, y1] = polar(r, a1);
+  return `M0,0 L${x0},${y0} A${r},${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${x1},${y1} Z`;
+}
+
+function setServo(fillId, valId, angle) {
+  const pct = Math.max(-135, Math.min(135, angle)) / 135 * 50;
+  const f = $(fillId);
+  f.style.left = (pct < 0 ? 50 + pct : 50) + '%';
+  f.style.width = Math.abs(pct) + '%';
+  $(valId).textContent = deg(angle);
+}
+
+// ── charts ─────────────────────────────────────────────────────────────────
+function sizeCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  // keep the CSS height from the markup; c.height gets overwritten with device pixels below
+  if (!c.dataset.h) c.dataset.h = c.getAttribute('height');
+  const w = c.clientWidth, h = +c.dataset.h;
+  const pw = Math.round(w * dpr), ph = Math.round(h * dpr);
+  if (c.width !== pw || c.height !== ph) { c.width = pw; c.height = ph; }
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return [ctx, w, h];
+}
+
+function drawChart(id, series, fixed, unit) {
+  const [ctx, w, h] = sizeCanvas($(id));
+  ctx.clearRect(0, 0, w, h);
+  const now = Date.now() / 1000, t0 = now - CHART_SPAN_S;
+  const pts = history.filter(p => p.t >= t0);
+
+  let lo = fixed ? fixed[0] : Infinity, hi = fixed ? fixed[1] : -Infinity;
+  if (!fixed) {
+    for (const p of pts) for (const s of series) { const v = s.get(p); lo = Math.min(lo, v); hi = Math.max(hi, v); }
+    if (!isFinite(lo)) { lo = 0; hi = 1; }
+    const padv = Math.max((hi - lo) * 0.15, s_minSpan(unit));
+    lo -= padv; hi += padv;
+  }
+  const L = 34, R = 6, T = 6, B = 16;
+  const X = t => L + (t - t0) / CHART_SPAN_S * (w - L - R);
+  const Y = v => T + (hi - v) / (hi - lo) * (h - T - B);
+
+  ctx.strokeStyle = '#2a3340'; ctx.fillStyle = '#8b949e'; ctx.font = '10px ui-monospace, monospace';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const v = lo + (hi - lo) * i / 4, y = Y(v);
+    ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(w - R, y); ctx.stroke();
+    ctx.fillText(fmtTick(v, unit), 0, y + 3);
+  }
+  ctx.fillText('-5m', L, h - 3); ctx.fillText('now', w - R - 20, h - 3);
+
+  for (const s of series) {
+    ctx.strokeStyle = s.color; ctx.lineWidth = 1.8; ctx.beginPath();
+    let prev = null;
+    for (const p of pts) {
+      const v = s.get(p), x = X(p.t), y = Y(v);
+      // break the line on wrap-around (e.g. heading 359 -> 1) or gaps > 5 s
+      if (prev && (Math.abs(v - prev.v) > (s.wrap || Infinity) || p.t - prev.t > 5)) ctx.moveTo(x, y);
+      else if (prev) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+      prev = { v, t: p.t };
+    }
+    ctx.stroke();
+  }
+}
+function s_minSpan(unit) { return unit === 'V' ? 0.05 : 2; }
+function fmtTick(v, unit) { return unit === 'V' ? v.toFixed(2) : Math.round(v); }
+
+// ── GPS track ──────────────────────────────────────────────────────────────
+function drawTrack() {
+  const [ctx, w, h] = sizeCanvas($('c-track'));
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = '#0f2a3f'; ctx.fillRect(0, 0, w, h);
+  const pts = history.filter(p => p.gps_ok);
+  if (!pts.length) {
+    ctx.fillStyle = '#8b949e'; ctx.font = '13px system-ui'; ctx.fillText('no valid GPS fix yet', 14, 24);
+    $('trk-info').textContent = '–';
+    return;
+  }
+  const last = pts[pts.length - 1];
+  const lat0 = last.latitude * Math.PI / 180;
+  const xy = p => [(p.longitude - last.longitude) * 111320 * Math.cos(lat0), (p.latitude - last.latitude) * 110540];
+  const m = pts.map(xy);
+  let span = 20;
+  for (const [x, y] of m) span = Math.max(span, Math.abs(x) * 2.2, Math.abs(y) * 2.2);
+  const k = Math.min(w, h) / span;
+  const P = ([x, y]) => [w / 2 + x * k, h / 2 - y * k];
+
+  // grid + scale bar
+  const step = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000].find(s => s * k > 60) || 5000;
+  ctx.strokeStyle = 'rgba(139,148,158,.12)'; ctx.lineWidth = 1;
+  for (let x = w / 2 % (step * k); x < w; x += step * k) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+  for (let y = h / 2 % (step * k); y < h; y += step * k) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+  ctx.strokeStyle = '#e6edf3'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(12, h - 14); ctx.lineTo(12 + step * k, h - 14); ctx.stroke();
+  ctx.fillStyle = '#e6edf3'; ctx.font = '11px ui-monospace, monospace'; ctx.fillText(step + ' m', 12, h - 20);
+  ctx.fillText('N', w - 16, 18);
+
+  ctx.strokeStyle = '#bc8cff'; ctx.lineWidth = 2; ctx.beginPath();
+  m.forEach((p, i) => { const [x, y] = P(p); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+  ctx.stroke();
+
+  // boat marker pointing along heading
+  const [bx, by] = P([0, 0]);
+  const a = (last.heading || 0) * Math.PI / 180;
+  ctx.save(); ctx.translate(bx, by); ctx.rotate(a);
+  ctx.fillStyle = '#e3b341'; ctx.beginPath(); ctx.moveTo(0, -11); ctx.lineTo(7, 8); ctx.lineTo(0, 4); ctx.lineTo(-7, 8); ctx.closePath(); ctx.fill();
+  ctx.restore();
+  $('trk-info').textContent = `${pts.length} fixes, view ${Math.round(span)} m`;
+}
+
+// ── render telemetry ───────────────────────────────────────────────────────
+function render() {
+  const t = telem;
+  if (!t) return;
+
+  // dial
+  $('wind').setAttribute('transform', `rotate(${t.ang_wind})`);
+  $('sail').setAttribute('transform', `translate(0,-14) rotate(${t.sail_ang_forward})`);
+  $('nogo').setAttribute('d', arcPath(104, t.ang_wind - 30, t.ang_wind + 30));
+  $('d-wind').textContent = deg(t.ang_wind);
+  $('d-sail').textContent = deg(t.sail_ang_forward);
+  const dhdgRel = wrap180(t.desired_heading - t.heading);
+  $('dhdg').setAttribute('transform', `rotate(${dhdgRel})`);
+  $('dsail').setAttribute('transform', `translate(0,-14) rotate(${t.desired_sail_angle})`);
+  $('d-dsail').textContent = deg(t.desired_sail_angle);
+  $('d-dhdg').textContent = `${t.desired_heading}° (${deg(dhdgRel)})`;
+  const pos = pointOfSail(t.ang_wind);
+  $('pos-name').textContent = pos;
+  $('pos-name').style.color = pos === 'IN IRONS' ? 'var(--fail)' : 'var(--text)';
+
+  // compass + attitude
+  $('rose').setAttribute('transform', `rotate(${-t.heading})`);
+  $('bug').setAttribute('transform', `rotate(${t.desired_heading - t.heading})`);
+  $('hdg-text').textContent = String(t.heading).padStart(3, '0') + '°';
+  $('hull-x').setAttribute('transform', `rotate(${t.roll})`);
+  $('o-hdg').textContent = t.heading + '°';
+  $('o-dhdg').textContent = t.desired_heading + '°';
+  $('o-roll').textContent = deg(t.roll) + ' ' + side(t.roll, 'stbd', 'port', '');
+  $('o-pitch').textContent = deg(t.pitch);
+
+  // control
+  $('c-mode').textContent = t.mode;
+  $('c-dhdg').textContent = t.desired_heading + '°';
+  $('c-dsail').textContent = deg(t.desired_sail_angle);
+  $('c-seg').textContent = t.route_segment;
+  $('c-drift').textContent = sgn(t.drift_distance) + ' m';
+  $('c-drift2').textContent = sgn(t.drift_distance) + ' m ' + side(t.drift_distance, 'stbd', 'port', '');
+  $('c-cmdseq').textContent = t.last_cmd_seq;
+  $('c-up').textContent = hms(t.uptime_ms / 1000);
+  const dp = Math.max(-20, Math.min(20, t.drift_distance)) / 20 * 50;
+  $('drift-fill').style.left = (dp < 0 ? 50 + dp : 50) + '%';
+  $('drift-fill').style.width = Math.abs(dp) + '%';
+
+  // battery
+  setBadge('b-battery', t.battery_valid);
+  $('bat-v').innerHTML = (t.battery_voltage / 1000).toFixed(2) + ' <small>V</small>';
+  $('bat-cells').innerHTML = t.cell_voltage.map((mv, i) => {
+    const frac = Math.max(0, Math.min(1, (mv - 3000) / 1200));
+    const col = mv < 3300 ? 'var(--fail)' : mv < 3500 ? 'var(--warn)' : 'var(--ok)';
+    return `<div class="cell"><div class="bar"><i style="height:${frac * 100}%;background:${col}"></i></div>
+            C${i + 1} <span class="val" style="color:var(--text)">${(mv / 1000).toFixed(2)}</span></div>`;
+  }).join('');
+
+  // encoder
+  setBadge('b-encoder', t.encoder_valid);
+  $('enc-ang').textContent = deg(t.sail_ang_forward) + ' ' + side(t.sail_ang_forward, 'stbd', 'port', '');
+  $('enc-mag').textContent = t.sail_encoder_magnitude;
+  const st = t.sail_encoder_status;
+  $('f-md').className = 'flag' + (st & 0x20 ? ' on good' : '');
+  $('f-ml').className = 'flag' + (st & 0x10 ? ' on bad' : '');
+  $('f-mh').className = 'flag' + (st & 0x08 ? ' on bad' : '');
+
+  // wind
+  setBadge('b-wind', t.wind_valid);
+  $('wind-ang').textContent = deg(t.ang_wind);
+  $('wind-side').textContent = side(t.ang_wind, 'starboard', 'port', 'dead ahead');
+  $('wind-pos').textContent = pos.toLowerCase();
+
+  // gps
+  setBadge('b-gps', t.gps_valid);
+  $('gps-lat').textContent = t.latitude.toFixed(6);
+  $('gps-lon').textContent = t.longitude.toFixed(6);
+  $('gps-alt').textContent = t.altitude.toFixed(1) + ' m';
+  $('gps-sats').textContent = `${t.satellites} / ${t.fix_valid}`;
+  $('gps-utc').textContent = `${pad2(t.utc_hours)}:${pad2(t.utc_minutes)}:${pad2(t.utc_seconds)}Z`;
+
+  // imu
+  setBadge('b-imu', t.imu_valid);
+  $('imu-temp').textContent = t.imu_temp + ' °C';
+  $('imu-cal').innerHTML = [['SYS', 6], ['GYR', 4], ['ACC', 2], ['MAG', 0]].map(([n, sh]) => {
+    const lvl = (t.imu_cal >> sh) & 3;
+    return `<div><div class="pips">${[1, 2, 3].map(i => `<i class="${i <= lvl ? 'on' : ''}"></i>`).join('')}</div>${n} ${lvl}/3</div>`;
+  }).join('');
+
+  // orientation
+  setBadge('b-orientation', t.orientation_valid);
+  $('or-hdg').textContent = t.heading + '°';
+  $('or-roll').textContent = deg(t.roll);
+  $('or-pitch').textContent = deg(t.pitch);
+
+  // servos
+  setServo('sv-rudder-fill', 'sv-rudder', t.rudder_servo_angle);
+  setServo('sv-sail-fill', 'sv-sail', t.sail_servo_angle);
+
+  // chart headers
+  $('ch-hdg').textContent = `${t.heading}° / ${t.desired_heading}°`;
+  $('ch-wind').textContent = deg(t.ang_wind);
+  $('ch-roll').textContent = deg(t.roll);
+  $('ch-bat').textContent = (t.battery_voltage / 1000).toFixed(2) + ' V';
+
+  renderAck();
+}
+
+function renderCharts() {
+  drawChart('c-hdg', [{ get: p => p.desired_heading, color: '#bc8cff', wrap: 180 },
+                      { get: p => p.heading, color: '#e3b341', wrap: 180 }], [0, 360]);
+  drawChart('c-wind', [{ get: p => p.ang_wind, color: '#39c5cf', wrap: 180 }], [-180, 180]);
+  drawChart('c-roll', [{ get: p => p.roll, color: '#e3b341' }], null, 'deg');
+  drawChart('c-bat', [{ get: p => p.battery_voltage / 1000, color: '#3fb950' }], null, 'V');
+  drawTrack();
+}
+
+function renderLink() {
+  if (!link) return;
+  $('st-pkts').textContent = link.pkts;
+  $('st-lost').textContent = link.lost;
+  $('st-junk').textContent = link.junk;
+  $('st-seq').textContent = link.seq ?? '–';
+  $('conn-btn').textContent = link.connected ? 'Disconnect' : 'Connect';
+  tick();
+}
+
+function tick() {
+  const pill = $('link-pill');
+  let stale = true;
+  if (!link || !link.connected) {
+    pill.className = 'pill fail';
+    pill.textContent = link && link.error ? 'SERIAL ERROR' : 'DISCONNECTED';
+    pill.title = (link && link.error) || '';
+    $('st-age').textContent = '–';
+  } else if (!link.rx_time) {
+    pill.className = 'pill idle'; pill.textContent = 'WAITING FOR BOAT'; pill.title = link.port;
+    $('st-age').textContent = '–';
+  } else {
+    const age = Date.now() / 1000 - link.rx_time;
+    stale = age * 1000 > NO_SIGNAL_MS;
+    pill.className = 'pill ' + (stale ? 'warn' : 'ok');
+    pill.textContent = stale ? 'NO SIGNAL' : 'LINK OK';
+    pill.title = link.port;
+    $('st-age').textContent = age.toFixed(1) + ' s';
+  }
+  document.body.classList.toggle('stale', stale && !!telem);
+  $('st-up').textContent = telem ? hms(telem.uptime_ms / 1000) : '–';
+}
+
+// ── commands ───────────────────────────────────────────────────────────────
+const BTN_LAYOUT = {
+  rudder: [['q', '+20'], ['a', '+10'], ['z', '+5'], ['e', '-20'], ['d', '-10'], ['c', '-5']],
+  sail:   [['w', '+20'], ['s', '+10'], ['x', '+5'], ['r', '-20'], ['f', '-10'], ['v', '-5']],
+};
+const KEYS = new Set([...BTN_LAYOUT.rudder, ...BTN_LAYOUT.sail].map(([k]) => k));
+
+for (const group of ['rudder', 'sail']) {
+  $('btns-' + group).innerHTML = BTN_LAYOUT[group]
+    .map(([k, l]) => `<button id="key-${k}" onclick="sendCmd('${k}')">${l}<kbd>${k}</kbd></button>`).join('');
+}
+
+async function sendCmd(key) {
+  const b = $('key-' + key);
+  if (b) { b.classList.add('flash'); setTimeout(() => b.classList.remove('flash'), 120); }
+  const res = await fetch('/cmd', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key }) });
+  if (!res.ok) $('ack-note').textContent = 'send failed: ' + (await res.json()).error;
+}
+
+document.addEventListener('keydown', ev => {
+  if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+  if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+  if (KEYS.has(ev.key)) { ev.preventDefault(); sendCmd(ev.key); }
+});
+
+function renderAck() {
+  const sent = link ? link.cmds_sent : 0;
+  $('ack-sent').textContent = sent;
+  if (!telem) return;
+  const recv = telem.last_cmd_seq;
+  $('ack-recv').textContent = recv;
+  // the boat counts every command since it booted, so only a growing gap in this session means losses
+  const missing = (sent - recv) & 0xFFFF;
+  $('ack-recv').className = sent && missing && missing < 1000 ? 'bad' : '';
+  $('ack-note').textContent = sent && missing && missing < 1000 ? `${missing} not confirmed yet` : '';
+}
+
+function renderLog() {
+  $('cmd-log').innerHTML = cmdLog.map(c => {
+    const d = new Date(c.t * 1000);
+    return `<div>#${c.n}  ${d.toLocaleTimeString([], { hour12: false })}  '${c.key}'  ${c.desc}</div>`;
+  }).join('') || '<div>no commands sent</div>';
+}
+
+// ── connection ─────────────────────────────────────────────────────────────
+async function loadPorts() {
+  const data = await (await fetch('/ports')).json();
+  const sel = $('port-select');
+  sel.innerHTML = data.ports.length ? data.ports.map(p => `<option>${p}</option>`).join('') : '<option value="">no ports found</option>';
+  if (data.current && !data.ports.includes(data.current)) $('port-input').value = data.current;
+  else if (data.current) sel.value = data.current;
+}
+
+async function toggleConnect() {
+  if (link && link.connected) { await fetch('/disconnect', { method: 'POST' }); return; }
+  const port = $('port-input').value.trim() || $('port-select').value;
+  if (!port) return;
+  await fetch('/connect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ port }) });
+}
+
+// ── event stream ───────────────────────────────────────────────────────────
+const es = new EventSource('/events');
+es.addEventListener('snapshot', e => {
+  const d = JSON.parse(e.data);
+  VALIDITY = d.validity; link = d.link; telem = d.telem; history = d.history; cmdLog = d.cmd_log;
+  $('raw').textContent = d.raw || '–';
+  renderLink(); render(); renderCharts(); renderLog(); loadPorts();
+});
+es.addEventListener('telem', e => {
+  const d = JSON.parse(e.data);
+  link = d.link; telem = d.telem;
+  history.push(d.sample);
+  if (history.length > 600) history.shift();
+  $('raw').textContent = d.raw;
+  renderLink(); render(); renderCharts();
+});
+es.addEventListener('link', e => { link = JSON.parse(e.data); renderLink(); loadPorts(); });
+es.addEventListener('cmd', e => {
+  const d = JSON.parse(e.data);
+  link = d.link; cmdLog.unshift(d.entry); cmdLog.length = Math.min(cmdLog.length, 50);
+  renderLog(); renderAck();
+});
+es.onerror = () => { const p = $('link-pill'); p.className = 'pill fail'; p.textContent = 'SERVER LOST'; };
+
+setInterval(tick, 250);
+window.addEventListener('resize', renderCharts);
+</script>
+</body>
+</html>
