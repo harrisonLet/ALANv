@@ -35,7 +35,7 @@ void ipc_cm7_init(void);
   * @retval IPC_STATUS_BUSY  Round skipped, the next publish catches up.
   * @note   Prints an error after 5 BUSY in a row, and again when it recovers.
   */
-ipc_status_t ipc_cm7_publish_telemetry(ipc_telemetry_t *telem);
+ipc_status_t ipc_cm7_publish_telemetry(LoRaTelemetry_t *telem);
 
 /**
   * @brief  Pop the oldest command from the CM4.

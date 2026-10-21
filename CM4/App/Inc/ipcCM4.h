@@ -32,7 +32,7 @@ ipc_status_t ipc_cm4_attach(uint32_t timeout_ms);
   * @retval IPC_STATUS_BUSY  CM7 is mid-write, try next tick.
   * @note   seq increases on every CM7 publish. If it stops changing, the CM7 has stalled.
   */
-ipc_status_t ipc_cm4_read_telemetry(ipc_telemetry_t *telem, uint32_t *seq);
+ipc_status_t ipc_cm4_read_telemetry(LoRaTelemetry_t *telem, uint32_t *seq);
 
 /**
   * @brief  Queue a command for the CM7 and wake it with the HSEM 2 doorbell.

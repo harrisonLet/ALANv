@@ -22,7 +22,7 @@ ipc_status_t ipc_cm4_attach(uint32_t timeout_ms) {
     }
     return IPC_STATUS_TIMEOUT;
 }
-ipc_status_t ipc_cm4_read_telemetry(ipc_telemetry_t *telem, uint32_t *seq) {
+ipc_status_t ipc_cm4_read_telemetry(LoRaTelemetry_t *telem, uint32_t *seq) {
     return ipc_telem_read(telem, seq);
 }
 ipc_status_t ipc_cm4_push_command(ipc_cmd_t *cmd) {

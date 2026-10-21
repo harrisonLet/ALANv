@@ -80,10 +80,10 @@ ipc_status_t ipc_cmd_push(const ipc_cmd_t *cmd) {
     return IPC_STATUS_OK;
 }
 
-ipc_status_t ipc_telem_read(ipc_telemetry_t *telem, uint32_t *telem_seq) {
+ipc_status_t ipc_telem_read(LoRaTelemetry_t *telem, uint32_t *telem_seq) {
     if (ipc_lock(IPC_HSEM_TELEM)) {
         *telem_seq = ipc_shared.telem_seq;
-        memcpy(telem, &ipc_shared.telem, sizeof(ipc_telemetry_t));
+        memcpy(telem, &ipc_shared.telem, sizeof(LoRaTelemetry_t));
         ipc_unlock(IPC_HSEM_TELEM);
         return IPC_STATUS_OK;
     }
@@ -180,10 +180,10 @@ ipc_status_t ipc_cmd_pop(ipc_cmd_t *cmd) {
     return IPC_STATUS_OK;
 }
 
-ipc_status_t ipc_telem_write(ipc_telemetry_t *telem) {
+ipc_status_t ipc_telem_write(LoRaTelemetry_t *telem) {
     if (ipc_lock(IPC_HSEM_TELEM)) {
         ipc_shared.telem_seq++;
-        memcpy(&ipc_shared.telem, telem, sizeof(ipc_telemetry_t));
+        memcpy(&ipc_shared.telem, telem, sizeof(LoRaTelemetry_t));
         ipc_unlock(IPC_HSEM_TELEM);
         return IPC_STATUS_OK;
     }

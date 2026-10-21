@@ -61,7 +61,7 @@ ipc_status_t ipc_cm7_pop_command(ipc_cmd_t *cmd) {
     return status;
 }
 
-ipc_status_t ipc_cm7_publish_telemetry(ipc_telemetry_t *telem) {
+ipc_status_t ipc_cm7_publish_telemetry(LoRaTelemetry_t *telem) {
     ipc_status_t status = ipc_telem_write(telem);
 
     if (status == IPC_STATUS_OK) {

@@ -1,5 +1,5 @@
-#ifndef TELEMETRY_H
-#define TELEMETRY_H
+#ifndef LORA_TELEMETRY_H
+#define LORA_TELEMETRY_H
 
 #include <stdint.h>
 

@@ -29,6 +29,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include "loraTelemetry.h"
 
 #define IPC_HSEM_TELEM          (1U)
 #define IPC_HSEM_CMD_BELL       (2U)
@@ -37,7 +38,7 @@
 #define IPC_SHARED_BASE         (0x38000000UL)
 #define IPC_SHARED_SIZE         (64UL * 1024UL)
 #define IPC_MAGIC               (0x414C414EUL) // ALAN in ASCII
-#define IPC_REV                 (1U)
+#define IPC_REV                 (2U)
 
 #define IPC_CMD_RING_SIZE       (2048U)
 #define IPC_CMD_ALIGN           (4U)
@@ -61,24 +62,6 @@ typedef enum {
     IPC_STATUS_TIMEOUT,             // Attach: magic never appeared
     IPC_STATUS_VERSION_MISMATCH,    // Attach: cores built with different layouts
 } ipc_status_t;
-
-typedef struct {
-    uint32_t uptime_ms;
-    int32_t  lat_e7;
-    int32_t  lon_e7;
-    int16_t  rudder_cmd_deg;
-    int16_t  sail_cmd_deg;
-    int16_t  sail_angle_deg;
-    uint16_t heading_cdeg;
-    uint16_t wind_speed_dkn;
-    uint16_t wind_dir_deg;
-    uint16_t last_cmd_seq;
-    uint8_t  last_cmd_result;
-    uint8_t  mode;
-    uint8_t  gps_fix;
-    uint8_t  battery_pct;
-    uint8_t  reserved[2];
-} ipc_telemetry_t;
 
 typedef struct {
     uint16_t len;       // Payload bytes following the header
@@ -126,7 +109,7 @@ typedef struct {
     volatile uint32_t magic;
     volatile uint32_t version;
     volatile uint32_t telem_seq;
-    ipc_telemetry_t   telem;
+    LoRaTelemetry_t   telem;
     ipc_cmd_ring_t    cmd;
 } ipc_shared_t;
 
@@ -180,7 +163,7 @@ ipc_status_t ipc_cmd_push(const ipc_cmd_t *cmd);
   * @retval IPC_STATUS_OK    Copied.
   * @retval IPC_STATUS_BUSY  CM7 is mid-write, nothing copied.
   */
-ipc_status_t ipc_telem_read(ipc_telemetry_t *telem, uint32_t *telem_seq);
+ipc_status_t ipc_telem_read(LoRaTelemetry_t *telem, uint32_t *telem_seq);
 #endif
 
 #ifdef CORE_CM7
@@ -207,7 +190,7 @@ ipc_status_t ipc_cmd_pop(ipc_cmd_t *cmd);
   * @retval IPC_STATUS_OK    Published.
   * @retval IPC_STATUS_BUSY  CM4 is mid-read, nothing written.
   */
-ipc_status_t ipc_telem_write(ipc_telemetry_t *telem);
+ipc_status_t ipc_telem_write(LoRaTelemetry_t *telem);
 #endif
 
 #endif
