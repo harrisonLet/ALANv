@@ -1,174 +1,226 @@
-#include "system.h"
+/////////////////////////////////////////////////////////////////////////////////////////
+//
+/////////////////////////////////////////////////////////////////////////////////////////
 
 #include "sensorWind.h"
-#include "servoSail.h"
+#include "objRing.h"
+#include "sharedSensor.h"
+#include "telemetry.h"
 
-#include "stm32h7xx_hal_gpio_ex.h"
+#include "queue.h"
 
-/* ------------------------------------------------------------------ */
-/* Config                                                               */
-/* ------------------------------------------------------------------ */
+/////////////////////////////////////////////////////////////////////////////////////////
 
-#define SENSOR_ADDRESS  0x02  // Default per protocol spec
+#define WIND_ADDR 0x02
 
-/* ------------------------------------------------------------------ */
-/* Globals                                                              */
-/* ------------------------------------------------------------------ */
-TaskHandle_t        task_sensorWind;
-UART_HandleTypeDef  UART4_Handler = {0};
+#define WIND_COUNTS     3600
+#define WIND_HALF_TURN  1800
+#define WIND_FORWARD    3500
 
-/* ------------------------------------------------------------------ */
-/* Forward declarations                                                 */
-/* ------------------------------------------------------------------ */
+/////////////////////////////////////////////////////////////////////////////////////////
 
-static uint16_t crc16(const uint8_t *buf, int len);
-static void     append_crc(uint8_t *buf, int len);
-static bool     check_crc(const uint8_t *buf, int len);
-static void     flush_rx(void);
-static bool     read_bytes(uint8_t *buf, size_t len, uint32_t timeout_ms);
-static float    read_wind_angle_360(uint8_t addr);
-static int      read_wind_dir_16(uint8_t addr);
-static const char* direction_name(int val);
+TaskHandle_t sensorWind_task;
 
+/////////////////////////////////////////////////////////////////////////////////////////
 
-// Hardware init                                                       
-void sensorWind_hardwareInit(void)
+static UART_HandleTypeDef uart_handler;
+
+static QueueHandle_t metadata_queue;
+
+static int32_t ang_unwrapped;
+static int32_t ang_unwrapped_storage[SENSOR_WIND_WINDOW];
+static Ring_o  ang_unwrapped_ring;
+static int32_t ang_unwrapped_sum;
+
+static uint16_t metadata_angle_prev;
+
+static uint8_t metadata_sequence;
+
+static HAL_StatusTypeDef wind_read(uint16_t *angle);
+static uint16_t wind_crc16(const uint8_t *buf, int len);
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+HardwareInit_e sensorWind_hardwareInit(void)
 {
+    sensorWind_printf("sensorWind_hardwareInit start");
+
+    // Initialize hardware clocks
+    sensorWind_printf("    - init hardware clocks");
     __HAL_RCC_GPIOC_CLK_ENABLE();
     __HAL_RCC_UART4_CLK_ENABLE();
 
-    /* PC10 — UART4 TX */
+    // Initialize GPIOs
+    sensorWind_printf("    - init hardware GPIO pins");
     GPIO_InitTypeDef GPIO_InitStruct = {0};
-    GPIO_InitStruct.Pin       = GPIO_PIN_10;
+    GPIO_InitStruct.Pin       = GPIO_PIN_10 | GPIO_PIN_11;
     GPIO_InitStruct.Mode      = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull      = GPIO_PULLUP;
     GPIO_InitStruct.Speed     = GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.Alternate = GPIO_AF8_UART4;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-    /* PC11 — UART4 RX */
-    GPIO_InitStruct.Pin = GPIO_PIN_11;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+    // Initialize UART4 peripheral, PC10 as Tx, PC11 as Rx
+    sensorWind_printf("    - init uart communication peripheral");
+    // --
+    // The below code forces the peripheral clock to use the D2PCLK1 source for UART2,
+    // UART3, UART4, UART5, UART7, and UART8 peripherals. It shouldn't be necessary,
+    // since D2PCLK1 is the default clock source for these UART peripherals, but I've
+    // included the code incase it becomes a problem in the future.
+    //
+    // RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
+    // PeriphClkInit.PeriphClockSelection       = RCC_PERIPHCLK_USART234578;
+    // PeriphClkInit.Usart234578ClockSelection  = RCC_USART234578CLKSOURCE_D2PCLK1;
+    // if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK) { Error_Handler(); }
+    // --
+    uart_handler.Instance          = UART4;
+    uart_handler.Init.BaudRate     = 9600;
+    uart_handler.Init.WordLength   = UART_WORDLENGTH_8B;
+    uart_handler.Init.StopBits     = UART_STOPBITS_1;
+    uart_handler.Init.Parity       = UART_PARITY_NONE;
+    uart_handler.Init.Mode         = UART_MODE_TX_RX;
+    uart_handler.Init.HwFlowCtl    = UART_HWCONTROL_NONE;
+    uart_handler.Init.OverSampling = UART_OVERSAMPLING_16;
+    if (HAL_UART_Init(&uart_handler) != HAL_OK) { Error_Handler(); }
 
-    /* Set UART4 kernel clock explicitly */
-    RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
-    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_UART4;
-    PeriphClkInit.Usart16ClockSelection  = RCC_UART4CLKSOURCE_D2PCLK1;
-    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
-    {
-        Error_Handler();
-    }
+    sensorWind_printf("    - UART4 initialized: SYSCLK:%lu, APB1:%lu, expected baud rate: 9600", 
+        HAL_RCC_GetSysClockFreq(), HAL_RCC_GetPCLK1Freq());
 
-    /* UART4 peripheral */
-    UART4_Handler.Instance        = UART4;
-    UART4_Handler.Init.BaudRate   = 9600;
-    UART4_Handler.Init.WordLength = UART_WORDLENGTH_8B;
-    UART4_Handler.Init.StopBits   = UART_STOPBITS_1;
-    UART4_Handler.Init.Parity     = UART_PARITY_NONE;
-    UART4_Handler.Init.Mode       = UART_MODE_TX_RX;
-
-    if (HAL_UART_Init(&UART4_Handler) != HAL_OK)
-    {
-        Error_Handler();
-    }
-
-    uint32_t apb1_clk = HAL_RCC_GetPCLK1Freq();
-    uint32_t sys_clk  = HAL_RCC_GetSysClockFreq();
-    printf("%s UART4 init complete on PC10(TX) / PC11(RX)\r\n", SENSOR_WIND_TASK);
-    printf("%s     SYSCLK:  %lu Hz\r\n", SENSOR_WIND_TASK, sys_clk);
-    printf("%s     APB1CLK: %lu Hz\r\n", SENSOR_WIND_TASK, apb1_clk);
-    printf("%s     Expected UART4 baud: 9600\r\n", SENSOR_WIND_TASK);
+    sensorWind_printf("sensorWind_hardwareInit complete");
+    return HARDWARE_INIT_SUCCESS;
 }
+
+
+
+RtosInit_e sensorWind_rtosInit(void)
+{
+    sensorWind_printf("sensorWind_rtosInit start");
+
+    // Initialize the Queues used to share data
+    sensorWind_printf("    - init shared RTOS structures");
+    if ((metadata_queue = xQueueCreate(1, sizeof(MetadataWind_t))) == NULL)
+    {
+        sensorWind_printf("ERROR: Failed to create queue for metadata");
+        return RTOS_INIT_FAIL;
+    }
+
+    // Initialize the windows used to integrate data
+    sensorWind_printf("    - init ring buffer for windowed sensor reading");
+    objRing_init(&ang_unwrapped_ring, ang_unwrapped_storage, sizeof(int32_t), SENSOR_WIND_WINDOW);
+    ang_unwrapped_sum = 0;
+    ang_unwrapped = 0;
+    metadata_angle_prev = WIND_FORWARD;
+
+    sensorWind_printf("sensorWind_rtosInit complete");
+    return RTOS_INIT_SUCCESS;
+}
+
 
 
 void sensorWind_handler(void *argument)
 {
-    for (;;)
-    {
-        float angle = read_wind_angle_360(SENSOR_ADDRESS);
+    sensorWind_printf("sensorWind_handler start");
 
-        if (angle < 0.0f)
+    TickType_t lastWake = xTaskGetTickCount();
+    for(;;)
+    {
+        // Read Frequency
+        vTaskDelayUntil(&lastWake, pdMS_TO_TICKS(1000 / SENSOR_WIND_FREQUENCY));
+
+        // Metdata
+        MetadataWind_t metadata = {0};
+        metadata.valid = VALIDITY_UNKNOWN;
+        metadata.sequence = metadata_sequence++;
+        metadata.timestamp = HAL_GetTick();
+
+        HAL_StatusTypeDef status = wind_read(&metadata.angle);
+        if (status != HAL_OK)
         {
-            printf("%s timeout or CRC error\r\n", SENSOR_WIND_TASK);
+            sensorWind_printf("ERROR: Failed to read wind sensor");
+            metadata.valid = VALIDITY_ERROR_UNREACHABLE;
         }
-        else
+        else 
         {
-            uint16_t degrees = (uint16_t)angle;
-            uint16_t tenths  = (uint16_t)(angle * 10) % 10;  // get decimal digit
-            printf("%s %u.%u deg\r\n", SENSOR_WIND_TASK, degrees, tenths);
+            if (metadata.angle >= WIND_COUNTS) { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
+            else { metadata.valid = VALIDITY_VALID; }
+
+            if (metadata.valid == VALIDITY_VALID)
+            {
+                int32_t delta = (int32_t)metadata.angle - metadata_angle_prev;
+                if (delta >  WIND_HALF_TURN) { delta -= WIND_COUNTS; }
+                if (delta < -WIND_HALF_TURN) { delta += WIND_COUNTS; }
+                ang_unwrapped += delta;
+                metadata_angle_prev = metadata.angle;
+
+                int32_t ang_unwrapped_old;
+                ang_unwrapped_sum += ang_unwrapped;
+                if (objRing_push(&ang_unwrapped_ring, &ang_unwrapped, &ang_unwrapped_old)) {
+                    ang_unwrapped_sum -= ang_unwrapped_old;
+                }
+            }
+            else {}
         }
+        #ifdef CM7_SENSOR_WIND_DEBUG
+        char metadata_str[METADATA_WIND_STR_SIZE];
+        sensorWind_printf("%s", MetadataWind_toString(&metadata, metadata_str));
+        #endif
+        xQueueOverwrite(metadata_queue, &metadata);
+
+        // Telemetry
+        if (ang_unwrapped_ring.count == 0 || metadata.valid != VALIDITY_VALID) { continue; }
+        TelemetryWind_t telemetry;
+        int32_t degrees = ((ang_unwrapped_sum / (int32_t)ang_unwrapped_ring.count) * 360) / WIND_COUNTS;
+        telemetry.ang_wind = ANG_WRAP_180(degrees);
+        telemetry.ang_wind_r = ANG_WRAP_180(180 - telemetry.ang_wind);
+        telemetry_setWind(&telemetry);
     }
 }
 
-// DEBUG Version, prints out what is sent and what is approaved
-// void sensorWind_handler(void *argument)
-// {
 
-//     printf("SYSCLK:  %lu Hz\r\n", HAL_RCC_GetSysClockFreq());
-//     printf("APB1CLK: %lu Hz\r\n", HAL_RCC_GetPCLK1Freq());
-//     printf("D3PCLK1: %lu Hz\r\n", HAL_RCCEx_GetD3PCLK1Freq());
+
+static HAL_StatusTypeDef wind_read(uint16_t *angle)
+{
+    uint8_t cmd[8] = {WIND_ADDR, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00};
+    uint16_t crc = wind_crc16(cmd, 6);
+    cmd[6] = crc & 0xFF;
+    cmd[7] = (crc >> 8) & 0xFF;
     
-//     // Use the known-good hardcoded frame from the datasheet for addr 0x02
-//     // so we can rule out any CRC calculation issues entirely
-//     uint8_t cmd[8] = {0x02, 0x03, 0x00, 0x00, 0x00, 0x01, 0x84, 0x39};
+    // Clear overrun flag and flush the RX data register
+    __HAL_UART_CLEAR_OREFLAG(&uart_handler);
+    __HAL_UART_FLUSH_DRREGISTER(&uart_handler);
 
-//     // Also print what our CRC function computes, so we can compare
-//     uint8_t cmd_check[8] = {0x02, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00};
-//     append_crc(cmd_check, 6);
-//     printf("Datasheet CRC:  84 39\r\n");
-//     printf("Computed CRC:   %02X %02X\r\n", cmd_check[6], cmd_check[7]);
-//     // These two lines must match. If they don't, there's a clock/compile issue.
+    // Transmit command to wind sensor
+    if (HAL_UART_Transmit(&uart_handler, cmd, 8, 30) != HAL_OK) 
+    {
+        sensorWind_printf("ERROR: Failed to transmit wind sensor command");
+        return HAL_ERROR;
+    }
 
-//     uint8_t resp[16] = {0}; // oversized buffer to catch any extra bytes
+    // Read response (7 bytes: addr, func (0x03), byte count (0x02), data_hi, data_lo, crc_lo, crc_hi)
+    uint8_t resp[7];
+    if (HAL_UART_Receive(&uart_handler, resp, 7, 50) != HAL_OK) {
+        sensorWind_printf("ERROR: Failed to read wind sensor response");
+        return HAL_ERROR;
+    }
 
-//     for (;;)
-//     {
-//         memset(resp, 0, sizeof(resp));
+    // Verify
+    if (resp[0] != WIND_ADDR || resp[1] != 0x03 || resp[2] != 0x02) {
+        sensorWind_printf("ERROR: Invalid wind sensor response header");
+        return HAL_ERROR;
+    }
+    uint16_t crc_calc = wind_crc16(resp, 5);
+    uint16_t crc_recv = (uint16_t)resp[5] | ((uint16_t)resp[6] << 8);
+    if (crc_calc != crc_recv) {
+        sensorWind_printf("ERROR: CRC mismatch in wind sensor response");
+        return HAL_ERROR;
+    }
 
-//         flush_rx();
-//         printf("Sending: %02X %02X %02X %02X %02X %02X %02X %02X\r\n",
-//                cmd[0], cmd[1], cmd[2], cmd[3],
-//                cmd[4], cmd[5], cmd[6], cmd[7]);
+    // Extract angle
+    *angle = ((uint16_t)resp[3] << 8) | (uint16_t)resp[4];
+    return HAL_OK;
+}
 
-//         HAL_UART_Transmit(&UART4_Handler, cmd, 8, 1000);
-
-//         // Read up to 16 bytes with generous timeout to catch whatever comes back
-//         HAL_StatusTypeDef status = HAL_UART_Receive(&UART4_Handler, resp, 7, 3000);
-
-//         if (status == HAL_OK)
-//         {
-//             printf("RX OK:      %02X %02X %02X %02X %02X %02X %02X\r\n",
-//                    resp[0], resp[1], resp[2], resp[3],
-//                    resp[4], resp[5], resp[6]);
-
-//             // Tell us exactly what's wrong
-//             if (resp[0] != 0x02) printf("  >> addr wrong: got %02X, want 02\r\n", resp[0]);
-//             if (resp[1] != 0x03) printf("  >> func wrong: got %02X, want 03\r\n", resp[1]);
-//             if (resp[2] != 0x02) printf("  >> len wrong:  got %02X, want 02\r\n", resp[2]);
-
-//             // Check CRC regardless of header
-//             bool crc_ok = check_crc(resp, 7);
-//             printf("  >> CRC: %s\r\n", crc_ok ? "OK" : "FAIL");
-//         }
-//         else if (status == HAL_TIMEOUT)
-//         {
-//             printf("RX TIMEOUT — zero bytes received within 3000ms\r\n");
-//             printf("  Check: sensor powered? A+/B- wired to DFR0845? 5V on DFR0845?\r\n");
-//         }
-//         else
-//         {
-//             printf("RX ERROR: HAL status %d\r\n", (int)status);
-//         }
-
-//         printf("---\r\n");
-//         vTaskDelay(pdMS_TO_TICKS(2000));
-//     }
-// }
-
-
-// CRC16 Modbus — single consistent implementation                      
-// Standard Modbus CRC16, low byte first (little-endian)
-static uint16_t crc16(const uint8_t *buf, int len)
+static uint16_t wind_crc16(const uint8_t *buf, int len)
 {
     uint16_t crc = 0xFFFF;
     for (int i = 0; i < len; i++)
@@ -183,122 +235,7 @@ static uint16_t crc16(const uint8_t *buf, int len)
     return crc;
 }
 
-// Appends CRC low byte then high byte to buf[len], buf[len+1]
-static void append_crc(uint8_t *buf, int len)
-{
-    uint16_t crc  = crc16(buf, len);
-    buf[len]      = crc & 0xFF;
-    buf[len + 1]  = (crc >> 8) & 0xFF;
-}
 
-// Validates CRC in last 2 bytes of buf (low byte first)
-static bool check_crc(const uint8_t *buf, int len)
-{
-    uint16_t computed = crc16(buf, len - 2);
-    uint16_t received = (uint16_t)(buf[len - 2] | ((uint16_t)buf[len - 1] << 8));
-    return computed == received;
-}
+/////////////////////////////////////////////////////////////////////////////////////////
 
-/* ------------------------------------------------------------------ */
-/* Serial helpers                                                       */
-/* ------------------------------------------------------------------ */
-static void flush_rx(void)
-{
-    // Abort any ongoing receive and clear the UART RX FIFO/shift register
-    HAL_UART_AbortReceive(&UART4_Handler);
-    uint8_t dummy;
-    while (HAL_UART_Receive(&UART4_Handler, &dummy, 1, 1) == HAL_OK) {}
-}
-
-// Read exactly `len` bytes with a timeout. Returns true on success.
-static bool read_bytes(uint8_t *buf, size_t len, uint32_t timeout_ms)
-{
-    // HAL_UART_Receive blocks until all bytes received or timeout
-    HAL_StatusTypeDef status = HAL_UART_Receive(&UART4_Handler, buf, (uint16_t)len, timeout_ms);
-    return (status == HAL_OK);
-}
-
-/* ------------------------------------------------------------------ */
-/* Sensor reads                                                         */
-/* ------------------------------------------------------------------ */
-
-// Returns wind angle in degrees (e.g. 65.5f), or -1.0f on error
-static float read_wind_angle_360(uint8_t addr)
-{
-    // Build Modbus read command for register 0x0000 (360° angle)
-    uint8_t cmd[8] = {addr, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00};
-    append_crc(cmd, 6);
-
-    flush_rx();
-
-    if (HAL_UART_Transmit(&UART4_Handler, cmd, 8, 1000) != HAL_OK)
-    {
-        printf("TX error\r\n");
-        return -1.0f;
-    }
-
-    // Expect 7 bytes: [addr][0x03][0x02][dataH][dataL][crcL][crcH]
-    uint8_t resp[7] = {0};
-    if (!read_bytes(resp, 7, 1000))
-    {
-        printf("RX timeout\r\n");
-        return -1.0f;
-    }
-
-    // Validate header bytes
-    if (resp[0] != addr || resp[1] != 0x03 || resp[2] != 0x02)
-    {
-        printf("Bad header: %02X %02X %02X\r\n", resp[0], resp[1], resp[2]);
-        return -1.0f;
-    }
-
-    // Validate CRC
-    if (!check_crc(resp, 7))
-    {
-        printf("CRC error on 360 angle\r\n");
-        return -1.0f;
-    }
-
-    uint16_t raw = (uint16_t)(((uint16_t)resp[3] << 8) | resp[4]);
-    return raw / 10.0f;  // e.g. 655 raw → 65.5°
-}
-
-// Returns 0-15 for 16 wind directions, or -1 on error
-static int read_wind_dir_16(uint8_t addr)
-{
-    // Build Modbus read command for register 0x0001 (16-direction)
-    uint8_t cmd[8] = {addr, 0x03, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00};
-    append_crc(cmd, 6);
-
-    flush_rx();
-
-    if (HAL_UART_Transmit(&UART4_Handler, cmd, 8, 1000) != HAL_OK)
-        return -1;
-
-    uint8_t resp[7] = {0};
-    if (!read_bytes(resp, 7, 1000))
-        return -1;
-
-    if (resp[0] != addr || resp[1] != 0x03 || resp[2] != 0x02)
-        return -1;
-
-    if (!check_crc(resp, 7))
-        return -1;
-
-    return (int)(((uint16_t)resp[3] << 8) | resp[4]);
-}
-
-/* ------------------------------------------------------------------ */
-/* Direction name lookup                                                */
-/* ------------------------------------------------------------------ */
-static const char* direction_name(int val)
-{
-    static const char *dirs[] = {
-        "North",          "North-northeast", "Northeast",  "East-northeast",
-        "East",           "East-southeast",  "Southeast",  "South-southeast",
-        "South",          "South-southwest", "Southwest",  "West-southwest",
-        "West",           "West-northwest",  "Northwest",  "North-northwest"
-    };
-    if (val < 0 || val > 15) return "Unknown";
-    return dirs[val];
-}
+bool sensorWind_getMetadata(MetadataWind_t *metadata) { return xQueuePeek(metadata_queue, metadata, 0) == pdTRUE; }

@@ -1,25 +1,30 @@
+#include "main.h"
+#include "projdefs.h"
 #include "system.h"
 #include "controller.h"
 #include "shared_configuration.h"
+#include "ipc.h"
+#include "telemetry.h"
 
 #include "servoShared.h"
 #include "servoSail.h"
 #include "servoRudder.h"
-#include "sensorWind.h"
-#include "sensorMagnetometer.h"
+
+#include "sensorBattery.h"
 #include "sensorEncoder.h"
 #include "sensorGPS.h"
+#include "sensorIMU.h"
+#include "sensorWind.h"
+#include "fusionOrientation.h"
+#include "ipcCM7.h"
 
 #include "semphr.h"
 
 TaskHandle_t task_live;
-TaskHandle_t task_button;
-SemaphoreHandle_t semphr_button;
 
-void live_hardwareInit();
+HardwareInit_e live_hardwareInit();
+RtosInit_e live_rtosInit();
 void live_handler(void *argument);
-void button_hardwareInit();
-void button_handler(void *argument);
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // Init Functions
@@ -29,10 +34,30 @@ void hardware_init(void) {
     #ifdef CM7_LIVE_ENABLE
     live_hardwareInit();
     #endif
-
-    #ifdef CM7_BUTTON_ENABLE
-    button_hardwareInit();
+    #ifdef CM7_TELEMETRY_ENABLE
+    telemetry_hardwareInit();
     #endif
+
+    #ifdef CM7_SENSOR_BATTERY_ENABLE
+    sensorBattery_hardwareInit();
+    #endif
+    #ifdef CM7_SENSOR_ENCODER_ENABLE
+    sensorEncoder_hardwareInit();
+    #endif
+    #ifdef CM7_SENSOR_GPS_ENABLE
+    sensorGPS_hardwareInit();
+    #endif
+    #ifdef CM7_SENSOR_IMU_ENABLE
+    sensorIMU_hardwareInit();
+    #endif
+    #ifdef CM7_SENSOR_WIND_ENABLE
+    sensorWind_hardwareInit();
+    #endif
+    #if defined(CM7_FUSION_ORIENTATION_ENABLE) && defined(CM7_SENSOR_IMU_ENABLE) && defined(CM7_SENSOR_GPS_ENABLE)
+    fusionOrientation_hardwareInit();
+    #endif
+
+
 
     #if defined(CM7_SERVO_SAIL_ENABLE) || defined(CM7_SERVO_RUDDER_ENABLE)
     servoShared_hardwareInit();
@@ -46,20 +71,8 @@ void hardware_init(void) {
     servoRudder_hardwareInit();
     #endif
 
-    #ifdef CM7_SENSOR_WIND_ENABLE
-    sensorWind_hardwareInit();
-    #endif
-
-    #ifdef CM7_SENSOR_MAGNETOMETER_ENABLE
-    sensorMagnetometer_hardwareInit();
-    #endif
-
-    #ifdef CM7_SENSOR_ENCODER_ENABLE
-    sensorEncoder_hardwareInit();
-    #endif
-
-    #ifdef CM7_SENSOR_GPS_ENABLE
-    sensorGPS_hardwareInit();
+    #ifdef IPC_ENABLE
+    ipc_init(); // Common Shared Memory (SRAM4) init
     #endif
 }
 
@@ -69,30 +82,52 @@ void hardware_init(void) {
   */
 void rtos_init()
 {
+    int32_t totalStack = 0;
+    
     #ifdef CM7_LIVE_ENABLE
-    if (xTaskCreate(live_handler,               "liveTask",               64,  NULL, osPriorityNormal,      &task_live)               != pdPASS) { Error_Handler(); }
+    if (live_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(live_handler, LIVE_TASK, LIVE_TASK_HEAP, NULL, LIVE_TASK_PRIORITY, &task_live) != pdPASS) { Error_Handler(); }
+    totalStack += LIVE_TASK_HEAP;
+    #endif
+    #ifdef CM7_TELEMETRY_ENABLE
+    if (telemetry_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(telemetry_handler, TELEMETRY_TASK, TELEMETRY_TASK_HEAP, NULL, TELEMETRY_TASK_PRIORITY, &telemetry_task) != pdPASS) { Error_Handler(); }
+    totalStack += TELEMETRY_TASK_HEAP;
     #endif
 
-
-    #ifdef CM7_BUTTON_ENABLE
-    if ((semphr_button = xSemaphoreCreateBinary()) == NULL) { Error_Handler(); }
-    if (xTaskCreate(button_handler,             "buttonTask",             64,  NULL, osPriorityNormal,      &task_button)             != pdPASS) { Error_Handler(); }
+    #ifdef CM7_SENSOR_BATTERY_ENABLE
+    if (sensorBattery_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(sensorBattery_handler, SENSOR_BATTERY_TASK, SENSOR_BATTERY_TASK_HEAP, NULL, SENSOR_BATTERY_TASK_PRIORITY, &sensorBattery_task) != pdPASS) { Error_Handler(); }
+    totalStack += SENSOR_BATTERY_TASK_HEAP;
     #endif
-
-    #ifdef CM7_SENSOR_WIND_ENABLE
-    if (xTaskCreate(sensorWind_handler,         SENSOR_WIND_TASK,         512, NULL, osPriorityAboveNormal, &task_sensorWind)         != pdPASS) { Error_Handler(); }
-    #endif
-
-    #ifdef CM7_SENSOR_MAGNETOMETER_ENABLE
-    if (xTaskCreate(sensorMagnetometer_handler, "sensorMagnetometerTask", 128, NULL, osPriorityAboveNormal, &task_sensorMagnetometer) != pdPASS) { Error_Handler(); }
-    #endif
-
     #ifdef CM7_SENSOR_ENCODER_ENABLE
-    if (xTaskCreate(sensorEncoder_handler,      "sensorEncoderTask",      256, NULL, osPriorityAboveNormal, &task_sensorEncoder)      != pdPASS) { Error_Handler(); }
+    if (sensorEncoder_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(sensorEncoder_handler, SENSOR_ENCODER_TASK, SENSOR_ENCODER_TASK_HEAP, NULL, SENSOR_ENCODER_TASK_PRIORITY, &sensorEncoder_task) != pdPASS) { Error_Handler(); }
+    totalStack += SENSOR_ENCODER_TASK_HEAP;
+    #endif
+    #ifdef CM7_SENSOR_GPS_ENABLE
+    if (sensorGPS_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(sensorGPS_handler, SENSOR_GPS_TASK, SENSOR_GPS_TASK_HEAP, NULL, SENSOR_GPS_TASK_PRIORITY, &sensorGPS_task) != pdPASS) { Error_Handler(); }
+    totalStack += SENSOR_GPS_TASK_HEAP;
+    #endif
+    #ifdef CM7_SENSOR_IMU_ENABLE
+    if (sensorIMU_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(sensorIMU_handler, SENSOR_IMU_TASK, SENSOR_IMU_TASK_HEAP, NULL, SENSOR_IMU_TASK_PRIORITY, &sensorIMU_task) != pdPASS) { Error_Handler(); }
+    totalStack += SENSOR_IMU_TASK_HEAP;
+    #endif
+    #ifdef CM7_SENSOR_WIND_ENABLE
+    if (sensorWind_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(sensorWind_handler, SENSOR_WIND_TASK, SENSOR_WIND_TASK_HEAP, NULL, SENSOR_WIND_TASK_PRIORITY, &sensorWind_task) != pdPASS) { Error_Handler(); }
+    totalStack += SENSOR_WIND_TASK_HEAP;
+    #endif
+    #if defined(CM7_FUSION_ORIENTATION_ENABLE) && defined(CM7_SENSOR_IMU_ENABLE) && defined(CM7_SENSOR_GPS_ENABLE)
+    if (fusionOrientation_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(fusionOrientation_handler, FUSION_ORIENTATION_TASK, FUSION_ORIENTATION_TASK_HEAP, NULL, FUSION_ORIENTATION_TASK_PRIORITY, &fusionOrientation_task) != pdPASS) { Error_Handler(); }
+    totalStack += FUSION_ORIENTATION_TASK_HEAP;
     #endif
 
-    #ifdef CM7_SENSOR_GPS_ENABLE
-    if (xTaskCreate(sensorGPS_handler,          "sensorGPSTask",          512, NULL, osPriorityAboveNormal, &task_sensorGPS)          != pdPASS) { Error_Handler(); }
+    #ifdef CM7_DEBUG
+    printf("Total stack allocated: %u B / %u B\r\n", (unsigned)(totalStack * 4), (unsigned)configTOTAL_HEAP_SIZE);
     #endif
 }
 
@@ -100,77 +135,87 @@ void rtos_init()
 // Live Functions
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void live_hardwareInit()
+HardwareInit_e live_hardwareInit()
 {
+    live_printf("live_hardwareInit start");
+
+    live_printf("    - init GPIO pins");
     __HAL_RCC_GPIOB_CLK_ENABLE();
-
     GPIO_InitTypeDef GPIO_InitStruct = {0};
-
     GPIO_InitStruct.Pin = GPIO_PIN_0;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+    live_printf("live_hardwareInit complete");
+    return HARDWARE_INIT_SUCCESS;
+}
+
+RtosInit_e live_rtosInit()
+{
+    live_printf("live_rtosInit start");
+    live_printf("live_rtosInit complete");
+    return RTOS_INIT_SUCCESS;
 }
 
 void live_handler(void *argument)
 {
+    live_printf("live_handler start");
     for(;;)
     {
+        #ifdef CM7_LIVE_DEBUG_STACK
+        
+        live_printf("StackHW (Live): %u", (unsigned)uxTaskGetStackHighWaterMark(NULL));
+        #ifdef CM7_TELEMETRY_ENABLE
+        live_printf("StackHW (telemetry)=%u", (unsigned)uxTaskGetStackHighWaterMark(telemetry_task));
+        #endif
+
+        #ifdef CM7_SENSOR_BATTERY_ENABLE
+        live_printf("StackHW (sensorBattery)=%u", (unsigned)uxTaskGetStackHighWaterMark(sensorBattery_task));
+        #endif
+        #ifdef CM7_SENSOR_ENCODER_ENABLE
+        live_printf("StackHW (sensorEncoder)=%u", (unsigned)uxTaskGetStackHighWaterMark(sensorEncoder_task));
+        #endif
+        #ifdef CM7_SENSOR_GPS_ENABLE
+        live_printf("StackHW (sensorGPS)=%u", (unsigned)uxTaskGetStackHighWaterMark(sensorGPS_task));
+        #endif
+        #ifdef CM7_SENSOR_IMU_ENABLE
+        live_printf("StackHW (sensorIMU)=%u", (unsigned)uxTaskGetStackHighWaterMark(sensorIMU_task));
+        #endif
+        #ifdef CM7_SENSOR_WIND_ENABLE
+        live_printf("StackHW (sensorWind)=%u", (unsigned)uxTaskGetStackHighWaterMark(sensorWind_task));
+        #endif
+        #if defined(CM7_FUSION_ORIENTATION_ENABLE) && defined(CM7_SENSOR_IMU_ENABLE) && defined(CM7_SENSOR_GPS_ENABLE)
+        live_printf("StackHW (fusionOrientation)=%u", (unsigned)uxTaskGetStackHighWaterMark(fusionOrientation_task));
+        #endif
+
+        #endif
+
         HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0);
-        vTaskDelay(1000 * portTICK_PERIOD_MS);
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////
+// FreeRTOS Fault Hooks
+/////////////////////////////////////////////////////////////////////////////////////////
 
+// Inspect this in the debugger after a stack overflow to see which task caused it.
+volatile char fault_taskName[configMAX_TASK_NAME_LEN];
 
-void button_hardwareInit()
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 {
-    __HAL_RCC_GPIOB_CLK_ENABLE();
-    __HAL_RCC_GPIOC_CLK_ENABLE();
-
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
-
-    GPIO_InitStruct.Pin = GPIO_PIN_14;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-    GPIO_InitStruct.Pin = GPIO_PIN_13;
-    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
-    HAL_NVIC_SetPriority(EXTI15_10_IRQn, 15, 0);
-    HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+    (void)xTask;
+    taskDISABLE_INTERRUPTS();
+    strncpy((char *)fault_taskName, pcTaskName, configMAX_TASK_NAME_LEN - 1);
+    __BKPT(0);
+    for (;;) { }
 }
 
-void button_handler(void *argument)
+void vApplicationMallocFailedHook(void)
 {
-    for(;;)
-    {
-        if (xSemaphoreTake(semphr_button, portMAX_DELAY) == pdTRUE)
-        {
-            printf("Button pressed!\r\n");
-            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET); 
-            vTaskDelay(1000 * portTICK_PERIOD_MS);
-            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_RESET);
-        }
-    }
-}
-
-void EXTI15_10_IRQHandler(void)
-{
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
-}
-
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-  if (GPIO_Pin == GPIO_PIN_13)
-  {
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    xSemaphoreGiveFromISR(semphr_button, &xHigherPriorityTaskWoken);
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-  }
+    taskDISABLE_INTERRUPTS();
+    __BKPT(0);
+    for (;;) { }
 }

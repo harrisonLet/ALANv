@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "shared_configuration.h"
+#include "ipcCM4.h"
 
 #include "lora.h"
 #include "servoRudder.h"
@@ -62,7 +63,6 @@ typedef struct __attribute__((packed)) {
 #define HSEM_ID_0 (0U) /* HW semaphore 0*/
 #endif
 #endif
-
 #define ADDR_SAMD21  0xAA
 #define ADDR_STM32   0xBB
 
@@ -141,7 +141,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   /* USER CODE BEGIN 2 */
-#if defined(CM4_ENABLE) && !defined(CM7_ENABLE)
+#if defined(CM4_ENABLE) && !defined(CM7_ENABLE) && defined(CM4_DEBUG)
   /* Initialize COM1 port (115200, 8 bits (7-bit data + 1 stop bit), no parity */
   BspCOMInit.BaudRate   = 115200;
   BspCOMInit.WordLength = COM_WORDLENGTH_8B;
@@ -158,6 +158,14 @@ int main(void)
   MX_TIM6_Init();
 
   Debug_LED_Init();
+
+  #if defined(IPC_ENABLE)
+  // Initialize IPC and wait 5s for Cm7 to setup shared memory 
+  if (ipc_cm4_attach(5000U) != IPC_STATUS_OK) {
+    // Set Red LED if IPC handshake with CM7 fails
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
+  }
+  #endif
 
   #if defined(CM4_SERVOS_ENABLE)
   servoRudder_init();

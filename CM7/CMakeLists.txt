@@ -68,7 +68,9 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/sysmem.c
     Core/Src/syscalls.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../Common/Src/system_stm32h7xx_dualcore_boot_cm4_cm7.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../Common/Src/ipc.c
     ${COMMON_DRIVER_SOURCES}
+    ${COMMON_APP_SOURCES}
 )
 
 # Auto-collect user sources - app code lives outside Core/, which is CubeMX-owned
@@ -85,6 +87,9 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${FREERTOS_SOURCES})
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined library search paths
 )
+
+# Shared linker options (float printf/scanf support)
+target_link_options(${CMAKE_PROJECT_NAME} PRIVATE ${COMMON_LINK_OPTIONS})
 
 # Add linked libraries
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE

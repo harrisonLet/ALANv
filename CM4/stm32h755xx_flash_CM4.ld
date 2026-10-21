@@ -38,7 +38,10 @@ ENTRY(Reset_Handler)
 MEMORY
 {
 FLASH (rx)      : ORIGIN = 0x08100000, LENGTH = 1024K
-RAM (xrw)      : ORIGIN = 0x10000000, LENGTH = 288K
+RAM (xrw)      : ORIGIN = 0x10000000, LENGTH = 288K 
+/* Memory used for all IPC data (SRAM4 region)
+No x flag (execute code) since its only used to r/w data */
+RAM_D3 (rw) : ORIGIN = 0x38000000, LENGTH = 64K
 }
 /* Highest address of the user mode stack */
 _estack = 0x10048000;    /* end of RAM */
@@ -207,7 +210,14 @@ SECTIONS
     . = ALIGN(8);
   } >RAM
 
-  
+  /* Setup allocation for ipc_shared - Defined in ipc.c */
+  .ipc_shared (NOLOAD) :
+  {
+    . = ALIGN(4);
+    KEEP(*(.ipc_shared))
+  } >RAM_D3 /* SRAM4 in Ram D3 */
+  /* Makes sure each core allocates same address for ipc_shared */
+  ASSERT(ipc_shared == 0x38000000, "ipc_shared is not at 0x38000000")
 
   /* Remove information from the standard libraries */
   /DISCARD/ :
