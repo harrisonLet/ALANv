@@ -98,7 +98,6 @@ static void SystemClock_Config(void);
 
 
 // initialize gpio pins for di0-3 interrupt and rst 
-// initialize led's for debugging
 
 /* USER CODE END 0 */
 
@@ -161,26 +160,17 @@ int main(void)
   MX_SPI1_Init();
   MX_TIM6_Init();
 
-  Debug_LED_Init();
-
   servoRudder_init();
   servoSail_init();
-
-
-
-  // Debug_LED_Toggle('y');  // toggle yellow LED to indicate SPI initialized
 
   if (LoRa_init() != 0)
   {
       printf("LoRa init FAILED\r\n");
-      Debug_LED_Toggle('o');
   }
   LoRa_StartRX();
 
   static int16_t rudder_angle = 0;
   static int16_t sail_angle   = 0;
-  /* LoRa_init() toggles yellow LED once for version check, so yellow starts ON */
-  static uint8_t led_status   = 0x04;  /* bitmask: bit0=green, bit1=red, bit2=yellow */
   static uint8_t tx_seq       = 0;
 
   TelemetryPacket_t pkt = {
@@ -203,7 +193,7 @@ int main(void)
       if (tx_flag) {
           tx_flag = 0;
           char payload[40];
-          uint8_t plen = snprintf(payload, sizeof(payload), "STATUS,%d,%d,%d", rudder_angle, sail_angle, led_status);
+          uint8_t plen = snprintf(payload, sizeof(payload), "STATUS,%d,%d", rudder_angle, sail_angle);
           uint8_t pkt[36];
           pkt[0] = ADDR_SAMD21;   /* dest */
           pkt[1] = ADDR_STM32;    /* src */
@@ -222,11 +212,6 @@ int main(void)
           uint8_t len = LoRa_GetCmd(cmd);
           if (len > 0) {
               printf("[RX] cmd len=%d byte0=0x%02X\r\n", len, cmd[0]);
-
-              /* LED toggles */
-              if      (cmd[0] == 'g') { led_status ^= 0x01; Debug_LED_Toggle('g'); }
-              else if (cmd[0] == 'r') { led_status ^= 0x02; Debug_LED_Toggle('r'); }
-              else if (cmd[0] == 'y') { led_status ^= 0x04; Debug_LED_Toggle('y'); }
 
               /* Rudder steps */
               int16_t delta = 0;

@@ -65,8 +65,6 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN Private defines */
 
-void Debug_LED_Init(void);
-void Debug_LED_Toggle(char color);
 
 /* USER CODE END Private defines */
 

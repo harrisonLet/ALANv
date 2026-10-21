@@ -3,12 +3,12 @@
 
 /* PWM output: PB8, TIM4 Channel 3, CN7 morpho connector
  * 64 MHz HSI -> prescaler 63 -> 1 MHz tick -> period 19999 -> 50 Hz
- * Pulse range: 1000-2000 us maps to -135..+135 degrees */
+ * Pulse range: 500-2500 us maps to -135..+135 degrees (270 degree servo) */
 
 #define SERVO_MIN_ANGLE  -135
 #define SERVO_MAX_ANGLE   135
-#define SERVO_MIN_PULSE  1000
-#define SERVO_MAX_PULSE  2000
+#define SERVO_MIN_PULSE   500
+#define SERVO_MAX_PULSE  2500
 #define SERVO_CENTER_PULSE ((SERVO_MIN_PULSE + SERVO_MAX_PULSE) / 2)
 
 static TIM_HandleTypeDef htim4;
