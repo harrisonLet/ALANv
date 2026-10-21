@@ -9,6 +9,7 @@
 #include "sensorMagnetometer.h"
 #include "sensorEncoder.h"
 #include "sensorGPS.h"
+#include "console.h"
 
 #include "semphr.h"
 
@@ -61,6 +62,10 @@ void hardware_init(void) {
     #ifdef CM7_SENSOR_GPS_ENABLE
     sensorGPS_hardwareInit();
     #endif
+
+    #ifdef CM7_CONSOLE_ENABLE
+    console_hardwareInit();
+    #endif
 }
 
 /**
@@ -89,6 +94,10 @@ void rtos_init()
 
     #ifdef CM7_SENSOR_ENCODER_ENABLE
     if (xTaskCreate(sensorEncoder_handler,      "sensorEncoderTask",      256, NULL, osPriorityAboveNormal, &task_sensorEncoder)      != pdPASS) { Error_Handler(); }
+    #endif
+
+    #ifdef CM7_CONSOLE_ENABLE
+    if (xTaskCreate(console_handler,            "consoleTask",            384, NULL, osPriorityHigh,        &task_console)            != pdPASS) { Error_Handler(); }
     #endif
 
     #ifdef CM7_SENSOR_GPS_ENABLE

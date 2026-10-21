@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ALAN Simulator</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script type="importmap">
+    { "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    } }
+  </script>
+</head>
+<body>
+<header>
+  <div class="brand">ALAN <span>simulator</span></div>
+  <div id="mode" class="badge">FIRMWARE OFF · sliders steer</div>
+  <button id="h-fw" class="primary">▶ Run my firmware</button>
+  <div class="hstat">t <b id="h-time">0.0</b> s</div>
+  <div class="hstat">firmware <b id="h-renode">not running</b></div>
+  <div class="hstat">log <b id="h-log">-</b></div>
+  <div class="spacer"></div>
+  <label class="hstat">speed
+    <select id="speed"><option>0.25</option><option>0.5</option><option selected>1</option><option>2</option><option>5</option></select>×
+  </label>
+  <button id="pause">Pause</button>
+</header>
+
+<div id="who" class="who"></div>
+<main>
+  <section class="left">
+    <nav class="viewtabs">
+      <button data-view="live" class="active">Live</button>
+      <button data-view="stability">Stability</button>
+      <button data-view="bench">Bench</button>
+      <button data-view="route">Route</button>
+      <button data-view="pos">Points of sail</button>
+      <button data-view="help">How it works</button>
+    </nav>
+    <div id="view-live" class="viewpane live">
+    <div id="view">
+      <div class="view-tools">
+        <button data-cam="chase" class="active">Chase</button>
+        <button data-cam="top">Top</button>
+        <button data-cam="free">Free</button>
+        <button id="clear-track">Clear track</button>
+      </div>
+      <div id="hud"></div>
+      <div id="model-note"></div>
+    </div>
+    <div class="bottom">
+      <div class="charts">
+        <div><canvas id="c-heading"></canvas></div>
+        <div><canvas id="c-servos"></canvas></div>
+        <div><canvas id="c-speed"></canvas></div>
+        <div><canvas id="c-vane"></canvas></div>
+      </div>
+      <div class="console">
+        <div class="tabs">
+          <button data-tab="fw" class="active">Firmware console</button>
+          <button data-tab="sys">System log</button>
+          <input id="filter" placeholder="filter…">
+          <label><input type="checkbox" id="autoscroll" checked> follow</label>
+        </div>
+        <pre id="out-fw"></pre>
+        <pre id="out-sys" hidden></pre>
+      </div>
+    </div>
+    </div>
+
+    <div id="view-stability" class="viewpane" hidden>
+      <div class="st-grid">
+        <div class="card">
+          <h3>Front view: heel <output id="st-heel-v">0°</output></h3>
+          <canvas id="st-front"></canvas>
+          <input type="range" id="st-heel" min="-90" max="90" value="0" step="1">
+          <p class="hint">Drag to heel the boat. Weight acts down through the CG (black), buoyancy up through the CB (blue).
+            The horizontal gap between them (GZ) is the lever that pulls it back upright.</p>
+        </div>
+        <div class="card">
+          <h3>Side view: where it floats</h3>
+          <canvas id="st-side"></canvas>
+          <div id="st-summary" class="grid"></div>
+        </div>
+        <div class="card">
+          <h3>Righting moment vs heel</h3>
+          <canvas id="st-gz"></canvas>
+          <div class="ctl"><span>Wind (apparent)</span><input type="range" id="st-wind" min="0" max="12" step="0.5" value="4"><output id="st-wind-v">4.0 m/s</output></div>
+          <p class="hint" id="st-wind-note"></p>
+        </div>
+        <div class="card">
+          <h3>Mass &amp; centre of gravity</h3>
+          <p class="hint">Weigh parts and place them (CAD mm: x port+ / starboard−, y bow− / stern+, z up, 0 = hull bottom).
+            Saving recomputes the CG, waterline and stability, and restarts the simulation with them.</p>
+          <table id="st-mass"><thead><tr><th>part</th><th>kg</th><th>x</th><th>y</th><th>z</th><th></th></tr></thead><tbody></tbody></table>
+          <div class="row"><button id="st-add">Add item</button><button id="st-save" class="primary">Save &amp; recompute</button><span id="st-msg" class="hint"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-bench" class="viewpane bench" hidden>
+      <div id="bench-view" class="bench-view"><div class="bench-note">On the stand · drag to orbit · scroll to zoom</div></div>
+      <div class="bench-side">
+        <div class="card">
+          <h3>Fan and sail (top view)</h3>
+          <canvas id="bench-dial"></canvas>
+          <div class="ctl"><span>Fan direction</span><input type="range" id="bench-fan-dir" min="0" max="359" value="60"><output id="bench-fan-dir-v">60°</output></div>
+          <div class="ctl"><span>Fan speed</span><input type="range" id="bench-fan" min="0" max="10" step="0.5" value="4"><output id="bench-fan-v">4.0 m/s</output></div>
+          <p class="hint">Drag around the ring to move the fan. The wing turns freely on its mast; the tail decides where it settles.</p>
+        </div>
+        <div class="card">
+          <h3>Set the sail angle</h3>
+          <div class="ctl"><span>Sail angle</span><input type="range" id="bench-wing" min="-90" max="90" value="30"><output id="bench-wing-v">30°</output></div>
+          <div class="row"><button id="bench-hold" class="toggle">Hold this sail angle</button></div>
+          <div id="bench-math" class="math"></div>
+          <p class="hint">"Hold" is a simulator helper that moves the tail by the formula above (it is not your firmware).
+            Your sail controller should do the same thing in code.</p>
+        </div>
+        <div class="card">
+          <h3>Firmware console</h3>
+          <p class="hint">Types into your firmware's serial port (USART3), exactly like <code>screen /tmp/alan-board 115200</code>
+            in a Mac terminal, or <code>screen /dev/tty.usbmodem* 115200</code> on the real board.
+            Needs <code>CM7_CONSOLE_ENABLE</code> (on in the simulator build).</p>
+          <div class="row"><input id="bench-fwcmd" placeholder="tail 30 · rudder -10 · center · sweep tail · status · help"><button id="bench-fwsend" class="primary">Send</button></div>
+          <pre id="bench-fwout" class="fwout"></pre>
+        </div>
+        <div class="card">
+          <h3>Test the servos</h3>
+          <p class="hint" id="bench-who"></p>
+          <label class="inline"><input type="checkbox" id="bench-viafw"> Send slider moves through the firmware console (tests your code's servo path)</label>
+          <div class="ctl"><span>Tail</span><input type="range" id="bench-tail" min="-90" max="90" value="0"><output id="bench-tail-v">0°</output></div>
+          <div class="ctl"><span>Rudder</span><input type="range" id="bench-rudder" min="-35" max="35" value="0"><output id="bench-rudder-v">0°</output></div>
+          <div class="row"><button id="bench-sweep-tail">Sweep tail</button><button id="bench-sweep-rudder">Sweep rudder</button>
+            <button id="bench-center">Center</button><button id="bench-release">Give back to firmware</button></div>
+          <div class="ctl"><span>Wing hard stops</span><input type="range" id="bench-limit" min="30" max="180" step="5" value="90"><output id="bench-limit-v">±90° (180° swing)</output></div>
+        </div>
+        <div class="card">
+          <h3>Wind vane position</h3>
+          <div class="row seg">
+            <button data-bvane="bow">Bow</button><button data-bvane="stern">Stern</button><button data-bvane="masthead">Masthead</button><button data-bvane="custom">Custom</button>
+          </div>
+          <div class="ctl"><span>Fore / aft</span><input type="range" id="bench-vx" min="-0.5" max="0.55" step="0.01" value="0.3"><output id="bench-vx-v">0.30 m forward</output></div>
+          <div class="ctl"><span>Height</span><input type="range" id="bench-vz" min="0.1" max="1.5" step="0.01" value="0.4"><output id="bench-vz-v">0.40 m up</output></div>
+          <div id="bench-vane" class="grid"></div>
+          <p class="hint">Positions are from the centre of gravity, height above the waterline. Moving a slider switches to Custom.
+            Close to the wing the airflow is bent (upwash ahead, downwash behind); low down the wind is lighter.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-route" class="viewpane route" hidden>
+      <canvas id="route-map"></canvas>
+      <div class="bench-side">
+        <div class="card">
+          <h3>Plan A → B</h3>
+          <p class="hint">Click the map to set B, click again to set A (they alternate). The planner runs here on your
+            laptop: straight if B can be sailed directly, otherwise tacks (upwind) or gybes (downwind) inside the corridor.</p>
+          <p id="route-summary" class="hint"></p>
+          <div class="ctl"><span>Corridor ±</span><input type="range" id="route-margin" min="4" max="40" value="12"><output id="route-margin-v">12 m</output></div>
+          <div class="row"><button id="route-plan">Plan route</button><button id="route-swap">Swap A/B</button></div>
+        </div>
+        <div class="card">
+          <h3>Sail it</h3>
+          <p class="hint">The boat starts at A and the <b>sim autopilot</b> follows the waypoints: a heading controller on the rudder,
+            the tail setting the wing's angle of attack. It stands in for the Live Tack Planner and PIDs your team is writing.</p>
+          <div class="ctl"><span>Wing AoA</span><input type="range" id="route-aoa" min="4" max="30" value="12"><output id="route-aoa-v">12°</output></div>
+          <div class="row"><button id="route-go" class="primary">Sail A → B</button><button id="route-replan">Re-plan from here</button><button id="route-stop">Stop</button></div>
+          <div id="route-status" class="grid"></div>
+        </div>
+        <div class="card">
+          <h3>Changing wind</h3>
+          <p class="hint">Gusts and shifts come from the Wind sliders (right). Shift it now to see the autopilot cope, then re-plan.</p>
+          <div class="row"><button id="route-shift-l">Shift wind −20°</button><button id="route-shift-r">Shift wind +20°</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-pos" class="viewpane" hidden>
+      <div class="pos-tools">
+        <div class="ctl"><span>True wind</span><input type="range" id="pos-tws" min="1" max="10" step="0.5" value="4"><output id="pos-tws-v">4.0 m/s</output></div>
+        <div class="ctl"><span>Wing AoA target</span><input type="range" id="pos-aoa" min="2" max="45" step="1" value="12"><output id="pos-aoa-v">12°</output></div>
+        <label class="inline"><input type="checkbox" id="pos-opt"> find the fastest AoA at each heading (slower)</label>
+        <button id="pos-run" class="primary">Compute</button>
+        <span id="pos-msg" class="hint"></span>
+      </div>
+      <div class="pos-grid">
+        <div class="card"><canvas id="pos-ring"></canvas></div>
+        <div class="card">
+          <h3>Speed polar</h3>
+          <canvas id="pos-polar"></canvas>
+          <div id="pos-detail" class="grid"></div>
+        </div>
+      </div>
+      <p class="hint pos-note">Each boat is the physics model held on that heading until it settles, with the tail set so the wing
+        meets the apparent wind at the target angle of attack (feathered inside the no-go zone). The grey line is the
+        wing chord, the orange tick the tail. Hover a boat for its numbers.</p>
+    </div>
+
+    <div id="view-help" class="viewpane help" hidden>
+      <h2>What you are looking at</h2>
+      <ol class="steps">
+        <li><b>Your code is compiled exactly as for the boat.</b> <em>Build &amp; start</em> compiles the CM7 firmware in
+          <code>CM7/</code> and <code>Common/</code> with the same Arm compiler and CMake as <code>./build.sh cm7 -b</code>.
+          The only difference is which sensors are switched on (passed as compiler flags, so
+          <code>shared_configuration.h</code> is untouched).</li>
+        <li><b>Renode runs that machine code on a virtual STM32H755.</b> It executes the same <code>.elf</code> file you would
+          flash, instruction by instruction: HAL, FreeRTOS, your tasks, your interrupts. The firmware card on the right shows
+          the branch, commit and edited files it was built from.</li>
+        <li><b>Virtual sensors answer on the real buses.</b> The BNO055 and AS5600 answer I2C register reads, the wind vane
+          answers Modbus on UART4, the GPS sends NMEA on UART7. Your drivers run unmodified.</li>
+        <li><b>Your servo commands move a virtual boat.</b> Every 20 ms the simulator reads the PWM your firmware writes to
+          TIM1, moves the rudder and tail, and computes the wind, water, wing, keel and heel. The new heading, wing angle,
+          wind and position go back into the sensors. That is the loop: your code &rarr; servos &rarr; boat &rarr; sensors &rarr; your code.</li>
+        <li><b>The boat is your CAD.</b> Hull, keel, wing, tail and rudder come from the Onshape exports; mass and centre of
+          gravity from Onshape plus the counterweight (Stability tab). Areas, positions and buoyancy are measured from the meshes.</li>
+      </ol>
+      <h2>Typical loop</h2>
+      <ol class="steps">
+        <li>Edit firmware in <code>CM7/App/Src</code>.</li>
+        <li>Click <em>Build &amp; start</em>. If the build fails, the System log tab says why.</li>
+        <li>Watch the boat, the charts and the Firmware console (your <code>printf</code> output). Change wind, current, faults.</li>
+        <li>When it behaves, flash the real board from the same code: <code>./build.sh cm7 -b -f</code>.</li>
+      </ol>
+      <h2>Not simulated</h2>
+      <p>The CM4 core and LoRa radio; waves (visual only); the physics parameters for drag are estimates until measured on the water.
+        Use the simulator to get logic right, and the lake to tune gains.</p>
+    </div>
+  </section>
+
+  <aside>
+    <details open>
+      <summary>Firmware (Renode)</summary>
+      <div id="fw-card" class="fwcard"></div>
+      <p class="hint">Compiles your CM7 code with the sensors below and runs it on the emulated STM32. While it runs, the boat follows your code's servo commands.</p>
+      <div class="checks">
+        <label><input type="checkbox" class="sensor" value="wind" checked> wind vane</label>
+        <label><input type="checkbox" class="sensor" value="imu"> IMU</label>
+        <label><input type="checkbox" class="sensor" value="encoder" checked> encoder</label>
+        <label><input type="checkbox" class="sensor" value="gps" checked> GPS</label>
+      </div>
+      <p class="warn">IMU off by default: on current <code>master</code> its 128-word task stack overflows and the firmware hard-faults (see sim/renode/README.md).</p>
+      <div class="row">
+        <button id="fw-start" class="primary">Build &amp; start</button>
+        <button id="fw-restart">Start (no build)</button>
+        <button id="fw-stop">Stop</button>
+      </div>
+      <div class="row"><input id="monitor" placeholder="Renode monitor command, e.g. cpu PC"><button id="monitor-send">Send</button></div>
+    </details>
+
+    <details open>
+      <summary>Wind</summary>
+      <div class="ctl"><span>From</span><input type="range" id="wind-dir" min="0" max="359" value="270"><output id="wind-dir-v">270°</output></div>
+      <div class="ctl"><span>Speed</span><input type="range" id="wind-speed" min="0" max="12" step="0.1" value="3"><output id="wind-speed-v">3.0 m/s</output></div>
+      <div class="ctl"><span>Gusts</span><input type="range" id="gust" min="0" max="3" step="0.1" value="0.5"><output id="gust-v">0.5 m/s</output></div>
+      <div class="ctl"><span>Shifts</span><input type="range" id="shift" min="0" max="30" step="1" value="5"><output id="shift-v">5°</output></div>
+    </details>
+
+    <details open>
+      <summary>Water</summary>
+      <div class="ctl"><span>Current to</span><input type="range" id="cur-dir" min="0" max="359" value="0"><output id="cur-dir-v">0°</output></div>
+      <div class="ctl"><span>Current</span><input type="range" id="cur-speed" min="0" max="1.5" step="0.05" value="0"><output id="cur-speed-v">0.00 m/s</output></div>
+      <div class="ctl"><span>Waves (visual)</span><input type="range" id="waves" min="0" max="0.3" step="0.01" value="0.05"><output id="waves-v">0.05 m</output></div>
+    </details>
+
+    <details open>
+      <summary>View</summary>
+      <div class="ctl"><span>Wind streaks</span><input type="range" id="streaks" min="0" max="1" step="0.05" value="1"><output id="streaks-v">100%</output></div>
+      <div class="ctl"><span>Track width</span><input type="range" id="track-width" min="1" max="12" step="1" value="4"><output id="track-width-v">4 px</output></div>
+      <p class="hint">Scroll on the 3D view to zoom in Chase and Top. Free: drag to orbit, right-drag to pan.</p>
+    </details>
+
+    <details open>
+      <summary>Wind vane mount</summary>
+      <div class="row seg">
+        <button data-vane="bow">Bow</button><button data-vane="stern">Stern</button><button data-vane="masthead">Masthead</button>
+      </div>
+      <p class="hint">Where the vane sits changes what it reads: wind is lighter near the deck, the wing bends the airflow
+        around it, and turning swings the bow and stern sideways. Compare the bottom chart (vane vs true apparent wind).</p>
+    </details>
+
+    <details open>
+      <summary>Sensor faults</summary>
+      <div class="row">
+        <button id="gps-toggle" class="toggle on">GPS on</button>
+        <button id="vane-toggle" class="toggle on">Wind vane on</button>
+      </div>
+    </details>
+
+    <details open>
+      <summary>Manual servos</summary>
+      <p class="hint">Used in physics-only mode, or when "Override firmware" is on.</p>
+      <label class="inline"><input type="checkbox" id="override"> Override firmware</label>
+      <div class="ctl"><span>Tail</span><input type="range" id="tail" min="-90" max="90" step="1" value="0"><output id="tail-v">0°</output></div>
+      <div class="ctl"><span>Rudder</span><input type="range" id="rudder" min="-35" max="35" step="1" value="0"><output id="rudder-v">0°</output></div>
+      <div class="row"><button id="center">Center both</button></div>
+    </details>
+
+    <details open>
+      <summary>Boat &amp; scenario</summary>
+      <div class="row"><select id="scenario"></select><button id="reset">Reset</button></div>
+      <p class="hint" id="scenario-desc"></p>
+      <div class="row">
+        <button id="stop-boat">Stop boat</button>
+        <input id="set-heading" type="number" min="0" max="359" placeholder="heading°"><button id="apply-heading">Set heading</button>
+      </div>
+    </details>
+
+    <details open>
+      <summary>Telemetry</summary>
+      <div id="telemetry" class="grid"></div>
+    </details>
+  </aside>
+</main>
+
+<script type="module" src="/static/app.js"></script>
+</body>
+</html>

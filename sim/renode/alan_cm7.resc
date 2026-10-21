@@ -1,0 +1,47 @@
+# Run the ALAN CM7 firmware on a virtual NUCLEO-H755ZI-Q with simulated sensors.
+#   Easiest:  sim/renode/run.sh            (builds the sim firmware, then starts this script)
+#   Manual, from the repo root:  renode sim/renode/alan_cm7.resc
+# In the Renode monitor:  start | pause | runMacro $reset | quit
+# Sensor inputs (see README):  i2c2.bno055 Heading 90 | i2c1.as5600 Angle 30
+#                              windvane Angle 270 | gps Latitude 40.76
+# With the physics simulator running (sim/plant/run_plant.py) the sensors are driven by the boat model instead.
+
+$name?="ALAN-CM7"
+$cm7?=@sim/renode/build/cm7/Autonomaus_Sailboat_CM7.elf
+
+include @sim/renode/models/AlanBNO055.cs
+include @sim/renode/models/AlanAS5600.cs
+include @sim/renode/models/AlanWindVane.cs
+include @sim/renode/models/AlanGPS.cs
+include @sim/renode/models/AlanPlantBridge.cs
+
+using sysbus
+mach create $name
+machine LoadPlatformDescription @sim/renode/alan_h755.repl
+
+# printf output (BSP COM1 = USART3, the ST-LINK virtual COM port)
+showAnalyzer usart3
+
+# The same port as a network terminal on your Mac (like the real board's USB serial):
+#   python3 sim/tools/board.py          (or: nc localhost 3456)
+# With CM7_CONSOLE_ENABLE the firmware takes commands there: tail 30, rudder -10, center, sweep tail, status.
+# A socket, not a pty: with nobody connected the output is dropped instead of filling up and freezing the chip.
+emulation CreateServerSocketTerminal 3456 "board" false
+connector Connect sysbus.usart3 board
+
+# Watch the heartbeat LED (PB0) toggle in the log
+logLevel -1 gpioPortB.GreenLED
+
+# Speed. The current firmware busy-waits on its UARTs, so the core never idles and every status-register read is
+# emulated; at the real 64 MHz that runs at ~0.4x real time on a laptop. 24 MIPS gives ~1x. Task timing
+# (FreeRTOS ticks, delays, UART baud) is unaffected; only pure number-crunching takes longer in virtual time.
+# The plant bridge also caps the run at real time (plant SpeedFactor), so a faster setting cannot run ahead.
+cpu PerformanceInMips 24
+emulation SetGlobalQuantum "0.002"
+
+macro reset
+"""
+    sysbus LoadELF $cm7
+    cpu VectorTableOffset 0x08000000
+"""
+runMacro $reset

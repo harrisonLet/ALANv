@@ -23,3 +23,4 @@
 // #define CM7_SENSOR_MAGNETOMETER_ENABLE
 // #define CM7_SENSOR_ENCODER_ENABLE
 // #define CM7_SENSOR_GPS_ENABLE
+// #define CM7_CONSOLE_ENABLE          // serial command console on USART3: tail/rudder/center/sweep/status
