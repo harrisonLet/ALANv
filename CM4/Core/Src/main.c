@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "lora.h"
+#include "telemetry.h"
 #include "servoRudder.h"
 #include "servoSail.h"
 #include <stdint.h>
@@ -37,18 +38,6 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
-typedef struct __attribute__((packed)) {
-    float    lat;
-    float    lon;
-    int16_t  heading;
-    int16_t  roll;
-    int16_t  pitch;
-    uint8_t  battery;
-    int16_t  wind_speed;
-    int16_t  wind_dir;
-    int16_t  sail_angle;
-} TelemetryPacket_t;
 
 /* USER CODE END PTD */
 
@@ -173,11 +162,44 @@ int main(void)
   static int16_t sail_angle   = 0;
   static uint8_t tx_seq       = 0;
 
-  TelemetryPacket_t pkt = {
-      .lat        = 40.7128f,
-      .lon        = -74.0060f,
-      .heading    = 180,
-      .battery    = 95,
+  /* Dummy telemetry until real data arrives from the CM7. Servo angles,
+     uptime and command count are filled in live before each send. */
+  static LoRaTelemetry_t telem = {
+      .battery_voltage        = 14800,
+      .cell_voltage           = { 3700, 3700, 3700, 3700 },
+      .battery_valid          = 0x01,   /* VALIDITY_VALID */
+
+      .sail_ang_forward       = 15,
+      .sail_encoder_magnitude = 2048,
+      .sail_encoder_status    = 0x20,   /* MD: magnet detected */
+      .encoder_valid          = 0x01,
+
+      .ang_wind               = -45,
+      .wind_valid             = 0x01,
+
+      .latitude               = 40.7128,
+      .longitude              = -74.0060,
+      .altitude               = 0.0f,
+      .satellites             = 8,
+      .fix_valid              = 1,
+      .utc_hours              = 12,
+      .utc_minutes            = 0,
+      .utc_seconds            = 0,
+      .gps_valid              = 0x01,
+
+      .imu_cal                = 0xFF,   /* sys/gyro/acc/mag all fully calibrated */
+      .imu_temp               = 25,
+      .imu_valid              = 0x01,
+
+      .heading                = 180,
+      .roll                   = 5,
+      .pitch                  = 0,
+      .orientation_valid      = 0x01,
+
+      .mode                   = 0,
+      .desired_heading        = 180,
+      .route_segment          = 0,
+      .drift_distance         = 0,
   };
 
   // char message[] = "Hello from harrisons laptop!\n";
@@ -192,16 +214,19 @@ int main(void)
 
       if (tx_flag) {
           tx_flag = 0;
-          char payload[40];
-          uint8_t plen = snprintf(payload, sizeof(payload), "STATUS,%d,%d", rudder_angle, sail_angle);
-          uint8_t pkt[36];
+          telem.rudder_servo_angle = rudder_angle;
+          telem.sail_servo_angle   = sail_angle;
+          telem.uptime_ms          = HAL_GetTick();
+
+          uint8_t pkt[4 + sizeof(LoRaTelemetry_t)];
           pkt[0] = ADDR_SAMD21;   /* dest */
           pkt[1] = ADDR_STM32;    /* src */
           pkt[2] = tx_seq++;
-          pkt[3] = plen;
-          memcpy(pkt + 4, payload, plen);
-          LoRa_Send(pkt, 4 + plen);
-          printf("[TX] %s\r\n", payload);
+          pkt[3] = sizeof(LoRaTelemetry_t);
+          memcpy(pkt + 4, &telem, sizeof(LoRaTelemetry_t));
+          LoRa_Send(pkt, sizeof(pkt));
+          printf("[TX] seq=%u len=%u rudder=%d sail=%d up=%lu\r\n",
+                 pkt[2], (unsigned)sizeof(pkt), rudder_angle, sail_angle, telem.uptime_ms);
       }
 
       if (dio0_flag) {
@@ -212,6 +237,7 @@ int main(void)
           uint8_t len = LoRa_GetCmd(cmd);
           if (len > 0) {
               printf("[RX] cmd len=%d byte0=0x%02X\r\n", len, cmd[0]);
+              telem.last_cmd_seq++;   /* commands carry no sequence number yet, so count them */
 
               /* Rudder steps */
               int16_t delta = 0;
