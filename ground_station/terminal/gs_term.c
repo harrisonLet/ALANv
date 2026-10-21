@@ -7,7 +7,7 @@
  * expects.
  *
  * Wire format from the boat (raw LoRa payload, forwarded byte for byte):
- *   [0] dest 0xAA  [1] src 0xBB  [2] seq  [3] len (= 72)  [4..75] LoRaTelemetry_t
+ *   [0] dest 0xAA  [1] src 0xBB  [2] seq  [3] len (= 74)  [4..77] LoRaTelemetry_t
  *
  * Build:  make
  * Run:    ./gs_term [/dev/ttyACM0]
@@ -30,7 +30,7 @@
 
 #include "telemetry.h"
 
-_Static_assert(sizeof(LoRaTelemetry_t) == 72, "LoRaTelemetry_t must be 72 bytes");
+_Static_assert(sizeof(LoRaTelemetry_t) == 74, "LoRaTelemetry_t must be 74 bytes");
 
 #define ADDR_GROUND    0xAA
 #define ADDR_BOAT      0xBB
@@ -398,8 +398,8 @@ static void draw(const char *port)
 
         printf("%s\n", HR);
         uint32_t up = t->uptime_ms / 1000;
-        printf("mode %u   desired hdg %3u   segment %u   drift %+d m   uptime %02u:%02u:%02u\n",
-               t->mode, t->desired_heading, t->route_segment, t->drift_distance,
+        printf("mode %u   desired hdg %3u   desired sail %+4d   segment %u   drift %+d m   uptime %02u:%02u:%02u\n",
+               t->mode, t->desired_heading, t->desired_sail_angle, t->route_segment, t->drift_distance,
                up / 3600, (up / 60) % 60, up % 60);
     }
 
