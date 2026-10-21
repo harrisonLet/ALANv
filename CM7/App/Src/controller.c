@@ -127,7 +127,7 @@ void rtos_init()
     #endif
 
     #ifdef CM7_DEBUG
-    printf("Total stack allocated: %u B / %u B\r\n", (uint)(totalStack * 4), (uint)configTOTAL_HEAP_SIZE);
+    printf("Total stack allocated: %u B / %u B\r\n", (unsigned)(totalStack * 4), (unsigned)configTOTAL_HEAP_SIZE);
     #endif
 }
 
