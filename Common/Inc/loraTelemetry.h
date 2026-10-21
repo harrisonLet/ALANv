@@ -2,6 +2,7 @@
 #define LORA_TELEMETRY_H
 
 #include <stdint.h>
+#include "sharedBattery.h"
 
 /*
  * Telemetry record sent from the boat to the ground station over LoRa.
@@ -11,7 +12,7 @@ typedef struct __attribute__((packed)) {
 
     /* Battery */
     uint16_t battery_voltage;        /* whole pack, mV */
-    uint16_t cell_voltage[4];        /* each cell, mV */
+    uint16_t cell_voltage[BATTERY_CELL_COUNT];        /* each cell, mV */
     uint8_t  battery_valid;          /* Validity_e */
 
     /* Main sail encoder (AS5600) */

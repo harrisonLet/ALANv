@@ -5,9 +5,16 @@
 #include "projdefs.h"
 #include "system.h"
 
+#include "sensorBattery.h"
+#include "sensorEncoder.h"
+#include "sensorGPS.h"
+#include "sensorIMU.h"
+#include "sensorWind.h"
 #include "telemetry.h"
 
 #include "queue.h"
+#include "ipc.h"
+#include "loraTelemetry.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -26,6 +33,8 @@ static QueueHandle_t TelemetryTailSail_queue;
 static QueueHandle_t TelemetryWind_queue;
 
 static QueueHandle_t telemetry_queueCreate(char* name, size_t itemSize);
+
+static bool telemetry_pack(LoRaTelemetry_t *telemetry, TelemetryBattery_t *telemetry_battery, TelemetryBoatRelativeOrientation_t *telemetry_boatRelative, TelemetryBoatGlobalOrientation_t *telemetry_boatGlobal, TelemetryRudder_t *telemetry_rudder, TelemetryMainSail_t *telemetry_mainSail, TelemetryTailSail_t *telemetry_tailSail, TelemetryWind_t *telemetry_wind);
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -73,20 +82,22 @@ void telemetry_handler(void *argument)
     for (;;)
     {
         vTaskDelayUntil(&lastWake, 10000);
+
+        LoRaTelemetry_t telemetry = {0};
+
+        TelemetryBattery_t telemetryBattery;
+        TelemetryBoatRelativeOrientation_t telemetryRelative;
+            
         
         #ifdef CM7_TELEMETRY_DEBUG
         #ifdef CM7_SENSOR_BATTERY_ENABLE
         {
-            TelemetryBattery_t telemetry;
-            telemetry_getBattery(&telemetry);
             char telemetryStr[TELEMETRY_BATTERY_STR_SIZE];
             telemetry_printf("%s", TelemetryBattery_toString(&telemetry, telemetryStr));
         }
         #endif
         #if defined(CM7_FUSION_ORIENTATION_ENABLE) && defined(CM7_SENSOR_IMU_ENABLE) && defined(CM7_SENSOR_GPS_ENABLE)
         {
-            TelemetryBoatRelativeOrientation_t telemetryRelative;
-            telemetry_getBoatRelativeOrientation(&telemetryRelative);
             char telemetryStr[TELEMETRY_BOAT_RELATIVE_ORIENTATION_STR_SIZE];
             telemetry_printf("%s", telemetryBoatRelativeOrientation_toString(&telemetryRelative, telemetryStr));
 
@@ -114,6 +125,57 @@ void telemetry_handler(void *argument)
         #endif
         #endif
     }
+}
+
+
+static bool telemetry_pack(
+    LoRaTelemetry_t *telemetry, 
+    TelemetryBattery_t *telemetry_battery, 
+    TelemetryBoatRelativeOrientation_t *telemetry_boatRelative, 
+    TelemetryBoatGlobalOrientation_t *telemetry_boatGlobal, 
+    TelemetryRudder_t *telemetry_rudder, 
+    TelemetryMainSail_t *telemetry_mainSail, 
+    TelemetryTailSail_t *telemetry_tailSail, 
+    TelemetryWind_t *telemetry_wind)
+{
+    bool battery_ok    = telemetry_getBattery(telemetry_battery) == TELEMETRY_OK;
+    telemetry_getBoatRelativeOrientation(telemetry_boatRelative); // LoRaTelemetry_t has no linear velocity/acceleration fields
+    bool boatGlobal_ok = telemetry_getBoatGlobalOrientation(telemetry_boatGlobal) == TELEMETRY_OK;
+    bool rudder_ok     = telemetry_getRudder(telemetry_rudder) == TELEMETRY_OK;
+    bool mainSail_ok   = telemetry_getMainSail(telemetry_mainSail) == TELEMETRY_OK;
+    bool tailSail_ok   = telemetry_getTailSail(telemetry_tailSail) == TELEMETRY_OK;
+    bool wind_ok       = telemetry_getWind(telemetry_wind) == TELEMETRY_OK;
+
+    // A failed get leaves its struct untouched (nothing published yet), so only copy the ones that succeeded
+    if (battery_ok) {
+        telemetry->battery_voltage = telemetry_battery->battery_voltage;
+        for (uint16_t i = 0; i < BATTERY_CELL_COUNT; i++) { telemetry->cell_voltage[i] = telemetry_battery->cell_voltage[i]; }
+    }
+    if (mainSail_ok) {
+        telemetry->sail_ang_forward = telemetry_mainSail->ang_forward;
+    }
+    if (wind_ok) {
+        telemetry->ang_wind = telemetry_wind->ang_wind;
+    }
+    if (boatGlobal_ok) {
+        telemetry->latitude  = telemetry_boatGlobal->latitude;
+        telemetry->longitude = telemetry_boatGlobal->longitude;
+        telemetry->heading   = telemetry_boatGlobal->angP_heading;
+        telemetry->roll      = telemetry_boatGlobal->angP_roll;
+        telemetry->pitch     = telemetry_boatGlobal->angP_pitch;
+    }
+    if (rudder_ok) {
+        telemetry->rudder_servo_angle = telemetry_rudder->ang_forward;
+    }
+    if (tailSail_ok) {
+        telemetry->sail_servo_angle = telemetry_tailSail->ang_forward; // The sail servo drives the tail sail
+    }
+
+    MetadataBattery_t metadata_battery;
+    bool metadata_battery_okay = sensorBattery_getMetadata(&metadata_battery);
+
+    // true only if every source above had data
+    return battery_ok && boatGlobal_ok && rudder_ok && mainSail_ok && tailSail_ok && wind_ok;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
