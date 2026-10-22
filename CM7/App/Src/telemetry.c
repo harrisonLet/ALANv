@@ -3,6 +3,8 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 
 #include "projdefs.h"
+#include "sharedBoat.h"
+#include "sharedSensor.h"
 #include "system.h"
 
 #include "sensorBattery.h"
@@ -17,6 +19,8 @@
 #include "loraTelemetry.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////
+
+
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -81,44 +85,49 @@ void telemetry_handler(void *argument)
     TickType_t lastWake = xTaskGetTickCount();
     for (;;)
     {
-        vTaskDelayUntil(&lastWake, 10000);
+        vTaskDelayUntil(&lastWake, 1000);
 
         LoRaTelemetry_t telemetry = {0};
 
-        TelemetryBattery_t telemetryBattery;
-        TelemetryBoatRelativeOrientation_t telemetryRelative;
-            
-        
+        TelemetryBattery_t telemetry_battery;
+        TelemetryBoatRelativeOrientation_t telemetry_boatRelative;
+        TelemetryBoatGlobalOrientation_t telemetry_boatGlobal;
+        TelemetryRudder_t telemetry_rudder;
+        TelemetryMainSail_t telemetry_mainSail;
+        TelemetryTailSail_t telemetry_tailSail;
+        TelemetryWind_t telemetry_wind;
+
+        bool pack_result = telemetry_pack(&telemetry, &telemetry_battery, &telemetry_boatRelative, &telemetry_boatGlobal, &telemetry_rudder, &telemetry_mainSail, &telemetry_tailSail, &telemetry_wind);
+        if (!pack_result) { telemetry_printf("Telemetry pack failed"); }
+        ipc_status_t ipc_status = ipc_telem_write(&telemetry);
+        if (ipc_status == IPC_STATUS_OK) { telemetry_printf("IPC write success"); }
+        else if (ipc_status == IPC_STATUS_BUSY) { telemetry_printf("IPC busy, this is acceptable, will retry in next round."); }
+        else { telemetry_printf("IPC write failed for a weird reason. %02X", ipc_status); }
+
         #ifdef CM7_TELEMETRY_DEBUG
         #ifdef CM7_SENSOR_BATTERY_ENABLE
         {
             char telemetryStr[TELEMETRY_BATTERY_STR_SIZE];
-            telemetry_printf("%s", TelemetryBattery_toString(&telemetry, telemetryStr));
+            telemetry_printf("%s", TelemetryBattery_toString(&telemetry_battery, telemetryStr));
         }
         #endif
         #if defined(CM7_FUSION_ORIENTATION_ENABLE) && defined(CM7_SENSOR_IMU_ENABLE) && defined(CM7_SENSOR_GPS_ENABLE)
         {
             char telemetryStr[TELEMETRY_BOAT_RELATIVE_ORIENTATION_STR_SIZE];
-            telemetry_printf("%s", telemetryBoatRelativeOrientation_toString(&telemetryRelative, telemetryStr));
+            telemetry_printf("%s", telemetryBoatRelativeOrientation_toString(&telemetry_boatRelative, telemetryStr));
 
-            TelemetryBoatGlobalOrientation_t telemetryGlobal;
-            telemetry_getBoatGlobalOrientation(&telemetryGlobal);
             char telemetryStrGlobal[TELEMETRY_BOAT_GLOBAL_ORIENTATION_STR_SIZE];
             telemetry_printf("%s", telemetryBoatGlobalOrientation_toString(&telemetryGlobal, telemetryStrGlobal));
         }
         #endif
         #ifdef CM7_SENSOR_ENCODER_ENABLE
         {
-            TelemetryMainSail_t telemetry;
-            telemetry_getMainSail(&telemetry);
             char telemetryStr[TELEMETRY_MAIN_SAIL_STR_SIZE];
             telemetry_printf("%s", TelemetryMainSail_toString(&telemetry, telemetryStr));
         }
         #endif
         #ifdef CM7_SENSOR_WIND_ENABLE
         {
-            TelemetryWind_t telemetry;
-            telemetry_getWind(&telemetry);
             char telemetryStr[TELEMETRY_WIND_STR_SIZE];
             telemetry_printf("%s", TelemetryWind_toString(&telemetry, telemetryStr));
         }
@@ -138,44 +147,99 @@ static bool telemetry_pack(
     TelemetryTailSail_t *telemetry_tailSail, 
     TelemetryWind_t *telemetry_wind)
 {
-    bool battery_ok    = telemetry_getBattery(telemetry_battery) == TELEMETRY_OK;
-    telemetry_getBoatRelativeOrientation(telemetry_boatRelative); // LoRaTelemetry_t has no linear velocity/acceleration fields
-    bool boatGlobal_ok = telemetry_getBoatGlobalOrientation(telemetry_boatGlobal) == TELEMETRY_OK;
-    bool rudder_ok     = telemetry_getRudder(telemetry_rudder) == TELEMETRY_OK;
-    bool mainSail_ok   = telemetry_getMainSail(telemetry_mainSail) == TELEMETRY_OK;
-    bool tailSail_ok   = telemetry_getTailSail(telemetry_tailSail) == TELEMETRY_OK;
-    bool wind_ok       = telemetry_getWind(telemetry_wind) == TELEMETRY_OK;
+    MetadataBattery_t metadata_battery;
+    if (sensorBattery_getMetadata(&metadata_battery))
+    {
+        if (metadata_battery.valid != 0 && metadata_battery.valid < 0x10) { telemetry->battery_valid |= LORA_TELEMETRY_METADATA_VALID; }
+    }
 
-    // A failed get leaves its struct untouched (nothing published yet), so only copy the ones that succeeded
-    if (battery_ok) {
+    MetdataEncoder_t metadata_encoder;
+    if (sensorEncoder_getMetadata(&metadata_encoder))
+    {
+        telemetry->sail_encoder_magnitude = metadata_encoder.magnitude;
+        telemetry->sail_encoder_status = metadata_encoder.status;
+        if (metadata_encoder.valid != 0 && metadata_encoder.valid < 0x10) { telemetry->encoder_valid |= LORA_TELEMETRY_METADATA_VALID; }
+    }
+
+    MetadataWind_t metadata_wind;
+    if (sensorWind_getMetadata(&metadata_wind))
+    {
+        if (metadata_wind.valid != 0 && metadata_wind.valid < 0x10) { telemetry->wind_valid |= LORA_TELEMETRY_METADATA_VALID; }
+    }
+
+    MetadataGPS_t metadata_gps;
+    if (sensorGPS_getMetadata(&metadata_gps))
+    {
+        telemetry->altitude = metadata_gps.altitude;
+        telemetry->satellites = metadata_gps.satellites;
+        telemetry->fix_valid = metadata_gps.fix_valid;
+        telemetry->utc_hours = metadata_gps.hours;
+        telemetry->utc_minutes = metadata_gps.minutes;
+        telemetry->utc_seconds = metadata_gps.seconds;
+        if (metadata_gps.valid != 0 && metadata_gps.valid < 0x10) { telemetry->gps_valid |= LORA_TELEMETRY_METADATA_VALID; }
+    }
+
+    MetadataIMU_t metadata_imu;
+    if (sensorIMU_getMetadata(&metadata_imu))
+    {
+        telemetry->imu_cal = metadata_imu.cal[0];
+        telemetry->imu_temp = metadata_imu.tmp[0];
+        if (metadata_imu.valid != 0 && metadata_imu.valid < 0x10) 
+        { 
+            telemetry->imu_valid |= LORA_TELEMETRY_METADATA_VALID; 
+            telemetry->orientation_valid |= LORA_TELEMETRY_METADATA_VALID; 
+        }
+    }
+
+    if (telemetry_getBattery(telemetry_battery) == TELEMETRY_OK) 
+    {
         telemetry->battery_voltage = telemetry_battery->battery_voltage;
         for (uint16_t i = 0; i < BATTERY_CELL_COUNT; i++) { telemetry->cell_voltage[i] = telemetry_battery->cell_voltage[i]; }
+        telemetry->battery_valid |= LORA_TELEMETRY_TELEMETRY_VALID;
     }
-    if (mainSail_ok) {
+    if (telemetry_getBoatRelativeOrientation(telemetry_boatRelative) == TELEMETRY_OK) 
+    {
+        // There are no packed telemetry fields for boat relative orientation, but we still need to get the data for later in the task
+    }
+    if (telemetry_getMainSail(telemetry_mainSail) == TELEMETRY_OK) {
         telemetry->sail_ang_forward = telemetry_mainSail->ang_forward;
+        telemetry->encoder_valid |= LORA_TELEMETRY_TELEMETRY_VALID;
     }
-    if (wind_ok) {
+    if (telemetry_getWind(telemetry_wind) == TELEMETRY_OK) {
         telemetry->ang_wind = telemetry_wind->ang_wind;
+        telemetry->wind_valid |= LORA_TELEMETRY_TELEMETRY_VALID;
     }
-    if (boatGlobal_ok) {
+    if (telemetry_getBoatGlobalOrientation(telemetry_boatGlobal) == TELEMETRY_OK) {
         telemetry->latitude  = telemetry_boatGlobal->latitude;
         telemetry->longitude = telemetry_boatGlobal->longitude;
         telemetry->heading   = telemetry_boatGlobal->angP_heading;
         telemetry->roll      = telemetry_boatGlobal->angP_roll;
         telemetry->pitch     = telemetry_boatGlobal->angP_pitch;
+        telemetry->imu_valid |= LORA_TELEMETRY_TELEMETRY_VALID;
+        telemetry->orientation_valid |= LORA_TELEMETRY_TELEMETRY_VALID;
     }
-    if (rudder_ok) {
+    if (telemetry_getRudder(telemetry_rudder) == TELEMETRY_OK) {
         telemetry->rudder_servo_angle = telemetry_rudder->ang_forward;
+        telemetry->rudder_servo_angle |= LORA_TELEMETRY_ALL_VALID;
     }
-    if (tailSail_ok) {
+    if (telemetry_getTailSail(telemetry_tailSail) == TELEMETRY_OK) {
         telemetry->sail_servo_angle = telemetry_tailSail->ang_forward; // The sail servo drives the tail sail
+        telemetry->sail_servo_angle |= LORA_TELEMETRY_ALL_VALID;
     }
 
-    MetadataBattery_t metadata_battery;
-    bool metadata_battery_okay = sensorBattery_getMetadata(&metadata_battery);
+    // TODO: The following values don't have fillers yet
+    telemetry->rudder_servo_angle = 0;
+    telemetry->sail_servo_angle = 0;
+    telemetry->mode = 0;
+    telemetry->desired_heading = 0;
+    telemetry->route_segment = 0;
+    telemetry->drift_distance = 0;
+    telemetry->last_cmd_seq = 0;
+    
+    telemetry->uptime_ms = HAL_GetTick();
 
     // true only if every source above had data
-    return battery_ok && boatGlobal_ok && rudder_ok && mainSail_ok && tailSail_ok && wind_ok;
+    return true;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

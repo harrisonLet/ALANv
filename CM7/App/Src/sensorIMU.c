@@ -530,8 +530,8 @@ static HAL_StatusTypeDef BNO055_readAllSensors(int16_t accXYZ[3], int16_t magXYZ
     gravXYZ[0] =   (int16_t)(buf[39] << 8 | buf[38]);
     gravXYZ[1] =   (int16_t)(buf[41] << 8 | buf[40]);
     gravXYZ[2] =   (int16_t)(buf[43] << 8 | buf[42]);
-    temp[0] =       (int8_t)(buf[44]);
-    cal[0] =        (uint8_t)(buf[45]);
+    temp[0] =      (int8_t)(buf[44]);
+    cal[0] =       (uint8_t)(buf[45]);
 
     return result;
 }
