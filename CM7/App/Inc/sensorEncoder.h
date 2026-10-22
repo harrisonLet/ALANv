@@ -12,7 +12,7 @@
 #define SENSOR_ENCODER_TASK_HEAP 220 // ~64B of extra
 #define sensorEncoder_printf(fmt, ...) DEBUG_PRINTF(SENSOR_ENCODER_TASK, fmt, ##__VA_ARGS__)
 #else
-#define SENSOR_ENCODER_TASK_HEAP 120 // ~32B of extra
+#define SENSOR_ENCODER_TASK_HEAP 150 // ~64B of extra
 #define sensorEncoder_printf(...) ((void)0)
 #endif
 

@@ -27,6 +27,7 @@
 
 #include "sensorEncoder.h"
 #include "objRing.h"
+#include "stm32h7xx_hal_def.h"
 #include "telemetry.h"
 
 #include "queue.h"
@@ -156,11 +157,16 @@ HardwareInit_e sensorEncoder_hardwareInit(void)
     // Initialize AS5600 sensor
     sensorEncoder_printf("    - init AS5600 sensor");
     // AS5600 power-up time T_PU = 10ms max (datasheet p.8)
-    HAL_Delay(10);
-    if (HAL_I2C_IsDeviceReady(&i2c_handler, AS5600_ADDR << 1, 3, 100) != HAL_OK) {
-        sensorEncoder_printf("ERROR: AS5600 not responding at 0x%02X, I2C error: 0x%lX\r\n", AS5600_ADDR, HAL_I2C_GetError(&i2c_handler));
-        Error_Handler();
+    HAL_StatusTypeDef ready;
+    for (uint8_t i = 0; i < 5; i++)
+    {
+        HAL_Delay(50);
+        ready = HAL_I2C_IsDeviceReady(&i2c_handler, AS5600_ADDR << 1, 3, 100);
+        if (ready == HAL_OK) break;
+        else sensorEncoder_printf("AS5600 not ready, will try again in 50ms");
     }
+    if (ready != HAL_OK) { sensorEncoder_printf("ERROR: AS5600 not responding at 0x%02X, I2C error: 0x%lX\r\n", AS5600_ADDR, HAL_I2C_GetError(&i2c_handler)); Error_Handler(); }
+
     uint8_t status = 0;
     if (AS5600_readRegs(AS5600_STATUS, &status, 1) == HAL_OK) {
         sensorEncoder_printf("    - AS5600 STATUS 0x%02X: MD=%d ML=%d MH=%d\r\n", status,
@@ -252,6 +258,7 @@ void sensorEncoder_handler(void *argument)
         xQueueOverwrite(metadata_queue, &metadata);
 
         // Telemetry
+        #ifdef CM7_TELEMETRY_ENABLE
         if (ang_unwrapped_ring.count == 0) { continue; }
         TelemetryMainSail_t telemetry = {0};
         int32_t degrees = ((ang_unwrapped_sum / (int32_t)ang_unwrapped_ring.count) * 360) / ENCODER_COUNTS;
@@ -260,6 +267,7 @@ void sensorEncoder_handler(void *argument)
         else if (degrees < 0) { telemetry.ang_starboard = 0;       telemetry.ang_port = -degrees; }
         else                  { telemetry.ang_starboard = 0;       telemetry.ang_port = 0; }
         telemetry_setMainSail(&telemetry);
+        #endif
     }
 }
 

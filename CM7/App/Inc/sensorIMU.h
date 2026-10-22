@@ -11,7 +11,7 @@
 #define SENSOR_IMU_TASK_HEAP 280 // ~64B of extra
 #define sensorIMU_printf(fmt, ...) DEBUG_PRINTF(SENSOR_IMU_TASK, fmt, ##__VA_ARGS__)
 #else
-#define SENSOR_IMU_TASK_HEAP 140 // ~32B of extra
+#define SENSOR_IMU_TASK_HEAP 170 // ~64B of extra
 #define sensorIMU_printf(...) ((void)0)
 #endif
 

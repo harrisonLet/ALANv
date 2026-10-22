@@ -12,10 +12,10 @@
 #define TELEMETRY_TASK_PRIORITY osPriorityLow
 
 #ifdef CM7_TELEMETRY_DEBUG
-#define TELEMETRY_TASK_HEAP 500
+#define TELEMETRY_TASK_HEAP 400
 #define telemetry_printf(fmt, ...) DEBUG_PRINTF(TELEMETRY_TASK, fmt, ##__VA_ARGS__)
 #else
-#define TELEMETRY_TASK_HEAP 200
+#define TELEMETRY_TASK_HEAP 260 // ~100B of extra
 #define telemetry_printf(fmt, ...) ((void)0)
 #endif
 

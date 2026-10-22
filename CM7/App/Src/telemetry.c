@@ -105,6 +105,7 @@ void telemetry_handler(void *argument)
         else { telemetry_printf("IPC write failed for a weird reason. %02X", ipc_status); }
 
         #ifdef CM7_TELEMETRY_DEBUG
+        telemetry_printf("\x1b[2J\x1b[H");
         #ifdef CM7_SENSOR_BATTERY_ENABLE
         {
             char telemetryStr[TELEMETRY_BATTERY_STR_SIZE];
@@ -117,19 +118,19 @@ void telemetry_handler(void *argument)
             telemetry_printf("%s", telemetryBoatRelativeOrientation_toString(&telemetry_boatRelative, telemetryStr));
 
             char telemetryStrGlobal[TELEMETRY_BOAT_GLOBAL_ORIENTATION_STR_SIZE];
-            telemetry_printf("%s", telemetryBoatGlobalOrientation_toString(&telemetryGlobal, telemetryStrGlobal));
+            telemetry_printf("%s", telemetryBoatGlobalOrientation_toString(&telemetry_boatGlobal, telemetryStrGlobal));
         }
         #endif
         #ifdef CM7_SENSOR_ENCODER_ENABLE
         {
             char telemetryStr[TELEMETRY_MAIN_SAIL_STR_SIZE];
-            telemetry_printf("%s", TelemetryMainSail_toString(&telemetry, telemetryStr));
+            telemetry_printf("%s", TelemetryMainSail_toString(&telemetry_mainSail, telemetryStr));
         }
         #endif
         #ifdef CM7_SENSOR_WIND_ENABLE
         {
             char telemetryStr[TELEMETRY_WIND_STR_SIZE];
-            telemetry_printf("%s", TelemetryWind_toString(&telemetry, telemetryStr));
+            telemetry_printf("%s", TelemetryWind_toString(&telemetry_wind, telemetryStr));
         }
         #endif
         #endif
@@ -153,7 +154,7 @@ static bool telemetry_pack(
         if (metadata_battery.valid != 0 && metadata_battery.valid < 0x10) { telemetry->battery_valid |= LORA_TELEMETRY_METADATA_VALID; }
     }
 
-    MetdataEncoder_t metadata_encoder;
+    MetadataEncoder_t metadata_encoder;
     if (sensorEncoder_getMetadata(&metadata_encoder))
     {
         telemetry->sail_encoder_magnitude = metadata_encoder.magnitude;

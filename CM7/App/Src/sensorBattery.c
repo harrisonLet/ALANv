@@ -1,8 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 // Battery sensor driver for reading cell voltages and pack voltage of the LiPo Battery.
 //
-// GPIO:          PA0  PA4  PA5  PA6
-// ADC1 channels: 16   18   19   3
+// GPIO:          PA4  PA5  PA6  PA7
+// ADC1 channels: 18   19   3    7
 // Battery Cell:  BC1  BC2  BC3  BC4
 //
 // Cell voltages are measured cumulatively from the pack negative terminal, ie BC1=cell1,
@@ -65,7 +65,7 @@ HardwareInit_e sensorBattery_hardwareInit(void)
     // Initialize the GPIOs
     sensorBattery_printf("    - init hardware GPIO pins");
     GPIO_InitTypeDef GPIO_InitStruct = {0};
-    GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6;
+    GPIO_InitStruct.Pin = GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -96,10 +96,10 @@ HardwareInit_e sensorBattery_hardwareInit(void)
     sensorBattery_printf("    - init ADC configuration for ranked reads");
     static const uint32_t battery_adcChannels[BATTERY_CELL_COUNT] =
     {
-        ADC_CHANNEL_16, // PA0 - BC1 (Battery Cell 1)
-        ADC_CHANNEL_18, // PA4 - BC2
-        ADC_CHANNEL_19, // PA5 - BC3
-        ADC_CHANNEL_3,  // PA6 - BC4
+        ADC_CHANNEL_18, // PA4 - BC1 (Battery Cell 1)
+        ADC_CHANNEL_19, // PA5 - BC2
+        ADC_CHANNEL_3,  // PA6 - BC3
+        ADC_CHANNEL_7,  // PA7 - BC4
     };
     static const uint32_t ranks[BATTERY_CELL_COUNT] = { 
         ADC_REGULAR_RANK_1, 
@@ -205,6 +205,7 @@ void sensorBattery_handler(void *argument)
         xQueueOverwrite(queue_metadata, &metadata);
 
         // Telemetry
+        #ifdef CM7_TELEMETRY_ENABLE
         if (metadata_raw_cell_ring.count == 0) { continue; }
         TelemetryBattery_t telemetry;
         telemetry.battery_voltage = rawTapsToMv(metadata_raw_cell_sum[BATTERY_CELL_COUNT - 1] / metadata_raw_cell_ring.count);
@@ -215,6 +216,7 @@ void sensorBattery_handler(void *argument)
             metadata_raw_cell_prev = metadata_raw_cell_curr;
         }
         telemetry_setBattery(&telemetry);
+        #endif
     }
 }
 

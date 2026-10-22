@@ -32,28 +32,36 @@ void live_handler(void *argument);
 
 void hardware_init(void) {
     #ifdef CM7_LIVE_ENABLE
+    cm7_printf("live_hardwareInit");
     live_hardwareInit();
     #endif
     #ifdef CM7_TELEMETRY_ENABLE
+    cm7_printf("telemetry_hardwareInit");
     telemetry_hardwareInit();
     #endif
 
     #ifdef CM7_SENSOR_BATTERY_ENABLE
+    cm7_printf("sensorBattery_hardwareInit");
     sensorBattery_hardwareInit();
     #endif
     #ifdef CM7_SENSOR_ENCODER_ENABLE
+    cm7_printf("sensorEncoder_hardwareInit");
     sensorEncoder_hardwareInit();
     #endif
     #ifdef CM7_SENSOR_GPS_ENABLE
+    cm7_printf("sensorGPS_hardwareInit");
     sensorGPS_hardwareInit();
     #endif
     #ifdef CM7_SENSOR_IMU_ENABLE
+    cm7_printf("sensorIMU_hardwareInit");
     sensorIMU_hardwareInit();
     #endif
     #ifdef CM7_SENSOR_WIND_ENABLE
+    cm7_printf("sensorWind_hardwareInit");
     sensorWind_hardwareInit();
     #endif
     #if defined(CM7_FUSION_ORIENTATION_ENABLE) && defined(CM7_SENSOR_IMU_ENABLE) && defined(CM7_SENSOR_GPS_ENABLE)
+    cm7_printf("fusionOrientation_hardwareInit");
     fusionOrientation_hardwareInit();
     #endif
 
@@ -72,6 +80,7 @@ void hardware_init(void) {
     #endif
 
     #ifdef IPC_ENABLE
+    cm7_printf("ipc_init");
     ipc_init(); // Common Shared Memory (SRAM4) init
     #endif
 }
@@ -85,49 +94,57 @@ void rtos_init()
     int32_t totalStack = 0;
     
     #ifdef CM7_LIVE_ENABLE
+    cm7_printf("live_rtosInit");
     if (live_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
     if (xTaskCreate(live_handler, LIVE_TASK, LIVE_TASK_HEAP, NULL, LIVE_TASK_PRIORITY, &task_live) != pdPASS) { Error_Handler(); }
     totalStack += LIVE_TASK_HEAP;
     #endif
     #ifdef CM7_TELEMETRY_ENABLE
+    cm7_printf("telemetry_rtosInit");
     if (telemetry_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
     if (xTaskCreate(telemetry_handler, TELEMETRY_TASK, TELEMETRY_TASK_HEAP, NULL, TELEMETRY_TASK_PRIORITY, &telemetry_task) != pdPASS) { Error_Handler(); }
     totalStack += TELEMETRY_TASK_HEAP;
     #endif
 
     #ifdef CM7_SENSOR_BATTERY_ENABLE
+    cm7_printf("sensorBattery_rtosInit");
     if (sensorBattery_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
     if (xTaskCreate(sensorBattery_handler, SENSOR_BATTERY_TASK, SENSOR_BATTERY_TASK_HEAP, NULL, SENSOR_BATTERY_TASK_PRIORITY, &sensorBattery_task) != pdPASS) { Error_Handler(); }
     totalStack += SENSOR_BATTERY_TASK_HEAP;
     #endif
     #ifdef CM7_SENSOR_ENCODER_ENABLE
+    cm7_printf("sensorEncoder_rtosInit");
     if (sensorEncoder_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
     if (xTaskCreate(sensorEncoder_handler, SENSOR_ENCODER_TASK, SENSOR_ENCODER_TASK_HEAP, NULL, SENSOR_ENCODER_TASK_PRIORITY, &sensorEncoder_task) != pdPASS) { Error_Handler(); }
     totalStack += SENSOR_ENCODER_TASK_HEAP;
     #endif
     #ifdef CM7_SENSOR_GPS_ENABLE
+    cm7_printf("sensorGPS_rtosInit");
     if (sensorGPS_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
     if (xTaskCreate(sensorGPS_handler, SENSOR_GPS_TASK, SENSOR_GPS_TASK_HEAP, NULL, SENSOR_GPS_TASK_PRIORITY, &sensorGPS_task) != pdPASS) { Error_Handler(); }
     totalStack += SENSOR_GPS_TASK_HEAP;
     #endif
     #ifdef CM7_SENSOR_IMU_ENABLE
+    cm7_printf("sensorIMU_rtosInit");
     if (sensorIMU_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
     if (xTaskCreate(sensorIMU_handler, SENSOR_IMU_TASK, SENSOR_IMU_TASK_HEAP, NULL, SENSOR_IMU_TASK_PRIORITY, &sensorIMU_task) != pdPASS) { Error_Handler(); }
     totalStack += SENSOR_IMU_TASK_HEAP;
     #endif
     #ifdef CM7_SENSOR_WIND_ENABLE
+    cm7_printf("sensorWind_rtosInit");
     if (sensorWind_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
     if (xTaskCreate(sensorWind_handler, SENSOR_WIND_TASK, SENSOR_WIND_TASK_HEAP, NULL, SENSOR_WIND_TASK_PRIORITY, &sensorWind_task) != pdPASS) { Error_Handler(); }
     totalStack += SENSOR_WIND_TASK_HEAP;
     #endif
     #if defined(CM7_FUSION_ORIENTATION_ENABLE) && defined(CM7_SENSOR_IMU_ENABLE) && defined(CM7_SENSOR_GPS_ENABLE)
+    cm7_printf("fusionOrientation_rtosInit");
     if (fusionOrientation_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
     if (xTaskCreate(fusionOrientation_handler, FUSION_ORIENTATION_TASK, FUSION_ORIENTATION_TASK_HEAP, NULL, FUSION_ORIENTATION_TASK_PRIORITY, &fusionOrientation_task) != pdPASS) { Error_Handler(); }
     totalStack += FUSION_ORIENTATION_TASK_HEAP;
     #endif
 
     #ifdef CM7_DEBUG
-    printf("Total stack allocated: %u B / %u B\r\n", (unsigned)(totalStack * 4), (unsigned)configTOTAL_HEAP_SIZE);
+    cm7_printf("Total stack allocated: %u B / %u B\r\n", (unsigned)(totalStack * 4), (unsigned)configTOTAL_HEAP_SIZE);
     #endif
 }
 

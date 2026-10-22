@@ -8,10 +8,10 @@
 #define FUSION_ORIENTATION_TASK_PRIORITY osPriorityNormal
 
 #ifdef CM7_FUSION_ORIENTATION_DEBUG
-#define FUSION_ORIENTATION_TASK_HEAP 240 // ~64B of extra
+#define FUSION_ORIENTATION_TASK_HEAP 300 // ~64B of extra
 #define fusionOrientation_printf(fmt, ...) DEBUG_PRINTF(FUSION_ORIENTATION_TASK, fmt, ##__VA_ARGS__)
 #else
-#define FUSION_ORIENTATION_TASK_HEAP 100 // ~32B of extra
+#define FUSION_ORIENTATION_TASK_HEAP 220 // ~64B of extra
 #define fusionOrientation_printf(...) ((void)0)
 #endif
 
