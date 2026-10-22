@@ -22,6 +22,8 @@
 #include "ipcCM4.h"
 
 #include "lora.h"
+#include "loraTelemetry.h"
+#include "telemteryReceive.h"
 #include "servoRudder.h"
 #include "servoSail.h"
 #include <stdint.h>
@@ -181,18 +183,11 @@ int main(void)
   }
   LoRa_StartRX();
 
-  static int16_t rudder_angle = 0;
-  static int16_t sail_angle   = 0;
   /* LoRa_init() toggles yellow LED once for version check, so yellow starts ON */
   static uint8_t led_status   = 0x04;  /* bitmask: bit0=green, bit1=red, bit2=yellow */
   static uint8_t tx_seq       = 0;
 
-  TelemetryPacket_t pkt = {
-      .lat        = 40.7128f,
-      .lon        = -74.0060f,
-      .heading    = 180,
-      .battery    = 95,
-  };
+  LoRaTelemetry_t telemetryPacket = {0};
 
   // char message[] = "Hello from harrisons laptop!\n";
 
@@ -206,15 +201,16 @@ int main(void)
 
       if (tx_flag) {
           tx_flag = 0;
-          char payload[40];
-          uint8_t plen = snprintf(payload, sizeof(payload), "STATUS,%d,%d,%d", rudder_angle, sail_angle, led_status);
-          uint8_t pkt[36];
+          char payload[sizeof(telemetryPacket)];
+          uint8_t plen = snprintf(payload, sizeof(payload), "STATUS,%d", led_status);
+          uint8_t pkt[5 + plen];
           pkt[0] = ADDR_SAMD21;   /* dest */
           pkt[1] = ADDR_STM32;    /* src */
           pkt[2] = tx_seq++;
-          pkt[3] = plen;
-          memcpy(pkt + 4, payload, plen);
-          LoRa_Send(pkt, 4 + plen);
+          pkt[3] = 1 + plen; // The 1 is the flags byte
+          pkt[4] = telem_status_t;
+          memcpy(pkt + 5, payload, plen);
+          LoRa_Send(pkt, 5 + plen);
           printf("[TX] %s\r\n", payload);
       }
 
