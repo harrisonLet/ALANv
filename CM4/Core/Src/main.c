@@ -23,7 +23,7 @@
 
 #include "lora.h"
 #include "loraTelemetry.h"
-#include "telemteryReceive.h"
+#include "telemetryReceive.h"
 #include "servoRudder.h"
 #include "servoSail.h"
 #include <stdint.h>
@@ -161,13 +161,16 @@ int main(void)
 
   Debug_LED_Init();
 
+  bool ipc_attached = false;
   #if defined(IPC_ENABLE)
-  // Initialize IPC and wait 5s for Cm7 to setup shared memory 
-  if (ipc_cm4_attach(5000U) != IPC_STATUS_OK) {
+  // Initialize IPC and wait 5s for Cm7 to setup shared memory
+  ipc_attached = (ipc_cm4_attach(5000U) == IPC_STATUS_OK);
+  if (!ipc_attached) {
     // Set Red LED if IPC handshake with CM7 fails
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
   }
   #endif
+  telemetryRec_init(ipc_attached);
 
   #if defined(CM4_SERVOS_ENABLE)
   servoRudder_init();
@@ -188,6 +191,7 @@ int main(void)
   static uint8_t tx_seq       = 0;
 
   LoRaTelemetry_t telemetryPacket = {0};
+  #define LORA_HDR_LEN_BYTES (5U) // dest, src, seq, len, flags
 
   // char message[] = "Hello from harrisons laptop!\n";
 
@@ -199,19 +203,26 @@ int main(void)
   {
       __WFI();   /* sleep until any interrupt fires */
 
+      // Every 1 s (TIM6): read the latest telemetry from SRAM4 and send it over LoRa.
+      // If the CM7 is mid-write, tx_flag stays set and the read retries on the next wake (~1 ms)
       if (tx_flag) {
+        uint8_t telem_status_flags;
+        // Only send LoRa for succefull read or 5 busy attempts in a row
+        if (telemetryRec_read(&telem_status_flags, &telemetryPacket)) {
           tx_flag = 0;
-          char payload[sizeof(telemetryPacket)];
-          uint8_t plen = snprintf(payload, sizeof(payload), "STATUS,%d", led_status);
-          uint8_t pkt[5 + plen];
+          LoRaTelemetry_t *payload = &telemetryPacket;
+          uint8_t plen = sizeof(LoRaTelemetry_t);
+          uint8_t pkt[LORA_HDR_LEN_BYTES + plen];
           pkt[0] = ADDR_SAMD21;   /* dest */
           pkt[1] = ADDR_STM32;    /* src */
           pkt[2] = tx_seq++;
-          pkt[3] = 1 + plen; // The 1 is the flags byte
-          pkt[4] = telem_status_t;
-          memcpy(pkt + 5, payload, plen);
-          LoRa_Send(pkt, 5 + plen);
-          printf("[TX] %s\r\n", payload);
+          pkt[3] = 1 + plen; // payload len (1 is the telem_status flags)
+          pkt[4] = telem_status_flags;
+          memcpy(pkt + LORA_HDR_LEN_BYTES, payload, plen);
+          LoRa_Send(pkt, LORA_HDR_LEN_BYTES + plen);
+          printf("[TX] seq=%u flags=0x%02X len=%u uptime_ms=%lu\r\n",
+                 pkt[2], pkt[4], pkt[3], (unsigned long)payload->uptime_ms);
+        }
       }
 
       if (dio0_flag) {
