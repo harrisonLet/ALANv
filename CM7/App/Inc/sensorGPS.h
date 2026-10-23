@@ -1,29 +1,30 @@
-extern TaskHandle_t task_sensorGPS;
-
-void sensorGPS_hardwareInit(void);
-void sensorGPS_handler(void *argument);
-
-#ifndef GPS_PARSER_H
-#define GPS_PARSER_H
+#ifndef SENSOR_GPS_H
+#define SENSOR_GPS_H
 
 #include "system.h"
+#include "sharedSensor.h"
 
-typedef struct{//$GPGLL,4717.11634,N,00833.91297,E,124923.00,A,A*6E is an example on page 62 https://content.u-blox.com/sites/default/files/products/documents/u-blox6_ReceiverDescrProtSpec_%28GPS.G6-SW-10018%29_Public.pdf
-  double latitude;
-  double longitude;
-  float altitude;
-  uint8_t satellites;
-  uint8_t fix_valid;
-  uint8_t hours;
-  uint8_t minutes;
-  uint8_t seconds;
-} GPS_Data_t;
+#define SENSOR_GPS_TASK "[SGPS----]"
+#define SENSOR_GPS_TASK_PRIORITY osPriorityLow
 
-extern GPS_Data_t myGPS;
+#ifdef CM7_SENSOR_GPS_DEBUG
+#define SENSOR_GPS_TASK_HEAP 350 // ~64B of extra, tested without a a GPS lock so it might be too small
+#define sensorGPS_printf(fmt, ...) DEBUG_PRINTF(SENSOR_GPS_TASK, fmt, ##__VA_ARGS__)
+#else
+#define SENSOR_GPS_TASK_HEAP 170 // ~64B of extra, tested without a GPS lock so it might be too small
+#define sensorGPS_printf(...) ((void)0)
+#endif
 
-void GPS_ProcessChar(uint8_t rx_byte);
-void GPS_Parse_GGA(char* nmea_str, GPS_Data_t* gps_struct); // (Global Positioning System Fix Data)
-// void GPS_Parse_GLL(char* nmea_str, GPS_Data_t* gps_struct); not sure if we need GLL
-//void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart); We will be doing interrupt stuff later
+#define SENSOR_GPS_FREQUENCY 1u // Hz, we don't actually use or set this value, the GPS module itself naturally functions at about 1Hz
+#define SENSOR_GPS_WINDOW 3u // num readings
+#define SENSOR_GPS_STALE 5000u // ms before data is considered stale
+
+extern TaskHandle_t sensorGPS_task;
+
+HardwareInit_e sensorGPS_hardwareInit(void);
+RtosInit_e sensorGPS_rtosInit(void);
+void sensorGPS_handler(void *argument);
+
+bool sensorGPS_getMetadata(MetadataGPS_t *metadata);
 
 #endif

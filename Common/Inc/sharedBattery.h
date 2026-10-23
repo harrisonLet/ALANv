@@ -1,18 +1,22 @@
+#pragma once
+
+#include <stdint.h>
+
 /////////////////////////////////////////////////////////////////////////////
 // Battery
-#define BATTERY_OP_VOLTAGE_MIN 12000
-#define BATTERY_OP_VOLTAGE_WARNING_LOW 13500
-#define BATTERY_OP_VOLTAGE_NOM 14800
-#define BATTERY_OP_VOLTAGE_WARNING_HIGH 16000
-#define BATTERY_OP_VOLTAGE_MAX 16800
+#define BATTERY_OP_VOLTAGE_MIN 12000u
+#define BATTERY_OP_VOLTAGE_WARNING_LOW 13500u
+#define BATTERY_OP_VOLTAGE_NOM 14800u
+#define BATTERY_OP_VOLTAGE_WARNING_HIGH 16000u
+#define BATTERY_OP_VOLTAGE_MAX 16800u
 
-#define BATTERY_CELL_OP_VOLTAGE_MIN 3000
-#define BATTERY_CELL_OP_VOLTAGE_WARNING_LOW 3300
-#define BATTERY_CELL_OP_VOLTAGE_NOM 3700
-#define BATTERY_CELL_OP_VOLTAGE_WARNING_HIGH 4000
-#define BATTERY_CELL_OP_VOLTAGE_MAX 4200
+#define BATTERY_CELL_OP_VOLTAGE_MIN 3000u
+#define BATTERY_CELL_OP_VOLTAGE_WARNING_LOW 3300u
+#define BATTERY_CELL_OP_VOLTAGE_NOM 3700u
+#define BATTERY_CELL_OP_VOLTAGE_WARNING_HIGH 4000u
+#define BATTERY_CELL_OP_VOLTAGE_MAX 4200u
 
-#define BATTERY_CELL_COUNT 4
+#define BATTERY_CELL_COUNT 4u
 
 /**
  * Represents the current battery level of each cell in the battery and overall battery health.
@@ -29,7 +33,7 @@ typedef struct {
      * - Operational Range: 12000 to 16800 mV
      * - Precision: 1 mV
      */
-    uint16_t overall_health; 
+    uint16_t battery_voltage; 
     /**
      * The voltage of each individual cell in the battery. LiPo batteries provide each 
      * cell's voltage as a cumulative value. The actual voltage of each cell must be 
@@ -45,3 +49,6 @@ typedef struct {
      */
     uint16_t cell_voltage[BATTERY_CELL_COUNT];
 } TelemetryBattery_t;
+
+#define TELEMETRY_BATTERY_STR_SIZE 64u
+char *TelemetryBattery_toString(const TelemetryBattery_t *telemetry, char buf[TELEMETRY_BATTERY_STR_SIZE]);
