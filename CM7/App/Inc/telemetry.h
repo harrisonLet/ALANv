@@ -10,7 +10,11 @@
 
 #define TELEMETRY_TASK "[TELEMTRY]"
 #define TELEMETRY_TASK_PRIORITY osPriorityLow
-#define TELEMETRY_TASK_DELAY_MS (1000U)
+#define TELEMETRY_FREQUENCY 1u // Hz
+_Static_assert(TELEMETRY_FREQUENCY > 0u && TELEMETRY_FREQUENCY <= SYSTEM_TICK_RATE_HZ, "TELEMETRY_FREQUENCY must be between 1Hz and the tick rate");
+#if (SYSTEM_TICK_RATE_HZ % TELEMETRY_FREQUENCY) != 0u
+#warning "TELEMETRY_FREQUENCY does not divide the tick rate, the period will be rounded down"
+#endif
 
 #ifdef CM7_TELEMETRY_DEBUG
 #define TELEMETRY_TASK_HEAP 400

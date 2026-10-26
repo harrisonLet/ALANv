@@ -85,8 +85,7 @@ void telemetry_handler(void *argument)
     TickType_t lastWake = xTaskGetTickCount();
     for (;;)
     {
-        if (!xTaskDelayUntil(&lastWake, TELEMETRY_TASK_DELAY_MS)) {
-            telemetry_printf("TaskDelay failed, wasn't delayed... skipping write");
+        if (!xTaskDelayUntil(&lastWake, configTICK_RATE_HZ / TELEMETRY_FREQUENCY)) {
             continue;
         }
 
