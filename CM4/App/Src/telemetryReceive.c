@@ -52,7 +52,7 @@ bool telemetryRec_read(uint8_t *flags, LoRaTelemetry_t *telem_packet)
         return true;
     }
 
-    // Has to be IPC_BUSY so check if read max amount of times
+    // Has to be IPC_BUSY so check if loop has read max amount of times
     else if (++busy_retries >= MAX_BUSY_READ_ATTEMPTS) {
         // Max attempts, set flag and return true so LoRa can send
         FLAG_SET(telem_status_flags, FLAG_BUSY_FALLBACK);
