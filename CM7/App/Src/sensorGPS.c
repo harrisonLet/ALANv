@@ -207,7 +207,7 @@ RtosInit_e sensorGPS_rtosInit(void)
 void sensorGPS_handler(void *argument)
 {
     sensorGPS_printf("sensorGPS_handler start.");
-    vTaskDelay(5000); // 5 seconds delay for the GPS module to stabilize
+    vTaskDelay(pdMS_TO_TICKS(5000)); // 5 seconds delay for the GPS module to stabilize
     // The loop below restarts the reception if this fails, so a failure here must not hang the task
     HAL_StatusTypeDef start_status = uartDMAHandler_start(); // start UART DMA reception after GPS module stabilizes
     if (start_status != HAL_OK)
@@ -230,13 +230,13 @@ void sensorGPS_handler(void *argument)
             {
                 sensorGPS_printf("UART DMA restart failed (HAL status %d), retrying", (int)status);
                 uart_dma_error = HAL_UART_ERROR_DMA;
-                vTaskDelay(100);
+                vTaskDelay(pdMS_TO_TICKS(100));
                 continue;
             }
         }
         
         // Metadata
-        if (ulTaskNotifyTake(pdTRUE, SENSOR_GPS_STALE) == 0)
+        if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(SENSOR_GPS_STALE)) == 0)
         {
             MetadataGPS_t metadata = {0};
             metadata.valid = VALIDITY_INVALID_GPS_STALE;

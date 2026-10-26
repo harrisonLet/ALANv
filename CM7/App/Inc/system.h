@@ -24,6 +24,8 @@
 #include "shared_configuration.h"
 
 #define STM32H755_CLOCK_RATE 64000000
+#define SYSTEM_TICK_RATE_HZ 1000u // configTICK_RATE_HZ contains a cast, so it cannot be used in #if checks
+_Static_assert(SYSTEM_TICK_RATE_HZ == configTICK_RATE_HZ, "SYSTEM_TICK_RATE_HZ must match configTICK_RATE_HZ");
 #define RAD2DEG 57.29577951308232f
 #define DEG2RAD 0.017453292519943295f
 

@@ -16,9 +16,13 @@
 #define sensorEncoder_printf(...) ((void)0)
 #endif
 
-#define SENSOR_ENCODER_FREQUENCY 50u // Hz, this value is primarily limited by the i2c bus speed, max: ~300Hz
+#define SENSOR_ENCODER_FREQUENCY 100u // Hz, this value is primarily limited by the i2c bus speed, max: ~300Hz
 #define SENSOR_ENCODER_WINDOW 10u // num readings
 #define SENSOR_ENCODER_STALE 100u // ms before data is considered stale
+_Static_assert(SENSOR_ENCODER_FREQUENCY > 0u && SENSOR_ENCODER_FREQUENCY <= 500u, "SENSOR_ENCODER_FREQUENCY must be 1-500Hz");
+#if (SYSTEM_TICK_RATE_HZ % SENSOR_ENCODER_FREQUENCY) != 0u
+#warning "SENSOR_ENCODER_FREQUENCY does not divide the tick rate, the period will be rounded down"
+#endif
 
 extern TaskHandle_t sensorEncoder_task;
 
