@@ -9,6 +9,7 @@
 #include "servoShared.h"
 #include "servoSail.h"
 #include "servoRudder.h"
+#include "arbiterRudder.h"
 
 #include "sensorBattery.h"
 #include "sensorEncoder.h"
@@ -71,6 +72,10 @@ void hardware_init(void) {
     servoRudder_hardwareInit();
     #endif
 
+    #if defined(CM7_ARBITER_RUDDER_ENABLE) && defined(CM7_SERVO_RUDDER_ENABLE)
+    arbiterRudder_hardwareInit();
+    #endif
+
     #ifdef IPC_ENABLE
     ipc_init(); // Common Shared Memory (SRAM4) init
     #endif
@@ -124,6 +129,13 @@ void rtos_init()
     if (fusionOrientation_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
     if (xTaskCreate(fusionOrientation_handler, FUSION_ORIENTATION_TASK, FUSION_ORIENTATION_TASK_HEAP, NULL, FUSION_ORIENTATION_TASK_PRIORITY, &fusionOrientation_task) != pdPASS) { Error_Handler(); }
     totalStack += FUSION_ORIENTATION_TASK_HEAP;
+    #endif
+    
+    #if defined(CM7_ARBITER_RUDDER_ENABLE) && defined(CM7_SERVO_RUDDER_ENABLE)
+    if (arbiterRudder_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(arbiterRudder_handler, ARBITER_RUDDER_TASK, ARBITER_RUDDER_TASK_HEAP,
+    NULL, ARBITER_RUDDER_TASK_PRIORITY, &arbiterRudder_task) != pdPASS) { Error_Handler(); }
+    totalStack += ARBITER_RUDDER_TASK_HEAP;
     #endif
 
     #ifdef CM7_DEBUG
