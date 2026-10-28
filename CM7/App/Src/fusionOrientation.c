@@ -101,7 +101,7 @@ void fusionOrientation_handler(void *argument)
     fusionOrientation_printf("fusionOrientation_handler start");
     for(;;)
     {
-        if (ulTaskNotifyTake(pdTRUE, SENSOR_IMU_STALE) == 0) { fusionOrientation_printf("Fused Orientation stale."); }
+        if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(SENSOR_IMU_STALE)) == 0) { fusionOrientation_printf("Fused Orientation stale."); }
         else
         {
             TelemetryBoatRelativeOrientation_t relativeOrientation = {0};

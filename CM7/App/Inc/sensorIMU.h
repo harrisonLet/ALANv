@@ -15,9 +15,13 @@
 #define sensorIMU_printf(...) ((void)0)
 #endif
 
-#define SENSOR_IMU_FREQUENCY 50u // Hz, this value is maxed at 100Hz because of limitations in the BNO055 chip (see data sheet pg 33)
+#define SENSOR_IMU_FREQUENCY 100U // Hz, this value is maxed at 100Hz because of limitations in the BNO055 chip (see data sheet pg 33)
 #define SENSOR_IMU_WINDOW 10u // num readings
 #define SENSOR_IMU_STALE 100u // ms before data is considered stale
+_Static_assert(SENSOR_IMU_FREQUENCY > 0u && SENSOR_IMU_FREQUENCY <= 100u, "SENSOR_IMU_FREQUENCY must be 1-100Hz");
+#if (SYSTEM_TICK_RATE_HZ % SENSOR_IMU_FREQUENCY) != 0u
+#warning "SENSOR_IMU_FREQUENCY does not divide the tick rate, the period will be rounded down"
+#endif
 
 extern TaskHandle_t sensorIMU_task;
 
