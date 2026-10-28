@@ -17,7 +17,7 @@
 #define ARBITER_RUDDER_FREQUENCY 20u // Hz
 #define ARBITER_RUDDER_STALE 200u // ms before a PID request is ignored and the rudder centers
 #define ARBITER_RUDDER_LIMIT 90 // clamps to the maximum degrees on either side
-#define ARBITER_RUDDER_SLEW 6 // max deg change per update (120 deg/s at 20 Hz)
+#define ARBITER_RUDDER_MAX_STEP 6 // max deg change per update (120 deg/s at 20 Hz)
 #define ARBITER_RUDDER_SIGN 1
 
 typedef enum {

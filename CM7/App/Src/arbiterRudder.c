@@ -57,9 +57,9 @@ for(;;){
             get_request(ARBITER_RUDDER_SOURCE_PID, pdMS_TO_TICKS(ARBITER_RUDDER_STALE), &target);
         }
 
-        // Clamp so the slew never goes past the limit
+        // Clamp first so the step never goes past the limit
         target = clamped_turn(target, -ARBITER_RUDDER_LIMIT, ARBITER_RUDDER_LIMIT);
-        int16_t step = clamped_turn(target - current_turn, -ARBITER_RUDDER_SLEW, ARBITER_RUDDER_SLEW);
+        int16_t step = clamped_turn(target - current_turn, -ARBITER_RUDDER_MAX_STEP, ARBITER_RUDDER_MAX_STEP);
         if (step == 0) { continue; }
         current_turn += step;
 

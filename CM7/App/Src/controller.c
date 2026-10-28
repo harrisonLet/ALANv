@@ -11,6 +11,7 @@
 #include "servoRudder.h"
 #include "arbiterRudder.h"
 #include "pidHeading.h"
+#include "arbiterTail.h"
 
 #include "sensorBattery.h"
 #include "sensorEncoder.h"
@@ -81,6 +82,10 @@ void hardware_init(void) {
     pidHeading_hardwareInit();
     #endif
 
+    #if defined(CM7_ARBITER_TAIL_ENABLE) && defined(CM7_SERVO_SAIL_ENABLE)
+    arbiterTail_hardwareInit();
+    #endif
+
     #ifdef IPC_ENABLE
     ipc_init(); // Common Shared Memory (SRAM4) init
     #endif
@@ -148,6 +153,13 @@ void rtos_init()
     if (xTaskCreate(pidHeading_handler, PID_HEADING_TASK, PID_HEADING_TASK_HEAP, NULL,
     PID_HEADING_TASK_PRIORITY, &pidHeading_task) != pdPASS) { Error_Handler(); }
     totalStack += PID_HEADING_TASK_HEAP;
+    #endif
+
+    #if defined(CM7_ARBITER_TAIL_ENABLE) && defined(CM7_SERVO_SAIL_ENABLE)
+    if (arbiterTail_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(arbiterTail_handler, ARBITER_TAIL_TASK, ARBITER_TAIL_TASK_HEAP, NULL,
+    ARBITER_TAIL_TASK_PRIORITY, &arbiterTail_task) != pdPASS) { Error_Handler(); }
+    totalStack += ARBITER_TAIL_TASK_HEAP;
     #endif
 
     #ifdef CM7_DEBUG
