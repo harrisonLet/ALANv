@@ -3,7 +3,7 @@
 
 #include "system.h"
 
-#define PID_SAIL_TASK "[PSAIL---]"
+#define PID_SAIL_TASK "[PID_SAIL]"
 #define PID_SAIL_TASK_PRIORITY osPriorityNormal
 #define PID_SAIL_TASK_HEAP 300 // room for printf and the float math
 

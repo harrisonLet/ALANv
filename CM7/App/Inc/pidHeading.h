@@ -3,7 +3,7 @@
 
 #include "system.h"
 
-#define PID_HEADING_TASK "[PHEAD---]"
+#define PID_HEADING_TASK "[PID_HEAD]"
 #define PID_HEADING_TASK_PRIORITY osPriorityNormal
 #define PID_HEADING_TASK_HEAP 300
 
