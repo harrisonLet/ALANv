@@ -13,6 +13,7 @@
 #include "pidHeading.h"
 #include "arbiterTail.h"
 #include "pidSail.h"
+#include "processLSP.h"
 
 #include "sensorBattery.h"
 #include "sensorEncoder.h"
@@ -89,6 +90,10 @@ void hardware_init(void) {
 
     #if defined(CM7_PID_SAIL_ENABLE) && defined(CM7_ARBITER_TAIL_ENABLE)
     pidSail_hardwareInit();
+    #endif
+
+    #if defined(CM7_PROCESS_LSP_ENABLE) && defined(CM7_PID_SAIL_ENABLE)
+    processLSP_hardwareInit();
     #endif
 
     #ifdef IPC_ENABLE
@@ -172,6 +177,13 @@ void rtos_init()
     if (xTaskCreate(pidSail_handler, PID_SAIL_TASK, PID_SAIL_TASK_HEAP, NULL,
     PID_SAIL_TASK_PRIORITY, &pidSail_task) != pdPASS) { Error_Handler(); }
     totalStack += PID_SAIL_TASK_HEAP;
+    #endif
+
+    #if defined(CM7_PROCESS_LSP_ENABLE) && defined(CM7_PID_SAIL_ENABLE)
+    if (processLSP_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(processLSP_handler, PROCESS_LSP_TASK, PROCESS_LSP_TASK_HEAP, NULL,
+    PROCESS_LSP_TASK_PRIORITY, &processLSP_task) != pdPASS) { Error_Handler(); }
+    totalStack += PROCESS_LSP_TASK_HEAP;
     #endif
 
     #ifdef CM7_DEBUG
