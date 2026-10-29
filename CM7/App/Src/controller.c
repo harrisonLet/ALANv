@@ -12,6 +12,7 @@
 #include "arbiterRudder.h"
 #include "pidHeading.h"
 #include "arbiterTail.h"
+#include "pidSail.h"
 
 #include "sensorBattery.h"
 #include "sensorEncoder.h"
@@ -84,6 +85,10 @@ void hardware_init(void) {
 
     #if defined(CM7_ARBITER_TAIL_ENABLE) && defined(CM7_SERVO_SAIL_ENABLE)
     arbiterTail_hardwareInit();
+    #endif
+
+    #if defined(CM7_PID_SAIL_ENABLE) && defined(CM7_ARBITER_TAIL_ENABLE)
+    pidSail_hardwareInit();
     #endif
 
     #ifdef IPC_ENABLE
@@ -160,6 +165,13 @@ void rtos_init()
     if (xTaskCreate(arbiterTail_handler, ARBITER_TAIL_TASK, ARBITER_TAIL_TASK_HEAP, NULL,
     ARBITER_TAIL_TASK_PRIORITY, &arbiterTail_task) != pdPASS) { Error_Handler(); }
     totalStack += ARBITER_TAIL_TASK_HEAP;
+    #endif
+
+    #if defined(CM7_PID_SAIL_ENABLE) && defined(CM7_ARBITER_TAIL_ENABLE)
+    if (pidSail_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(pidSail_handler, PID_SAIL_TASK, PID_SAIL_TASK_HEAP, NULL,
+    PID_SAIL_TASK_PRIORITY, &pidSail_task) != pdPASS) { Error_Handler(); }
+    totalStack += PID_SAIL_TASK_HEAP;
     #endif
 
     #ifdef CM7_DEBUG
