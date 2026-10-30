@@ -38,7 +38,7 @@
 #define IPC_SHARED_BASE         (0x38000000UL)
 #define IPC_SHARED_SIZE         (64UL * 1024UL)
 #define IPC_MAGIC               (0x414C414EUL) // ALAN in ASCII
-#define IPC_REV                 (2U)
+#define IPC_REV                 (3U)
 
 #define IPC_CMD_RING_SIZE       (2048U)
 #define IPC_CMD_ALIGN           (4U)
@@ -49,7 +49,7 @@
 
 enum { IPC_MODE_MANUAL, IPC_MODE_AUTO, IPC_MODE_SAFE };
 enum { IPC_CMD_MANUAL_STEP = 1, IPC_CMD_SHUTDOWN, IPC_CMD_WAYPOINT, IPC_CMD_ROUTE_COMMIT };
-enum { IPC_RESULT_NONE, IPC_RESULT_OK, IPC_RESULT_UNSUPPORTED, IPC_RESULT_BAD_LEN };
+enum { IPC_RESULT_NONE, IPC_RESULT_OK, IPC_RESULT_UNSUPPORTED, IPC_RESULT_BAD_LEN, IPC_BAD_VALUE, IPC_RESULT_TOO_MANY, IPC_RESULT_INCOMPLETE, IPC_RESULT_BAD_CRC};
 
 // Return codes for the IPC API. Separate from IPC_RESULT_*, which is telemetry data sent to the ground station
 typedef enum {
@@ -83,8 +83,11 @@ typedef struct {
 } ipc_cmd_waypoint_t;
 
 typedef struct {
-    uint16_t count;
-    uint16_t reserved;
+    uint16_t count; // number of waypoints up to 32. min 1
+    uint16_t crc16; // CRC-16 over the waypoints 0 to count-1
+    uint8_t arrive_m;  // arrival radius for all waypoints (0 = default of 8 meters)
+    uint8_t margin_warning_m; // warning zone beyond each paths's margin
+    uint16_t reserved; // 0
 } ipc_cmd_route_commit_t;
 
 // Only hdr.len bytes of payload are stored in the ring
