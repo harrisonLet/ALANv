@@ -144,7 +144,7 @@ typedef struct {
     uint8_t  route_segment;    // current leg index, 0xFF = no route
     int16_t  drift_distance;   // cross-track error, m, + = starboard of the path
     int8_t   tack_side;        // -1 = wind from port, +1 = wind from starboard, 0 = not upwind
-    uint8_t  flags;            // -1 = wind from port, +1 = wind from starboard, 0 = not upwind
+    uint8_t  flags;            // bit 0: NAV_FLAG_TACK_SLOW
     uint32_t timestamp;        // ms
     uint8_t  valid;            // Validity_e
 } TelemetryNavigation_t;
