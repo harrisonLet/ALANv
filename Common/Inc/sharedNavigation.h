@@ -112,3 +112,39 @@ typedef struct {
     NauticalVector_t nv; /**< The nautical vector contained in this node. */
     uint32_t nv_next; /**< Reference to the next node in the linked list. */
 } NauticalVectorLL_t;
+
+
+/**
+ * State of the Live Tack Planner (LTP). Sent to the ground station in telemetry,
+ * so the numbers are fixed: never renumber an existing state, only add new ones
+ * at the end. Stored as uint8_t in structs.
+ *
+ * IDLE is 0 so a zero-initialized struct reads as "not running".
+ *
+ * True wind direction: the compass direction where the wind is blowing from, which LTP calc
+ * calculates as heading + vane angle
+ *
+ * No-go: the range of headings within 45 degrees of the wind that the baot can't sail because
+ * the sail stalls. For example an upwind waypoint it sails at twd of +/- 45 degrees and zig zag.
+ */
+typedef enum {
+    NAV_STATE_IDLE        = 0x00, /**< Not enabled, or no route loaded. No heading.*/
+    NAV_STATE_DIRECT      = 0x01, /**< Waypoint is sailable, steering straight at it. */
+    NAV_STATE_UPWIND_PORT = 0x02, /**< Beating with the wind from port (heading = True wind direction + no-go). */
+    NAV_STATE_UPWIND_STBD = 0x03, /**< Beating with the wind from starboard (heading = True wind direction - no-go). */
+    NAV_STATE_TACKING     = 0x04, /**< Turning onto the other tack, holding the new tack's heading. */
+    NAV_STATE_ARRIVED     = 0x05, /**< Last waypoint reached. No heading published. */
+    NAV_STATE_FAULT       = 0x06, /**< Bad or stale input, or outside the warning zone. No heading published. */
+} NavState_e;
+
+
+typedef struct {
+    uint16_t desired_heading;  // 0..359 deg true, 0xFFFF = none
+    uint8_t  nav_state;        // NavState_e
+    uint8_t  route_segment;    // current leg index, 0xFF = no route
+    int16_t  drift_distance;   // cross-track error, m, + = starboard of the path
+    int8_t   tack_side;        // -1 = wind from port, +1 = wind from starboard, 0 = not upwind
+    uint8_t  flags;            // -1 = wind from port, +1 = wind from starboard, 0 = not upwind
+    uint32_t timestamp;        // ms
+    uint8_t  valid;            // Validity_e
+} TelemetryNavigation_t;
