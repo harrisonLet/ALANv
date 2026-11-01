@@ -2,12 +2,17 @@
 // Route Manager. Never include system.h; the mutex is the only FreeRTOS call and is
 // stubbed out under NAV_HOST_TEST so CM7/Test/navigation can build this file.
 //
-// This is an outline stub only to help compile
+// navigationRoute_version() and navigationRoute_copy() are still stubs.
 /////////////////////////////////////////////////////////////////////////////////////////
 
 #include "navigationRoute.h"
 
+#include <string.h>
+
 /////////////////////////////////////////////////////////////////////////////////////////
+
+// The CRC runs over spare as raw bytes, and the ground station packs exactly 12 per waypoint
+_Static_assert(sizeof(ipc_cmd_waypoint_t) == 12, "ipc_cmd_waypoint_t must be 12 bytes with no padding, the route CRC depends on it");
 
 static ipc_cmd_waypoint_t spare[NAV_ROUTE_MAX_WAYPOINTS]; // raw upload in progress
 static uint32_t rx_mask; // which spare slots have arived to checks which bits are set
@@ -53,16 +58,51 @@ void navigationRoute_init(void)
 
 uint8_t navigationRoute_addWaypoint(const ipc_cmd_waypoint_t *wp)
 {
-    (void)wp;
-    return IPC_RESULT_NONE;
+    if (wp->index >= NAV_ROUTE_MAX_WAYPOINTS) { return IPC_RESULT_TOO_MANY; }
+
+    // Compared both ways rather than with abs(), which is undefined for INT32_MIN
+    if (wp->lat_e7 > 900000000 || wp->lat_e7 < -900000000 ||
+        wp->lon_e7 > 1800000000 || wp->lon_e7 < -1800000000 ||
+        wp->margin_m == 0) { return IPC_RESULT_BAD_VALUE; }
+
+    spare[wp->index] = *wp;
+    rx_mask |= 1u << wp->index;
+    return IPC_RESULT_OK;
 }
 
 
 
 uint8_t navigationRoute_commit(const ipc_cmd_route_commit_t *commit)
 {
-    (void)commit;
-    return IPC_RESULT_NONE;
+    uint16_t count = commit->count;
+    // Bits 0..count-1. (1u << 32) is undefined behavior, so a full route (or a bad count) gets all ones
+    uint32_t required = (count >= NAV_ROUTE_MAX_WAYPOINTS) ? 0xFFFFFFFFu : (1u << count) - 1u;
+    uint8_t result;
+
+    if (count == 0 || count > NAV_ROUTE_MAX_WAYPOINTS) { result = IPC_RESULT_TOO_MANY; }
+    else if ((rx_mask & required) != required) { result = IPC_RESULT_INCOMPLETE; }
+    else if (crc16_ccitt((const uint8_t *)spare, count * sizeof(ipc_cmd_waypoint_t)) != commit->crc16) { result = IPC_RESULT_BAD_CRC; }
+    else if (!ROUTE_LOCK()) { result = IPC_RESULT_NONE; } // LTP held the route for 10 ms; not OK, so the ground station resends
+    else
+    {
+        active.count = (uint8_t)count;
+        active.arrive_m = commit->arrive_m ? commit->arrive_m : NAV_ROUTE_DEFAULT_ARRIVE_M;
+        active.margin_warning_m = commit->margin_warning_m;
+        for (uint16_t i = 0; i < count; i++)
+        {
+            active.wp[i].lat = spare[i].lat_e7 / 1e7;
+            active.wp[i].lon = spare[i].lon_e7 / 1e7;
+            active.wp[i].margin_m = spare[i].margin_m;
+        }
+        version++;
+        ROUTE_UNLOCK();
+        result = IPC_RESULT_OK;
+    }
+
+    // Every path: the next upload starts from an empty spare buffer
+    memset(spare, 0, sizeof(spare));
+    rx_mask = 0;
+    return result;
 }
 
 
