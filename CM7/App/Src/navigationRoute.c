@@ -2,12 +2,18 @@
 // Route Manager. Never include system.h; the mutex is the only FreeRTOS call and is
 // stubbed out under NAV_HOST_TEST so CM7/Test/navigation can build this file.
 //
-// STUB: compiles only. Bodies come with the Route Manager step of the design plan.
+// This is an outline stub only to help compile
 /////////////////////////////////////////////////////////////////////////////////////////
 
 #include "navigationRoute.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////
+
+static ipc_cmd_waypoint_t spare[NAV_ROUTE_MAX_WAYPOINTS]; // raw upload in progress
+static uint32_t rx_mask; // which spare slots have arived to checks which bits are set
+static NavRoute_t active; // the route LTP will sail
+static uint32_t version; // 0 means no route, +1 for every good commit
+
 
 uint16_t crc16_ccitt(const uint8_t *data, size_t len)
 {
