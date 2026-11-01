@@ -22,10 +22,6 @@
 #define NAV_GPS_STALE_MS            5000u   // same as SENSOR_GPS_STALE, but sensorGPS.h pulls in system.h
 #define NAV_RETURN_ANGLE_DEG        45.0    // angle back toward the line on a DIRECT leg; tune
 
-#define NAV_HEADING_NONE            0xFFFFu // desired_heading when no heading is published
-#define NAV_SEGMENT_NONE            0xFFu   // route_segment when no route is loaded
-#define NAV_FLAG_TACK_SLOW          0x01u   // flags bit 0: tack taking too long
-
 /**
  * Everything LTP reads in one cycle, gathered by the task wrapper.
  */

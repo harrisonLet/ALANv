@@ -148,3 +148,7 @@ typedef struct {
     uint32_t timestamp;        // ms
     uint8_t  valid;            // Validity_e
 } TelemetryNavigation_t;
+
+#define NAV_HEADING_NONE            0xFFFFu // desired_heading when no heading is published
+#define NAV_SEGMENT_NONE            0xFFu   // route_segment when no route is loaded
+#define NAV_FLAG_TACK_SLOW          0x01u   // flags bit 0: tack taking too long
