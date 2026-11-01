@@ -208,7 +208,9 @@ void sensorEncoder_handler(void *argument)
     for(;;)
     {
         // Read Frequency
-        vTaskDelayUntil(&lastWake, pdMS_TO_TICKS(1000 / SENSOR_ENCODER_FREQUENCY));
+        if (!xTaskDelayUntil(&lastWake, configTICK_RATE_HZ / SENSOR_ENCODER_FREQUENCY)) {
+            continue;
+        }
 
         // Metdata
         MetadataEncoder_t metadata = {0};
