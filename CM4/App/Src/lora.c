@@ -225,6 +225,7 @@
 
 #include "lora.h"
 #include "main.h"
+#include "shared_configuration.h"
 #include <stdint.h>
 
  /* ─── Register addresses ─────────────────────────────────────────── */
@@ -469,7 +470,12 @@ void LoRa_ProcessDIO0(void)
     SPI_tx_byte(REG_IRQ_FLAGS, 0xFF);        /* clear flags before touching FIFO */
 
     if (s_state == LORA_STATE_TX) {
+        #if defined(CM4_LORA_COMMANDS_ENABLE)
         LoRa_StartRX();
+        #else
+        SPI_tx_byte(REG_OP_MODE, 0x81);     /* commands disabled: standby until next send */
+        s_state = LORA_STATE_IDLE;
+        #endif
         return;
     }
 

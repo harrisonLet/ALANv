@@ -24,8 +24,6 @@
 #include "lora.h"
 #include "loraTelemetry.h"
 #include "telemetryReceive.h"
-#include "servoRudder.h"
-#include "servoSail.h"
 #include <stdint.h>
 #include <string.h>
 
@@ -172,11 +170,6 @@ int main(void)
   #endif
   telemetryRec_init(ipc_attached);
 
-  #if defined(CM4_SERVOS_ENABLE)
-  servoRudder_init();
-  servoSail_init();
-  #endif
-
   // Debug_LED_Toggle('y');  // toggle yellow LED to indicate SPI initialized
 
   if (LoRa_init() != 0)
@@ -184,7 +177,9 @@ int main(void)
       printf("LoRa init FAILED\r\n");
       Debug_LED_Toggle('o');
   }
+  #if defined(CM4_LORA_COMMANDS_ENABLE)
   LoRa_StartRX();
+  #endif
 
   /* LoRa_init() toggles yellow LED once for version check, so yellow starts ON */
   static uint8_t led_status   = 0x04;  /* bitmask: bit0=green, bit1=red, bit2=yellow */
@@ -229,6 +224,7 @@ int main(void)
           dio0_flag = 0;
           LoRa_ProcessDIO0();
 
+          #if defined(CM4_LORA_COMMANDS_ENABLE)
           uint8_t cmd[64];
           uint8_t len = LoRa_GetCmd(cmd);
           if (len > 0) {
@@ -238,41 +234,8 @@ int main(void)
               if      (cmd[0] == 'g') { led_status ^= 0x01; Debug_LED_Toggle('g'); }
               else if (cmd[0] == 'r') { led_status ^= 0x02; Debug_LED_Toggle('r'); }
               else if (cmd[0] == 'y') { led_status ^= 0x04; Debug_LED_Toggle('y'); }
-
-              #if defined(CM4_SERVOS_ENABLE)
-              /* Rudder steps */
-              int16_t delta = 0;
-              if      (cmd[0] == 'q') delta = +20;
-              else if (cmd[0] == 'e') delta = -20;
-              else if (cmd[0] == 'a') delta = +10;
-              else if (cmd[0] == 'd') delta = -10;
-              else if (cmd[0] == 'z') delta = +5;
-              else if (cmd[0] == 'c') delta = -5;
-
-              if (delta != 0) {
-                rudder_angle += delta;
-                if (rudder_angle >  135) rudder_angle =  135;
-                if (rudder_angle < -135) rudder_angle = -135;
-                servoRudder_setAngle(rudder_angle);
-              }
-
-              /* Sail steps */
-              delta = 0;
-              if      (cmd[0] == 'w') delta = +20;
-              else if (cmd[0] == 'r') delta = -20;
-              else if (cmd[0] == 's') delta = +10;
-              else if (cmd[0] == 'f') delta = -10;
-              else if (cmd[0] == 'x') delta = +5;
-              else if (cmd[0] == 'v') delta = -5;
-
-              if (delta != 0) {
-                sail_angle += delta;
-                if (sail_angle >  135) sail_angle =  135;
-                if (sail_angle < -135) sail_angle = -135;
-                servoSail_setAngle(sail_angle);
-              }
-              #endif
           }
+          #endif
       }
   }
 #endif
