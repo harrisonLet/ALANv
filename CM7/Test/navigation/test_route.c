@@ -1,7 +1,9 @@
 #include "test_check.h"
 #include "navigationRoute.h"
 
+#include <math.h>
 #include <stdint.h>
+#include <string.h>
 
 // A lake-test waypoint near Salt Lake City, a little farther north for each index
 static ipc_cmd_waypoint_t route_wp(uint16_t index)
@@ -143,11 +145,72 @@ static void route_commit(void)
     CHECK(navigationRoute_commit(&c5) == IPC_RESULT_INCOMPLETE);
 }
 
+
+
+// Must run before any good commit, while there is still no route
+static void route_copyEmpty(void)
+{
+    NavRoute_t out;
+    memset(&out, 0xA5, sizeof(out));
+    CHECK(navigationRoute_copy(&out) == false);
+
+    // out is unchanged on false
+    NavRoute_t sentinel;
+    memset(&sentinel, 0xA5, sizeof(sentinel));
+    CHECK(memcmp(&out, &sentinel, sizeof(out)) == 0);
+}
+
+
+
+static void route_copy(void)
+{
+    ipc_cmd_waypoint_t wps[NAV_ROUTE_MAX_WAYPOINTS];
+    for (uint16_t i = 0; i < NAV_ROUTE_MAX_WAYPOINTS; i++) { wps[i] = route_wp(i); }
+    wps[0].lat_e7 = 407608123;
+    NavRoute_t out;
+
+    // arrive_m 0 becomes the default; the e7 integer converts to degrees within 1e-9
+    route_send(wps, 3);
+    ipc_cmd_route_commit_t c3 = route_commitFor(wps, 3);
+    CHECK(navigationRoute_commit(&c3) == IPC_RESULT_OK);
+    CHECK(navigationRoute_copy(&out) == true);
+    CHECK(out.count == 3);
+    CHECK(out.arrive_m == NAV_ROUTE_DEFAULT_ARRIVE_M);
+    CHECK(out.margin_warning_m == 5);
+    CHECK(fabs(out.wp[0].lat - 40.7608123) < 1e-9);
+    CHECK(fabs(out.wp[0].lon - -111.8910000) < 1e-9);
+    CHECK(out.wp[0].margin_m == 20);
+
+    // A nonzero arrive_m is kept as sent
+    route_send(wps, 3);
+    c3.arrive_m = 15;
+    CHECK(navigationRoute_commit(&c3) == IPC_RESULT_OK);
+    CHECK(navigationRoute_copy(&out) == true);
+    CHECK(out.arrive_m == 15);
+
+    // A full 32-waypoint route comes through whole, last waypoint included
+    route_send(wps, 32);
+    ipc_cmd_route_commit_t c32 = route_commitFor(wps, 32);
+    CHECK(navigationRoute_commit(&c32) == IPC_RESULT_OK);
+    CHECK(navigationRoute_copy(&out) == true);
+    CHECK(out.count == 32);
+    CHECK(fabs(out.wp[31].lat - (407608000 + 31 * 10000) / 1e7) < 1e-9);
+
+    // A failed commit leaves the active route alone
+    route_send(wps, 3);
+    c3.crc16 ^= 0x0001;
+    CHECK(navigationRoute_commit(&c3) == IPC_RESULT_BAD_CRC);
+    CHECK(navigationRoute_copy(&out) == true);
+    CHECK(out.count == 32);
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void test_route(void)
 {
+    route_copyEmpty();
     route_crc();
     route_addWaypoint();
     route_commit();
+    route_copy();
 }
