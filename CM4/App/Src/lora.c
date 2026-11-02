@@ -15,7 +15,7 @@
  *   RFM95W SCK   -> SPI1 SCK   PA5
  *   RFM95W NSS (CS)   -> GPIO output (CS, defined as LORA_CS_PIN)   PD14
  *   RFM95W DIO0 (G0)  -> GPIO EXTI input (defined as LORA_DIO0_PIN) PG9
- *   RFM95W RESET -> GPIO output (optional but recommended) PA0
+ *   RFM95W RESET      -> GPIO output, active low                    PA0
  *
  * CONFIGURATION
  * -----------------------------------------------------------------------------
@@ -271,8 +271,8 @@
 
 #define CS_LOW()   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_RESET)
 #define CS_HIGH()  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET)
-#define RESET_LOW()  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_RESET)  // TODO: adjust pin
-#define RESET_HIGH() HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_SET)    // TODO: adjust pin
+#define RESET_LOW()  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_RESET)
+#define RESET_HIGH() HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_SET)
 
 
 
