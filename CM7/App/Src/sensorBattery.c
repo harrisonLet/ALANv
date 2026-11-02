@@ -65,10 +65,12 @@ HardwareInit_e sensorBattery_hardwareInit(void)
     // Initialize the GPIOs
     sensorBattery_printf("    - init hardware GPIO pins");
     GPIO_InitTypeDef GPIO_InitStruct = {0};
-    GPIO_InitStruct.Pin = GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7;
+    GPIO_InitStruct.Pin = GPIO_PIN_4 | GPIO_PIN_7;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    GPIO_InitStruct.Pin = GPIO_PIN_4 | GPIO_PIN_5;
+    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
     // Initialize ADC
     sensorBattery_printf("    - init ADC (Analog to Digital Converter) hardware");
@@ -97,9 +99,9 @@ HardwareInit_e sensorBattery_hardwareInit(void)
     static const uint32_t battery_adcChannels[BATTERY_CELL_COUNT] =
     {
         ADC_CHANNEL_18, // PA4 - BC1 (Battery Cell 1)
-        ADC_CHANNEL_19, // PA5 - BC2
-        ADC_CHANNEL_3,  // PA6 - BC3
-        ADC_CHANNEL_7,  // PA7 - BC4
+        ADC_CHANNEL_7,  // PA7 - BC2
+        ADC_CHANNEL_4,  // PC4 - BC3
+        ADC_CHANNEL_8,  // PC5 - BC4
     };
     static const uint32_t ranks[BATTERY_CELL_COUNT] = { 
         ADC_REGULAR_RANK_1, 

@@ -13,9 +13,9 @@
  *   RFM95W MOSI  -> SPI1 MOSI  PB5
  *   RFM95W MISO  -> SPI1 MISO  PA6
  *   RFM95W SCK   -> SPI1 SCK   PA5
- *   RFM95W NSS   -> GPIO output (CS, defined as LORA_CS_PIN)   PD14
- *   RFM95W DIO0  -> GPIO EXTI input (defined as LORA_DIO0_PIN)
- *   RFM95W RESET -> GPIO output (optional but recommended)
+ *   RFM95W NSS (CS)   -> GPIO output (CS, defined as LORA_CS_PIN)   PD14
+ *   RFM95W DIO0 (G0)  -> GPIO EXTI input (defined as LORA_DIO0_PIN) PG9
+ *   RFM95W RESET -> GPIO output (optional but recommended) PA0
  *
  * CONFIGURATION
  * -----------------------------------------------------------------------------
