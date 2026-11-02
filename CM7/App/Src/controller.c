@@ -192,9 +192,9 @@ void rtos_init()
     #endif
 
     #ifdef CM7_CONSOLE_ENABLE
-    if (xTaskCreate(console_handler, "[CONSOLE-]", 256, NULL,
+    if (xTaskCreate(console_handler, "[CONSOLE-]", 512, NULL,
     osPriorityLow, &task_console) != pdPASS) { Error_Handler(); }
-    totalStack += 256;
+    totalStack += 512;
     #endif
 
     #ifdef CM7_DEBUG
