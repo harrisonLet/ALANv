@@ -228,8 +228,8 @@ void sensorEncoder_handler(void *argument)
         {
             if      (metadata.status & AS5600_STATUS_MH)  { metadata.valid = VALIDITY_UNTRUSTED_OVER_SATURATION; }
             else if (metadata.status & AS5600_STATUS_ML)  { metadata.valid = VALIDITY_UNTRUSTED_UNDER_SATURATION; }
-            else if (metadata.raw_angle > ENCODER_COUNTS) { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
-            else if (metadata.angle > 360)                { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
+            else if (metadata.raw_angle >= ENCODER_COUNTS) { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
+            else if (metadata.angle >= ENCODER_COUNTS)     { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
             else                                          { metadata.valid = VALIDITY_VALID; }
             
             if (metadata.valid == VALIDITY_VALID) {
@@ -247,21 +247,32 @@ void sensorEncoder_handler(void *argument)
             }
             else { }
         }
-        #ifdef CM7_SENSOR_ENCODER_DEBUG
-        char metadata_str[METADATA_ENCODER_STR_SIZE];
-        sensorEncoder_printf("%s", MetadataEncoder_toString(&metadata, metadata_str));
-        #endif
         xQueueOverwrite(metadata_queue, &metadata);
 
         // Telemetry
-        if (ang_unwrapped_ring.count == 0) { continue; }
         TelemetryMainSail_t telemetry = {0};
-        int32_t degrees = ((ang_unwrapped_sum / (int32_t)ang_unwrapped_ring.count) * 360) / ENCODER_COUNTS;
-        telemetry.ang_forward = ANG_WRAP_180(degrees);
-        if      (degrees > 0) { telemetry.ang_starboard = degrees; telemetry.ang_port = 0; }
-        else if (degrees < 0) { telemetry.ang_starboard = 0;       telemetry.ang_port = -degrees; }
-        else                  { telemetry.ang_starboard = 0;       telemetry.ang_port = 0; }
-        telemetry_setMainSail(&telemetry);
+        if (ang_unwrapped_ring.count > 0) {
+            int32_t degrees = ((ang_unwrapped_sum / (int32_t)ang_unwrapped_ring.count) * 360) / ENCODER_COUNTS;
+            telemetry.ang_forward = ANG_WRAP_180(degrees);
+            if      (degrees > 0) { telemetry.ang_starboard = degrees; telemetry.ang_port = 0; }
+            else if (degrees < 0) { telemetry.ang_starboard = 0;       telemetry.ang_port = -degrees; }
+            else                  { telemetry.ang_starboard = 0;       telemetry.ang_port = 0; }
+            telemetry_setMainSail(&telemetry);
+        }
+
+        // Debug print: raw registers followed by the converted (windowed, forward relative) angle.
+        // The telemetry fields are formatted inline rather than via TelemetryMainSail_toString to
+        // avoid a second 64B string buffer on this task's stack.
+        #ifdef CM7_SENSOR_ENCODER_DEBUG
+        char metadata_str[METADATA_ENCODER_STR_SIZE];
+        MetadataEncoder_toString(&metadata, metadata_str);
+        if (ang_unwrapped_ring.count > 0) {
+            sensorEncoder_printf("%s  ->  ang_forward=%+04ddeg [ %03u | %03u ]deg", metadata_str,
+                telemetry.ang_forward, (unsigned)telemetry.ang_starboard, (unsigned)telemetry.ang_port);
+        } else {
+            sensorEncoder_printf("%s  ->  no valid reads yet", metadata_str);
+        }
+        #endif
     }
 }
 
