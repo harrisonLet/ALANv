@@ -2,7 +2,7 @@
 // Route Manager. Never include system.h; the mutex is the only FreeRTOS call and is
 // stubbed out under NAV_HOST_TEST so CM7/Test/navigation can build this file.
 //
-// navigationRoute_version() and navigationRoute_copy() are still stubs.
+// navigationRoute_version() is still a stub.
 /////////////////////////////////////////////////////////////////////////////////////////
 
 #include "navigationRoute.h"
@@ -116,6 +116,14 @@ uint32_t navigationRoute_version(void)
 
 bool navigationRoute_copy(NavRoute_t *out)
 {
-    (void)out;
-    return false;
+    // return false if version == 0 or the lock fails.
+    if (version == 0 || !ROUTE_LOCK()) 
+    { 
+        return false;
+    }
+
+    // move data from active to out under the lock, then unlock and return true
+    memcpy(out, &active, sizeof(active));
+    ROUTE_UNLOCK();
+    return true;
 }
