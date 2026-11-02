@@ -27,12 +27,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "stm32h7xx_hal_conf.h"
-#include "stm32h7xx_hal_gpio.h"
-#include "stm32h7xx_hal_rcc.h"
-#include "stm32h7xx_hal_spi.h"
-#include "stm32h7xx_hal_tim.h"
-
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -40,18 +34,6 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
-typedef struct __attribute__((packed)) {
-    float    lat;
-    float    lon;
-    int16_t  heading;
-    int16_t  roll;
-    int16_t  pitch;
-    uint8_t  battery;
-    int16_t  wind_speed;
-    int16_t  wind_dir;
-    int16_t  sail_angle;
-} TelemetryPacket_t;
 
 /* USER CODE END PTD */
 
@@ -65,6 +47,7 @@ typedef struct __attribute__((packed)) {
 #endif
 #define ADDR_SAMD21  0xAA
 #define ADDR_STM32   0xBB
+#define LORA_HDR_LEN_BYTES (5U) // dest, src, seq, len, flags
 
 /* USER CODE END PD */
 
@@ -93,9 +76,6 @@ static void SystemClock_Config(void);
 /* Private user code --------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-
-// initialize gpio pins for di0-3 interrupt and rst
-
 /* USER CODE END 0 */
 
 /**
@@ -103,7 +83,7 @@ static void SystemClock_Config(void);
   * @retval int
   */
 int main(void)
-  {
+{
 
   /* USER CODE BEGIN 1 */
 
@@ -150,8 +130,7 @@ int main(void)
   if (BSP_COM_Init(COM1, &BspCOMInit) != BSP_ERROR_NONE) { Error_Handler(); }
   setvbuf(stdout, NULL, _IONBF, 0);
 #endif
-  
-  
+
 #if defined(CM4_ENABLE)
   MX_SPI1_Init();
   MX_TIM6_Init();
@@ -172,12 +151,9 @@ int main(void)
   LoRa_StartRX();
   #endif
 
-  static uint8_t tx_seq       = 0;
+  static uint8_t tx_seq = 0;
 
   LoRaTelemetry_t telemetryPacket = {0};
-  #define LORA_HDR_LEN_BYTES (5U) // dest, src, seq, len, flags
-
-  // char message[] = "Hello from harrisons laptop!\n";
 
   /* USER CODE END 2 */
 
@@ -191,7 +167,7 @@ int main(void)
       // If the CM7 is mid-write, tx_flag stays set and the read retries on the next wake (~1 ms)
       if (tx_flag) {
         uint8_t telem_status_flags;
-        // Only send LoRa for succefull read or 5 busy attempts in a row
+        // Only send LoRa for successful read or 5 busy attempts in a row
         if (telemetryRec_read(&telem_status_flags, &telemetryPacket)) {
           tx_flag = 0;
           LoRaTelemetry_t *payload = &telemetryPacket;
@@ -228,7 +204,6 @@ int main(void)
 }
 
 /* USER CODE BEGIN 4 */
-
 
 static void MX_SPI1_Init(void)
 {
