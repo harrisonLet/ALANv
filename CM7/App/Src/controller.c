@@ -22,6 +22,7 @@
 #include "sensorWind.h"
 #include "fusionOrientation.h"
 #include "ipcCM7.h"
+#include "console.h"
 
 #include "semphr.h"
 
@@ -94,6 +95,10 @@ void hardware_init(void) {
 
     #if defined(CM7_PROCESS_LSP_ENABLE) && defined(CM7_PID_SAIL_ENABLE)
     processLSP_hardwareInit();
+    #endif
+
+    #ifdef CM7_CONSOLE_ENABLE
+    console_hardwareInit();
     #endif
 
     #ifdef IPC_ENABLE
@@ -184,6 +189,12 @@ void rtos_init()
     if (xTaskCreate(processLSP_handler, PROCESS_LSP_TASK, PROCESS_LSP_TASK_HEAP, NULL,
     PROCESS_LSP_TASK_PRIORITY, &processLSP_task) != pdPASS) { Error_Handler(); }
     totalStack += PROCESS_LSP_TASK_HEAP;
+    #endif
+
+    #ifdef CM7_CONSOLE_ENABLE
+    if (xTaskCreate(console_handler, "[CONSOLE-]", 256, NULL,
+    osPriorityLow, &task_console) != pdPASS) { Error_Handler(); }
+    totalStack += 256;
     #endif
 
     #ifdef CM7_DEBUG
