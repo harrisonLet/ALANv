@@ -11,7 +11,7 @@
 // CM4 Configuration
 /////////////////////////////////////////////////////////////////////////////////////////
 #define CM4_ENABLE
-// #define CM4_SERVOS_ENABLE
+// #define CM4_LORA_COMMANDS_ENABLE // Ground -> boat commands. Off: radio only transmits telemetry, never listens
 
 
 
