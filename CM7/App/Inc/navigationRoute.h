@@ -37,9 +37,11 @@ uint16_t crc16_ccitt(const uint8_t *data, size_t len);
 
 /**
   * @brief  Clear the active route, the spare buffer and the received mask. Version goes to 0.
-  * @retval None
+  * @retval true   Ready.
+  * @retval false  The route mutex could not be created (FreeRTOS heap full). Do not use the route.
+  * @note   Call once before the scheduler starts.
   */
-void navigationRoute_init(void);
+bool navigationRoute_init(void);
 
 /**
   * @brief  Check a waypoint and copy it into the spare buffer.

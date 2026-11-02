@@ -45,11 +45,21 @@ uint16_t crc16_ccitt(const uint8_t *data, size_t len)
 
 
 
-void navigationRoute_init(void)
+bool navigationRoute_init(void)
 {
-#ifndef NAV_HOST_TEST
-    route_mutex = xSemaphoreCreateMutex();
-#endif
+    // Runs before the scheduler starts, so nothing else can be reading the route yet
+    memset(&active, 0, sizeof(active));
+    memset(spare, 0, sizeof(spare));
+    rx_mask = 0;
+    version = 0;
+
+    #ifndef NAV_HOST_TEST
+        // NULL when the FreeRTOS heap is full; ROUTE_LOCK() would then pass NULL to xSemaphoreTake
+        route_mutex = xSemaphoreCreateMutex();
+        if (route_mutex == NULL) { return false; }
+    #endif
+
+    return true;
 }
 
 
