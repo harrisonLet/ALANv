@@ -109,7 +109,7 @@ uint8_t navigationRoute_commit(const ipc_cmd_route_commit_t *commit)
 
 uint32_t navigationRoute_version(void)
 {
-    return 0;
+    return version;
 }
 
 
