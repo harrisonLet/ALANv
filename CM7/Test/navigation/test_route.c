@@ -162,6 +162,34 @@ static void route_copyEmpty(void)
 
 
 
+// Must run before any other test commits, so the counts start from 0
+static void route_version(void)
+{
+    ipc_cmd_waypoint_t wps[3] = { route_wp(0), route_wp(1), route_wp(2) };
+    ipc_cmd_route_commit_t c3 = route_commitFor(wps, 3);
+
+    CHECK(navigationRoute_version() == 0);
+
+    route_send(wps, 3);
+    CHECK(navigationRoute_commit(&c3) == IPC_RESULT_OK);
+    CHECK(navigationRoute_version() == 1);
+
+    route_send(wps, 3);
+    CHECK(navigationRoute_commit(&c3) == IPC_RESULT_OK);
+    CHECK(navigationRoute_version() == 2);
+
+    // Bad CRC, then a missing waypoint: neither moves the version
+    route_send(wps, 3);
+    ipc_cmd_route_commit_t bad = c3; bad.crc16 ^= 0x0001;
+    CHECK(navigationRoute_commit(&bad) == IPC_RESULT_BAD_CRC);
+    CHECK(navigationRoute_version() == 2);
+    route_send(wps, 2);
+    CHECK(navigationRoute_commit(&c3) == IPC_RESULT_INCOMPLETE);
+    CHECK(navigationRoute_version() == 2);
+}
+
+
+
 static void route_copy(void)
 {
     ipc_cmd_waypoint_t wps[NAV_ROUTE_MAX_WAYPOINTS];
@@ -209,6 +237,7 @@ static void route_copy(void)
 void test_route(void)
 {
     route_copyEmpty();
+    route_version();
     route_crc();
     route_addWaypoint();
     route_commit();
