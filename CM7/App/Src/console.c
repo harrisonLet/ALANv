@@ -4,6 +4,8 @@
 
 #include "servoSail.h"
 #include "servoRudder.h"
+#include "pidHeading.h"
+#include "pidSail.h"
 #include "queue.h"
 
 /*
@@ -13,6 +15,7 @@
  *
  *   tail <deg>        set the tail (sail) servo, -90..90
  *   rudder <deg>      set the rudder servo, -90..90
+ *   heading <deg>     give the heading PID a new target, 0..359
  *   center            both servos to 0
  *   sweep tail|rudder sweep a servo end to end and back to 0
  *   status            print the last commanded angles
@@ -77,9 +80,35 @@ static void sweep(void (*set)(int), int limit)
     for (int a = -limit; a <= 0; a += 5)  { set(a); vTaskDelay(pdMS_TO_TICKS(40)); }
 }
 
+static void set_heading(int v)
+{
+#if defined(CM7_PID_HEADING_ENABLE) && defined(CM7_ARBITER_RUDDER_ENABLE)
+    if (v < 0 || v > 359) { printf("[CONSOLE] heading must be 0..359\r\n"); return; }
+    pidHeading_setTarget((uint16_t)v);
+    printf("[CONSOLE] OK heading %d\r\n", v);
+#else
+    (void)v;
+    printf("[CONSOLE] heading PID is not enabled in this build\r\n");
+#endif
+}
+
+static void set_sail_target(int v)
+  {
+  #if defined(CM7_PID_SAIL_ENABLE) && defined(CM7_ARBITER_TAIL_ENABLE)
+      if (v < -180 || v > 180) { printf("[CONSOLE] sail must be -180..180\r\n"); return;
+  }
+      pidSail_setTarget((int16_t)v);
+      printf("[CONSOLE] OK sail target %d\r\n", v);
+  #else
+      (void)v;
+      printf("[CONSOLE] sail PID is not enabled in this build\r\n");
+  #endif
+  }
+
 static void help(void)
 {
-    printf("[CONSOLE] commands: tail <deg> | rudder <deg> | center | sweep tail|rudder | status | help\r\n");
+    printf("[CONSOLE] commands: tail <deg> | rudder <deg> | heading <deg> | center | sweep tail|rudder | status | help\r\n");
+    printf("[CONSOLE] commands: tail <deg> | rudder <deg> | heading <deg> | sail <deg> | center | sweep tail|rudder | status | help\r\n");
 }
 
 static void run(char *line)
@@ -91,6 +120,8 @@ static void run(char *line)
 
     if (strcmp(word, "tail") == 0 && n == 2)            { set_tail(value);   printf("[CONSOLE] OK tail %d\r\n", tail_deg); }
     else if (strcmp(word, "rudder") == 0 && n == 2)     { set_rudder(value); printf("[CONSOLE] OK rudder %d\r\n", rudder_deg); }
+    else if (strcmp(word, "heading") == 0 && n == 2)    { set_heading(value); }
+    else if (strcmp(word, "sail") == 0 && n == 2)       { set_sail_target(value); }
     else if (strcmp(word, "center") == 0)               { set_tail(0); set_rudder(0); printf("[CONSOLE] OK centered\r\n"); }
     else if (strcmp(word, "sweep") == 0 && strstr(line, "tail"))   { sweep(set_tail, 90);   printf("[CONSOLE] OK tail swept\r\n"); }
     else if (strcmp(word, "sweep") == 0 && strstr(line, "rudder")) { sweep(set_rudder, 35); printf("[CONSOLE] OK rudder swept\r\n"); }
