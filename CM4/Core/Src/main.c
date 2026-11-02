@@ -94,8 +94,7 @@ static void SystemClock_Config(void);
 /* USER CODE BEGIN 0 */
 
 
-// initialize gpio pins for di0-3 interrupt and rst 
-// initialize led's for debugging
+// initialize gpio pins for di0-3 interrupt and rst
 
 /* USER CODE END 0 */
 
@@ -157,32 +156,22 @@ int main(void)
   MX_SPI1_Init();
   MX_TIM6_Init();
 
-  Debug_LED_Init();
-
   bool ipc_attached = false;
   #if defined(IPC_ENABLE)
-  // Initialize IPC and wait 5s for Cm7 to setup shared memory
+  // Initialize IPC and wait 5s for Cm7 to setup shared memory.
+  // A failed handshake is reported to the ground station through FLAG_NO_IPC
   ipc_attached = (ipc_cm4_attach(5000U) == IPC_STATUS_OK);
-  if (!ipc_attached) {
-    // Set Red LED if IPC handshake with CM7 fails
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
-  }
   #endif
   telemetryRec_init(ipc_attached);
-
-  // Debug_LED_Toggle('y');  // toggle yellow LED to indicate SPI initialized
 
   if (LoRa_init() != 0)
   {
       printf("LoRa init FAILED\r\n");
-      Debug_LED_Toggle('o');
   }
   #if defined(CM4_LORA_COMMANDS_ENABLE)
   LoRa_StartRX();
   #endif
 
-  /* LoRa_init() toggles yellow LED once for version check, so yellow starts ON */
-  static uint8_t led_status   = 0x04;  /* bitmask: bit0=green, bit1=red, bit2=yellow */
   static uint8_t tx_seq       = 0;
 
   LoRaTelemetry_t telemetryPacket = {0};
@@ -229,11 +218,6 @@ int main(void)
           uint8_t len = LoRa_GetCmd(cmd);
           if (len > 0) {
               printf("[RX] cmd len=%d byte0=0x%02X\r\n", len, cmd[0]);
-
-              /* LED toggles */
-              if      (cmd[0] == 'g') { led_status ^= 0x01; Debug_LED_Toggle('g'); }
-              else if (cmd[0] == 'r') { led_status ^= 0x02; Debug_LED_Toggle('r'); }
-              else if (cmd[0] == 'y') { led_status ^= 0x04; Debug_LED_Toggle('y'); }
           }
           #endif
       }
