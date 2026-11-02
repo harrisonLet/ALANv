@@ -18,11 +18,11 @@
 
 // Angle of attack per sailing zone
 #define PROCESS_LSP_AOA_IRONS 0
-#define PROCESS_LSP_AOA_CLOSEHAULED 5
-#define PROCESS_LSP_AOA_CLOSEREACH 10
-#define PROCESS_LSP_AOA_BEAMREACH 15
-#define PROCESS_LSP_AOA_BROADREACH 20
-#define PROCESS_LSP_AOA_TRAININGRUN 45 // we likely won't be able to hold this angle of attack
+#define PROCESS_LSP_AOA_CLOSEHAULED 30
+#define PROCESS_LSP_AOA_CLOSEREACH 35
+#define PROCESS_LSP_AOA_BEAMREACH 40
+#define PROCESS_LSP_AOA_BROADREACH 45
+#define PROCESS_LSP_AOA_TRAININGRUN 55 // we likely won't be able to hold this angle of attack
 #define PROCESS_LSP_AOA_RUNNING 90 // the tail physically can't hold this angle of attack but we will still try
 
 extern TaskHandle_t processLSP_task;
