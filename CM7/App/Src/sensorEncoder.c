@@ -157,6 +157,7 @@ HardwareInit_e sensorEncoder_hardwareInit(void)
     // Initialize AS5600 sensor
     sensorEncoder_printf("    - init AS5600 sensor");
     // AS5600 power-up time T_PU = 10ms max (datasheet p.8)
+    HAL_Delay(100); // wait for power-up
     HAL_StatusTypeDef ready;
     for (uint8_t i = 0; i < 5; i++)
     {
