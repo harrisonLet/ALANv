@@ -240,4 +240,4 @@ static uint16_t wind_crc16(const uint8_t *buf, int len)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-bool sensorWind_getMetadata(MetadataWind_t *metadata) { return xQueuePeek(metadata_queue, metadata, 0) == pdTRUE; }
+bool sensorWind_getMetadata(MetadataWind_t *metadata) { return (metadata_queue != NULL) && xQueuePeek(metadata_queue, metadata, 0) == pdTRUE; }

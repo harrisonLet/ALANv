@@ -330,4 +330,4 @@ static HAL_StatusTypeDef AS5600_read(uint8_t seq, MetadataEncoder_t *metadata)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-bool sensorEncoder_getMetadata(MetadataEncoder_t *metadata) { return xQueuePeek(metadata_queue, metadata, 0) == pdTRUE; }
+bool sensorEncoder_getMetadata(MetadataEncoder_t *metadata) { return (metadata_queue != NULL) && xQueuePeek(metadata_queue, metadata, 0) == pdTRUE; }
