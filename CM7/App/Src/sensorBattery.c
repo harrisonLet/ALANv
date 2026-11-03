@@ -1,8 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 // Battery sensor driver for reading cell voltages and pack voltage of the LiPo Battery.
 //
-// GPIO:          PA4  PA5  PA6  PA7
-// ADC1 channels: 18   19   3    7
+// GPIO:          PA4  PB1  PF11 PF12
+// ADC1 channels: 18   5    2    6
 // Battery Cell:  BC1  BC2  BC3  BC4
 //
 // Cell voltages are measured cumulatively from the pack negative terminal, ie BC1=cell1,
@@ -60,17 +60,21 @@ HardwareInit_e sensorBattery_hardwareInit(void)
     // Initialize Clocks
     sensorBattery_printf("    - init hardware clocks");
     __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    __HAL_RCC_GPIOF_CLK_ENABLE();
     __HAL_RCC_ADC12_CLK_ENABLE();
 
     // Initialize the GPIOs
     sensorBattery_printf("    - init hardware GPIO pins");
     GPIO_InitTypeDef GPIO_InitStruct = {0};
-    GPIO_InitStruct.Pin = GPIO_PIN_4 | GPIO_PIN_7;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Pin = GPIO_PIN_4;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-    GPIO_InitStruct.Pin = GPIO_PIN_4 | GPIO_PIN_5;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+    GPIO_InitStruct.Pin = GPIO_PIN_1;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    GPIO_InitStruct.Pin = GPIO_PIN_11 | GPIO_PIN_12;
+    HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
     // Initialize ADC
     sensorBattery_printf("    - init ADC (Analog to Digital Converter) hardware");
@@ -99,9 +103,9 @@ HardwareInit_e sensorBattery_hardwareInit(void)
     static const uint32_t battery_adcChannels[BATTERY_CELL_COUNT] =
     {
         ADC_CHANNEL_18, // PA4 - BC1 (Battery Cell 1)
-        ADC_CHANNEL_7,  // PA7 - BC2
-        ADC_CHANNEL_4,  // PC4 - BC3
-        ADC_CHANNEL_8,  // PC5 - BC4
+        ADC_CHANNEL_5,  // PB1 - BC2
+        ADC_CHANNEL_2,  // PF11 - BC3
+        ADC_CHANNEL_6,  // PF12 - BC4
     };
     static const uint32_t ranks[BATTERY_CELL_COUNT] = { 
         ADC_REGULAR_RANK_1, 
@@ -256,4 +260,4 @@ static uint16_t rawTapsToMv(uint16_t counts)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-bool sensorBattery_getMetadata(MetadataBattery_t *metadata)    { return xQueuePeek(queue_metadata, metadata, 0) == pdTRUE; }
+bool sensorBattery_getMetadata(MetadataBattery_t *metadata)    { return (queue_metadata != NULL) && xQueuePeek(queue_metadata, metadata, 0) == pdTRUE; }
