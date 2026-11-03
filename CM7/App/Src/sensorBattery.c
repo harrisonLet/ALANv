@@ -1,8 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 // Battery sensor driver for reading cell voltages and pack voltage of the LiPo Battery.
 //
-// GPIO:          PA4  PB1  PF11 PF12
-// ADC1 channels: 18   5    2    6
+// GPIO:          PA0  PA4  PB1  PF11
+// ADC1 channels: 16   18   5    2
 // Battery Cell:  BC1  BC2  BC3  BC4
 //
 // Cell voltages are measured cumulatively from the pack negative terminal, ie BC1=cell1,
@@ -69,11 +69,11 @@ HardwareInit_e sensorBattery_hardwareInit(void)
     GPIO_InitTypeDef GPIO_InitStruct = {0};
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Pin = GPIO_PIN_4;
+    GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_4;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
     GPIO_InitStruct.Pin = GPIO_PIN_1;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-    GPIO_InitStruct.Pin = GPIO_PIN_11 | GPIO_PIN_12;
+    GPIO_InitStruct.Pin = GPIO_PIN_11;
     HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
     // Initialize ADC
@@ -102,10 +102,10 @@ HardwareInit_e sensorBattery_hardwareInit(void)
     sensorBattery_printf("    - init ADC configuration for ranked reads");
     static const uint32_t battery_adcChannels[BATTERY_CELL_COUNT] =
     {
-        ADC_CHANNEL_18, // PA4 - BC1 (Battery Cell 1)
-        ADC_CHANNEL_5,  // PB1 - BC2
-        ADC_CHANNEL_2,  // PF11 - BC3
-        ADC_CHANNEL_6,  // PF12 - BC4
+        ADC_CHANNEL_16, // PA0 - BC1 (Battery Cell 1)
+        ADC_CHANNEL_18, // PA4 - BC2
+        ADC_CHANNEL_5,  // PB1 - BC3
+        ADC_CHANNEL_2,  // PF11 - BC4
     };
     static const uint32_t ranks[BATTERY_CELL_COUNT] = { 
         ADC_REGULAR_RANK_1, 
