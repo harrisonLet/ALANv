@@ -27,7 +27,6 @@
 
 #include "sensorEncoder.h"
 #include "objRing.h"
-#include "stm32h7xx_hal_def.h"
 #include "telemetry.h"
 
 #include "queue.h"
@@ -215,7 +214,9 @@ void sensorEncoder_handler(void *argument)
     for(;;)
     {
         // Read Frequency
-        vTaskDelayUntil(&lastWake, pdMS_TO_TICKS(1000 / SENSOR_ENCODER_FREQUENCY));
+        if (!xTaskDelayUntil(&lastWake, configTICK_RATE_HZ / SENSOR_ENCODER_FREQUENCY)) {
+            continue;
+        }
 
         // Metdata
         MetadataEncoder_t metadata = {0};
@@ -233,8 +234,8 @@ void sensorEncoder_handler(void *argument)
         {
             if      (metadata.status & AS5600_STATUS_MH)  { metadata.valid = VALIDITY_UNTRUSTED_OVER_SATURATION; }
             else if (metadata.status & AS5600_STATUS_ML)  { metadata.valid = VALIDITY_UNTRUSTED_UNDER_SATURATION; }
-            else if (metadata.raw_angle > ENCODER_COUNTS) { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
-            else if (metadata.angle > 360)                { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
+            else if (metadata.raw_angle >= ENCODER_COUNTS) { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
+            else if (metadata.angle >= ENCODER_COUNTS)     { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
             else                                          { metadata.valid = VALIDITY_VALID; }
             
             if (metadata.valid == VALIDITY_VALID) {
@@ -252,10 +253,6 @@ void sensorEncoder_handler(void *argument)
             }
             else { }
         }
-        #ifdef CM7_SENSOR_ENCODER_DEBUG
-        char metadata_str[METADATA_ENCODER_STR_SIZE];
-        sensorEncoder_printf("%s", MetadataEncoder_toString(&metadata, metadata_str));
-        #endif
         xQueueOverwrite(metadata_queue, &metadata);
 
         // Telemetry
