@@ -232,11 +232,11 @@ void sensorEncoder_handler(void *argument)
         }
         else
         {
-            if      (metadata.status & AS5600_STATUS_MH)  { metadata.valid = VALIDITY_UNTRUSTED_OVER_SATURATION; }
-            else if (metadata.status & AS5600_STATUS_ML)  { metadata.valid = VALIDITY_UNTRUSTED_UNDER_SATURATION; }
+            if      (metadata.status & AS5600_STATUS_MH)   { metadata.valid = VALIDITY_UNTRUSTED_OVER_SATURATION; }
+            else if (metadata.status & AS5600_STATUS_ML)   { metadata.valid = VALIDITY_UNTRUSTED_UNDER_SATURATION; }
             else if (metadata.raw_angle >= ENCODER_COUNTS) { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
             else if (metadata.angle >= ENCODER_COUNTS)     { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
-            else                                          { metadata.valid = VALIDITY_VALID; }
+            else                                           { metadata.valid = VALIDITY_VALID; }
             
             if (metadata.valid == VALIDITY_VALID) {
                 int32_t delta = (int32_t)metadata.angle - metadata_angle_prev;
@@ -253,6 +253,10 @@ void sensorEncoder_handler(void *argument)
             }
             else { }
         }
+        #ifdef CM7_SENSOR_ENCODER_DEBUG
+        char metadata_str[METADATA_ENCODER_STR_SIZE];
+        sensorEncoder_printf("%s", MetadataEncoder_toString(&metadata, metadata_str));
+        #endif
         xQueueOverwrite(metadata_queue, &metadata);
 
         // Telemetry
