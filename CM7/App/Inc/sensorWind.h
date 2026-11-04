@@ -11,7 +11,7 @@
 #define SENSOR_WIND_TASK_HEAP 230 // ~64B of extra
 #define sensorWind_printf(fmt, ...) DEBUG_PRINTF(SENSOR_WIND_TASK, fmt, ##__VA_ARGS__)
 #else
-#define SENSOR_WIND_TASK_HEAP 100 // ~32B of extra
+#define SENSOR_WIND_TASK_HEAP 130 // ~64B of extra
 #define sensorWind_printf(...) ((void)0)
 #endif
 

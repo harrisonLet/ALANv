@@ -169,12 +169,14 @@ void sensorWind_handler(void *argument)
         xQueueOverwrite(metadata_queue, &metadata);
 
         // Telemetry
+        #ifdef CM7_TELEMETRY_ENABLE
         if (ang_unwrapped_ring.count == 0 || metadata.valid != VALIDITY_VALID) { continue; }
         TelemetryWind_t telemetry;
         int32_t degrees = ((ang_unwrapped_sum / (int32_t)ang_unwrapped_ring.count) * 360) / WIND_COUNTS;
         telemetry.ang_wind = ANG_WRAP_180(degrees);
         telemetry.ang_wind_r = ANG_WRAP_180(180 - telemetry.ang_wind);
         telemetry_setWind(&telemetry);
+        #endif
     }
 }
 
@@ -240,4 +242,4 @@ static uint16_t wind_crc16(const uint8_t *buf, int len)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-bool sensorWind_getMetadata(MetadataWind_t *metadata) { return xQueuePeek(metadata_queue, metadata, 0) == pdTRUE; }
+bool sensorWind_getMetadata(MetadataWind_t *metadata) { return (metadata_queue != NULL) && xQueuePeek(metadata_queue, metadata, 0) == pdTRUE; }

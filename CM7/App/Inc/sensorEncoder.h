@@ -12,11 +12,11 @@
 #define SENSOR_ENCODER_TASK_HEAP 220 // ~64B of extra
 #define sensorEncoder_printf(fmt, ...) DEBUG_PRINTF(SENSOR_ENCODER_TASK, fmt, ##__VA_ARGS__)
 #else
-#define SENSOR_ENCODER_TASK_HEAP 120 // ~32B of extra
+#define SENSOR_ENCODER_TASK_HEAP 150 // ~64B of extra
 #define sensorEncoder_printf(...) ((void)0)
 #endif
 
-#define SENSOR_ENCODER_FREQUENCY 100u // Hz, this value is primarily limited by the i2c bus speed, max: ~300Hz
+#define SENSOR_ENCODER_FREQUENCY 1u // Hz, this value is primarily limited by the i2c bus speed, max: ~300Hz
 #define SENSOR_ENCODER_WINDOW 10u // num readings
 #define SENSOR_ENCODER_STALE 100u // ms before data is considered stale
 #define SENSOR_ENCODER_DEBUG_FREQUENCY 1 // Hz, how often the debug line prints

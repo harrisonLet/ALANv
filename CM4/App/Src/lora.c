@@ -13,9 +13,9 @@
  *   RFM95W MOSI  -> SPI1 MOSI  PB5
  *   RFM95W MISO  -> SPI1 MISO  PA6
  *   RFM95W SCK   -> SPI1 SCK   PA5
- *   RFM95W NSS   -> GPIO output (CS, defined as LORA_CS_PIN)   PD14
- *   RFM95W DIO0  -> GPIO EXTI input (defined as LORA_DIO0_PIN)
- *   RFM95W RESET -> GPIO output (optional but recommended)
+ *   RFM95W NSS (CS)   -> GPIO output (CS, defined as LORA_CS_PIN)   PD14
+ *   RFM95W DIO0 (G0)  -> GPIO EXTI input (defined as LORA_DIO0_PIN) PG9
+ *   RFM95W RESET -> GPIO output (optional but recommended) PD15
  *
  * CONFIGURATION
  * -----------------------------------------------------------------------------
@@ -225,6 +225,7 @@
 
 #include "lora.h"
 #include "main.h"
+#include "shared_configuration.h"
 #include <stdint.h>
 
  /* ─── Register addresses ─────────────────────────────────────────── */
@@ -270,8 +271,8 @@
 
 #define CS_LOW()   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_RESET)
 #define CS_HIGH()  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET)
-#define RESET_LOW()  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_RESET)  // TODO: adjust pin
-#define RESET_HIGH() HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_SET)    // TODO: adjust pin
+#define RESET_LOW()  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_RESET)
+#define RESET_HIGH() HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_SET)
 
 
 
@@ -469,7 +470,12 @@ void LoRa_ProcessDIO0(void)
     SPI_tx_byte(REG_IRQ_FLAGS, 0xFF);        /* clear flags before touching FIFO */
 
     if (s_state == LORA_STATE_TX) {
+        #if defined(CM4_LORA_COMMANDS_ENABLE)
         LoRa_StartRX();
+        #else
+        SPI_tx_byte(REG_OP_MODE, 0x81);     /* commands disabled: standby until next send */
+        s_state = LORA_STATE_IDLE;
+        #endif
         return;
     }
 

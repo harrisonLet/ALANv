@@ -71,6 +71,7 @@
 #define AS5600_STATUS_MH        (1U << 3)  /* magnet too strong */
 #define AS5600_STATUS_ML        (1U << 4)  /* magnet too weak   */
 #define AS5600_STATUS_MD        (1U << 5)  /* magnet detected   */
+#define AS5600_STATUS_MASK (AS5600_STATUS_MH | AS5600_STATUS_ML | AS5600_STATUS_MD)
 
 /* 12-bit value mask for H/L register pairs */
 #define AS5600_12BIT_MASK           0x0FFF
@@ -156,18 +157,24 @@ HardwareInit_e sensorEncoder_hardwareInit(void)
     // Initialize AS5600 sensor
     sensorEncoder_printf("    - init AS5600 sensor");
     // AS5600 power-up time T_PU = 10ms max (datasheet p.8)
-    HAL_Delay(1000);
-    if (HAL_I2C_IsDeviceReady(&i2c_handler, AS5600_ADDR << 1, 3, 100) != HAL_OK) {
-        sensorEncoder_printf("ERROR: AS5600 not responding at 0x%02X, I2C error: 0x%lX\r\n", AS5600_ADDR, HAL_I2C_GetError(&i2c_handler));
-        Error_Handler();
+  HAL_Delay(100); // wait for power-up
+      HAL_StatusTypeDef ready;
+      for (uint8_t i = 0; i < 5; i++)
+      {
+          HAL_Delay(50);
+          ready = HAL_I2C_IsDeviceReady(&i2c_handler, AS5600_ADDR << 1, 3, 100);
+          if (ready == HAL_OK) break;
+          else sensorEncoder_printf("AS5600 not ready, will try again in 50ms");
     }
+    if (ready != HAL_OK) { sensorEncoder_printf("ERROR: AS5600 not responding at 0x%02X, I2C error: 0x%lX\r\n", AS5600_ADDR, HAL_I2C_GetError(&i2c_handler)); return HARDWARE_INIT_FAIL; }
+
     uint8_t status = 0;
     if (AS5600_readRegs(AS5600_STATUS, &status, 1) == HAL_OK) {
         sensorEncoder_printf("    - AS5600 STATUS 0x%02X: MD=%d ML=%d MH=%d\r\n", status,
                !!(status & AS5600_STATUS_MD), !!(status & AS5600_STATUS_ML), !!(status & AS5600_STATUS_MH));
     } else {
         sensorEncoder_printf("ERROR: Failed to read AS5600 STATUS register\r\n");
-        Error_Handler();
+        return HARDWARE_INIT_FAIL;
     }
 
     sensorEncoder_printf("sensorEncoder_hardwareInit complete");
@@ -226,11 +233,12 @@ void sensorEncoder_handler(void *argument)
         }
         else
         {
-            if      (metadata.status & AS5600_STATUS_MH)  { metadata.valid = VALIDITY_UNTRUSTED_OVER_SATURATION; }
-            else if (metadata.status & AS5600_STATUS_ML)  { metadata.valid = VALIDITY_UNTRUSTED_UNDER_SATURATION; }
-            else if (metadata.raw_angle >= ENCODER_COUNTS) { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
-            else if (metadata.angle >= ENCODER_COUNTS)     { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
-            else                                          { metadata.valid = VALIDITY_VALID; }
+            if      (metadata.status & AS5600_STATUS_MH)    { metadata.valid = VALIDITY_UNTRUSTED_OVER_SATURATION; }
+            else if (metadata.status & AS5600_STATUS_ML)    { metadata.valid = VALIDITY_UNTRUSTED_UNDER_SATURATION; }
+            else if (!(metadata.status & AS5600_STATUS_MD)) { metadata.valid = VALIDITY_UNTRUSTED; }
+            else if (metadata.raw_angle > ENCODER_COUNTS)   { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
+            else if (metadata.angle >= ENCODER_COUNTS)      { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
+            else                                            { metadata.valid = VALIDITY_VALID; }
             
             if (metadata.valid == VALIDITY_VALID) {
                 int32_t delta = (int32_t)metadata.angle - metadata_angle_prev;
@@ -247,50 +255,25 @@ void sensorEncoder_handler(void *argument)
             }
             else { }
         }
+        #ifdef CM7_SENSOR_ENCODER_DEBUG
+        char metadata_str[METADATA_ENCODER_STR_SIZE];
+        sensorEncoder_printf("%s", MetadataEncoder_toString(&metadata, metadata_str));
+        #endif
         xQueueOverwrite(metadata_queue, &metadata);
 
         // Telemetry
+        #ifdef CM7_TELEMETRY_ENABLE
+        sensorEncoder_printf("Ring count: %d\n", ang_unwrapped_ring.count);
+        if (ang_unwrapped_ring.count == 0) { continue; }
         TelemetryMainSail_t telemetry = {0};
-        if (ang_unwrapped_ring.count > 0) {
-            int32_t degrees = ((ang_unwrapped_sum / (int32_t)ang_unwrapped_ring.count) * 360) / ENCODER_COUNTS * -1;
-            telemetry.ang_forward = ANG_WRAP_180(degrees);
-            if      (degrees > 0) { telemetry.ang_starboard = degrees; telemetry.ang_port = 0; }
-            else if (degrees < 0) { telemetry.ang_starboard = 0;       telemetry.ang_port = -degrees; }
-            else                  { telemetry.ang_starboard = 0;       telemetry.ang_port = 0; }
-            telemetry_setMainSail(&telemetry);
-        }
-/*
-// Debug print: raw registers followed by the converted (windowed, forward relative) angle.
-    // The telemetry fields are formatted inline rather than via TelemetryMainSail_toString to
-    // avoid a second 64B string buffer on this task's stack.
-    #ifdef CM7_SENSOR_ENCODER_DEBUG
-    char metadata_str[METADATA_ENCODER_STR_SIZE];
-    MetadataEncoder_toString(&metadata, metadata_str);
-    if (ang_unwrapped_ring.count > 0) {
-        sensorEncoder_printf("%s  ->  ang_forward=%+04ddeg [ %03u | %03u ]deg", metadata_str,
-            telemetry.ang_forward, (unsigned)telemetry.ang_starboard, (unsigned)telemetry.ang_port);
-    } else {
-        sensorEncoder_printf("%s  ->  no valid reads yet", metadata_str);
-    }
-    #endif
-
-
-*/
-
-        #ifdef CM7_SENSOR_ENCODER_DEBUG
-          static uint32_t debug_count;
-          if (++debug_count % (SENSOR_ENCODER_FREQUENCY / SENSOR_ENCODER_DEBUG_FREQUENCY) == 0) {
-              char metadata_str[METADATA_ENCODER_STR_SIZE];
-              MetadataEncoder_toString(&metadata, metadata_str);
-              if (ang_unwrapped_ring.count > 0) {
-                  sensorEncoder_printf("%s  ->  ang_forward=%+04ddeg [ %03u | %03u ]deg", metadata_str,
-                      telemetry.ang_forward, (unsigned)telemetry.ang_starboard,
-  (unsigned)telemetry.ang_port);
-              } else {
-                  sensorEncoder_printf("%s  ->  no valid reads yet", metadata_str);
-              }
-          }
-          #endif
+        int32_t degrees = ((ang_unwrapped_sum / (int32_t)ang_unwrapped_ring.count) * 360) / ENCODER_COUNTS;
+        sensorEncoder_printf("Degrees: %ld\n", degrees);
+        telemetry.ang_forward = ANG_WRAP_180(degrees);
+        if      (degrees > 0) { telemetry.ang_starboard = degrees; telemetry.ang_port = 0; }
+        else if (degrees < 0) { telemetry.ang_starboard = 0;       telemetry.ang_port = -degrees; }
+        else                  { telemetry.ang_starboard = 0;       telemetry.ang_port = 0; }
+        telemetry_setMainSail(&telemetry);
+        #endif
     }
 }
 
@@ -334,7 +317,7 @@ static HAL_StatusTypeDef AS5600_read(uint8_t seq, MetadataEncoder_t *metadata)
     uint8_t buf[5];
     HAL_StatusTypeDef status = AS5600_readRegs(AS5600_STATUS, buf, sizeof(buf));
     if (status != HAL_OK) { return status; }
-    metadata->status    = buf[0];
+    metadata->status    = buf[0] & AS5600_STATUS_MASK;
     metadata->raw_angle = ((buf[1] << 8) | buf[2]) & AS5600_12BIT_MASK;
     metadata->angle     = ((buf[3] << 8) | buf[4]) & AS5600_12BIT_MASK;
 
@@ -353,4 +336,4 @@ static HAL_StatusTypeDef AS5600_read(uint8_t seq, MetadataEncoder_t *metadata)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-bool sensorEncoder_getMetadata(MetadataEncoder_t *metadata) { return xQueuePeek(metadata_queue, metadata, 0) == pdTRUE; }
+bool sensorEncoder_getMetadata(MetadataEncoder_t *metadata) { return (metadata_queue != NULL) && xQueuePeek(metadata_queue, metadata, 0) == pdTRUE; }

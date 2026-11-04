@@ -12,7 +12,7 @@
 #define SENSOR_BATTERY_TASK_HEAP 230 // ~64B of extra
 #define sensorBattery_printf(fmt, ...) DEBUG_PRINTF(SENSOR_BATTERY_TASK, fmt, ##__VA_ARGS__)
 #else
-#define SENSOR_BATTERY_TASK_HEAP 100 // ~32B of extra
+#define SENSOR_BATTERY_TASK_HEAP 130 // ~64B of extra
 #define sensorBattery_printf(...) ((void)0)
 #endif
 

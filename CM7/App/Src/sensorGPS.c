@@ -548,4 +548,4 @@ void DMA1_Stream0_IRQHandler(void) { HAL_DMA_IRQHandler(&uart_dma_handler); }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-bool sensorGPS_getMetadata(MetadataGPS_t *metadata) { return xQueuePeek(metadata_queue, metadata, 0) == pdTRUE; }
+bool sensorGPS_getMetadata(MetadataGPS_t *metadata) { return (metadata_queue != NULL) && xQueuePeek(metadata_queue, metadata, 0) == pdTRUE; }

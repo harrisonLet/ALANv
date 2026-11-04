@@ -3,6 +3,12 @@
 
 #define LIVE_TASK "[LIVE----]"
 
+#ifdef CM7_DEBUG
+#define cm7_printf(fmt, ...) DEBUG_PRINTF("[CM7-----]", fmt, ##__VA_ARGS__)
+#else
+#define cm7_printf(...) ((void)0)
+#endif
+
 #ifdef CM7_LIVE_DEBUG
 #define LIVE_TASK_PRIORITY osPriorityHigh
 #define LIVE_TASK_HEAP 300

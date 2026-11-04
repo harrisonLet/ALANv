@@ -11,7 +11,8 @@
 // CM4 Configuration
 /////////////////////////////////////////////////////////////////////////////////////////
 #define CM4_ENABLE
-// #define CM4_SERVOS_ENABLE
+// #define CM4_LORA_COMMANDS_ENABLE // Ground -> boat commands. Off: radio only transmits telemetry, never listens
+// #define CM4_LORA_DUMMY_TELEMETRY // Test: send a fixed telemetry packet every tick instead of reading SRAM4
 
 
 
@@ -26,12 +27,12 @@
 #define CM7_ENABLE
 #define CM7_LIVE_ENABLE
 #define CM7_TELEMETRY_ENABLE
-// #define CM7_SENSOR_BATTERY_ENABLE
+#define CM7_SENSOR_BATTERY_ENABLE
 #define CM7_SENSOR_ENCODER_ENABLE
-// #define CM7_SENSOR_GPS_ENABLE
-// #define CM7_SENSOR_IMU_ENABLE
+#define CM7_SENSOR_GPS_ENABLE
+#define CM7_SENSOR_IMU_ENABLE
 #define CM7_SENSOR_WIND_ENABLE
-//#define CM7_FUSION_ORIENTATION_ENABLE // This module requires data from the SENSOR_GPS and SENSOR_IMU tasks, it will not run if they are not also enabled
+#define CM7_FUSION_ORIENTATION_ENABLE // This module requires data from the SENSOR_GPS and SENSOR_IMU tasks, it will not run if they are not also enabled
 //#define CM7_SERVO_RUDDER_ENABLE
 //#define CM7_ARBITER_RUDDER_ENABLE
 //#define CM7_PID_HEADING_ENABLE
@@ -40,6 +41,7 @@
 #define CM7_PID_SAIL_ENABLE
 #define CM7_PROCESS_LSP_ENABLE
 #define CM7_CONSOLE_ENABLE
+
 
 #ifdef CM7_ENABLE
 #define CM7_DEBUG
@@ -51,7 +53,7 @@
 #endif
 
 #ifdef CM7_TELEMETRY_ENABLE
-#define CM7_TELEMETRY_DEBUG
+// #define CM7_TELEMETRY_DEBUG
 #endif
 
 #ifdef CM7_SENSOR_BATTERY_ENABLE
@@ -59,7 +61,7 @@
 #endif
 
 #ifdef CM7_SENSOR_ENCODER_ENABLE
-//  #define CM7_SENSOR_ENCODER_DEBUG
+#define CM7_SENSOR_ENCODER_DEBUG
 #endif
 
 #ifdef CM7_SENSOR_GPS_ENABLE
@@ -77,7 +79,7 @@
 #endif
 
 #ifdef CM7_FUSION_ORIENTATION_ENABLE
-#define CM7_FUSION_ORIENTATION_DEBUG
+// #define CM7_FUSION_ORIENTATION_DEBUG
 #endif
 
 #ifdef CM7_ARBITER_RUDDER_ENABLE
