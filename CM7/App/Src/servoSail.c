@@ -53,7 +53,7 @@ void servoSail_hardwareInit()
     HAL_Delay(1000);
   }
 
-  printf("%s Initialized, centered at %d degrees\r\n", SERVO_SAIL_TASK, servoSail_pulseToAngle(SERVO_CENTER_PULSE));
+  // printf("%s Initialized, centered at %d degrees\r\n", SERVO_SAIL_TASK, servoSail_pulseToAngle(SERVO_CENTER_PULSE));
 }
 
 

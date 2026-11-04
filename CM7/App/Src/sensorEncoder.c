@@ -156,7 +156,7 @@ HardwareInit_e sensorEncoder_hardwareInit(void)
     // Initialize AS5600 sensor
     sensorEncoder_printf("    - init AS5600 sensor");
     // AS5600 power-up time T_PU = 10ms max (datasheet p.8)
-    HAL_Delay(10);
+    HAL_Delay(1000);
     if (HAL_I2C_IsDeviceReady(&i2c_handler, AS5600_ADDR << 1, 3, 100) != HAL_OK) {
         sensorEncoder_printf("ERROR: AS5600 not responding at 0x%02X, I2C error: 0x%lX\r\n", AS5600_ADDR, HAL_I2C_GetError(&i2c_handler));
         Error_Handler();
@@ -252,27 +252,45 @@ void sensorEncoder_handler(void *argument)
         // Telemetry
         TelemetryMainSail_t telemetry = {0};
         if (ang_unwrapped_ring.count > 0) {
-            int32_t degrees = ((ang_unwrapped_sum / (int32_t)ang_unwrapped_ring.count) * 360) / ENCODER_COUNTS;
+            int32_t degrees = ((ang_unwrapped_sum / (int32_t)ang_unwrapped_ring.count) * 360) / ENCODER_COUNTS * -1;
             telemetry.ang_forward = ANG_WRAP_180(degrees);
             if      (degrees > 0) { telemetry.ang_starboard = degrees; telemetry.ang_port = 0; }
             else if (degrees < 0) { telemetry.ang_starboard = 0;       telemetry.ang_port = -degrees; }
             else                  { telemetry.ang_starboard = 0;       telemetry.ang_port = 0; }
             telemetry_setMainSail(&telemetry);
         }
+/*
+// Debug print: raw registers followed by the converted (windowed, forward relative) angle.
+    // The telemetry fields are formatted inline rather than via TelemetryMainSail_toString to
+    // avoid a second 64B string buffer on this task's stack.
+    #ifdef CM7_SENSOR_ENCODER_DEBUG
+    char metadata_str[METADATA_ENCODER_STR_SIZE];
+    MetadataEncoder_toString(&metadata, metadata_str);
+    if (ang_unwrapped_ring.count > 0) {
+        sensorEncoder_printf("%s  ->  ang_forward=%+04ddeg [ %03u | %03u ]deg", metadata_str,
+            telemetry.ang_forward, (unsigned)telemetry.ang_starboard, (unsigned)telemetry.ang_port);
+    } else {
+        sensorEncoder_printf("%s  ->  no valid reads yet", metadata_str);
+    }
+    #endif
 
-        // Debug print: raw registers followed by the converted (windowed, forward relative) angle.
-        // The telemetry fields are formatted inline rather than via TelemetryMainSail_toString to
-        // avoid a second 64B string buffer on this task's stack.
+
+*/
+
         #ifdef CM7_SENSOR_ENCODER_DEBUG
-        char metadata_str[METADATA_ENCODER_STR_SIZE];
-        MetadataEncoder_toString(&metadata, metadata_str);
-        if (ang_unwrapped_ring.count > 0) {
-            sensorEncoder_printf("%s  ->  ang_forward=%+04ddeg [ %03u | %03u ]deg", metadata_str,
-                telemetry.ang_forward, (unsigned)telemetry.ang_starboard, (unsigned)telemetry.ang_port);
-        } else {
-            sensorEncoder_printf("%s  ->  no valid reads yet", metadata_str);
-        }
-        #endif
+          static uint32_t debug_count;
+          if (++debug_count % (SENSOR_ENCODER_FREQUENCY / SENSOR_ENCODER_DEBUG_FREQUENCY) == 0) {
+              char metadata_str[METADATA_ENCODER_STR_SIZE];
+              MetadataEncoder_toString(&metadata, metadata_str);
+              if (ang_unwrapped_ring.count > 0) {
+                  sensorEncoder_printf("%s  ->  ang_forward=%+04ddeg [ %03u | %03u ]deg", metadata_str,
+                      telemetry.ang_forward, (unsigned)telemetry.ang_starboard,
+  (unsigned)telemetry.ang_port);
+              } else {
+                  sensorEncoder_printf("%s  ->  no valid reads yet", metadata_str);
+              }
+          }
+          #endif
     }
 }
 
