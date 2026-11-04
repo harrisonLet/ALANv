@@ -166,7 +166,7 @@ HardwareInit_e sensorEncoder_hardwareInit(void)
         if (ready == HAL_OK) break;
         else sensorEncoder_printf("AS5600 not ready, will try again in 50ms");
     }
-    if (ready != HAL_OK) { sensorEncoder_printf("ERROR: AS5600 not responding at 0x%02X, I2C error: 0x%lX\r\n", AS5600_ADDR, HAL_I2C_GetError(&i2c_handler)); Error_Handler(); }
+    if (ready != HAL_OK) { sensorEncoder_printf("ERROR: AS5600 not responding at 0x%02X, I2C error: 0x%lX\r\n", AS5600_ADDR, HAL_I2C_GetError(&i2c_handler)); return HARDWARE_INIT_FAIL; }
 
     uint8_t status = 0;
     if (AS5600_readRegs(AS5600_STATUS, &status, 1) == HAL_OK) {
@@ -174,7 +174,7 @@ HardwareInit_e sensorEncoder_hardwareInit(void)
                !!(status & AS5600_STATUS_MD), !!(status & AS5600_STATUS_ML), !!(status & AS5600_STATUS_MH));
     } else {
         sensorEncoder_printf("ERROR: Failed to read AS5600 STATUS register\r\n");
-        Error_Handler();
+        return HARDWARE_INIT_FAIL;
     }
 
     sensorEncoder_printf("sensorEncoder_hardwareInit complete");
