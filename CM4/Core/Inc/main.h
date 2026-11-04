@@ -65,6 +65,12 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN Private defines */
 
+/* CM4 status LEDs (CM7 owns green LD1 on PB0) */
+#define STATUS_LED_PORT GPIOB
+#define STATUS_LED_PIN  GPIO_PIN_14  /* red LD3: toggles on every telemetry send */
+#define TICK_LED_PORT   GPIOE
+#define TICK_LED_PIN    GPIO_PIN_1   /* yellow/orange LD2: toggles on every TIM6 tx_flag tick */
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
