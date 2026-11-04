@@ -71,6 +71,7 @@
 #define AS5600_STATUS_MH        (1U << 3)  /* magnet too strong */
 #define AS5600_STATUS_ML        (1U << 4)  /* magnet too weak   */
 #define AS5600_STATUS_MD        (1U << 5)  /* magnet detected   */
+#define AS5600_STATUS_MASK (AS5600_STATUS_MH | AS5600_STATUS_ML | AS5600_STATUS_MD)
 
 /* 12-bit value mask for H/L register pairs */
 #define AS5600_12BIT_MASK           0x0FFF
@@ -232,11 +233,12 @@ void sensorEncoder_handler(void *argument)
         }
         else
         {
-            if      (metadata.status & AS5600_STATUS_MH)   { metadata.valid = VALIDITY_UNTRUSTED_OVER_SATURATION; }
-            else if (metadata.status & AS5600_STATUS_ML)   { metadata.valid = VALIDITY_UNTRUSTED_UNDER_SATURATION; }
-            else if (metadata.raw_angle >= ENCODER_COUNTS) { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
-            else if (metadata.angle >= ENCODER_COUNTS)     { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
-            else                                           { metadata.valid = VALIDITY_VALID; }
+            if      (metadata.status & AS5600_STATUS_MH)    { metadata.valid = VALIDITY_UNTRUSTED_OVER_SATURATION; }
+            else if (metadata.status & AS5600_STATUS_ML)    { metadata.valid = VALIDITY_UNTRUSTED_UNDER_SATURATION; }
+            else if (!(metadata.status & AS5600_STATUS_MD)) { metadata.valid = VALIDITY_UNTRUSTED; }
+            else if (metadata.raw_angle > ENCODER_COUNTS)   { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
+            else if (metadata.angle >= ENCODER_COUNTS)      { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
+            else                                            { metadata.valid = VALIDITY_VALID; }
             
             if (metadata.valid == VALIDITY_VALID) {
                 int32_t delta = (int32_t)metadata.angle - metadata_angle_prev;
@@ -261,9 +263,11 @@ void sensorEncoder_handler(void *argument)
 
         // Telemetry
         #ifdef CM7_TELEMETRY_ENABLE
+        sensorEncoder_printf("Ring count: %d\n", ang_unwrapped_ring.count);
         if (ang_unwrapped_ring.count == 0) { continue; }
         TelemetryMainSail_t telemetry = {0};
         int32_t degrees = ((ang_unwrapped_sum / (int32_t)ang_unwrapped_ring.count) * 360) / ENCODER_COUNTS;
+        sensorEncoder_printf("Degrees: %ld\n", degrees);
         telemetry.ang_forward = ANG_WRAP_180(degrees);
         if      (degrees > 0) { telemetry.ang_starboard = degrees; telemetry.ang_port = 0; }
         else if (degrees < 0) { telemetry.ang_starboard = 0;       telemetry.ang_port = -degrees; }
@@ -313,7 +317,7 @@ static HAL_StatusTypeDef AS5600_read(uint8_t seq, MetadataEncoder_t *metadata)
     uint8_t buf[5];
     HAL_StatusTypeDef status = AS5600_readRegs(AS5600_STATUS, buf, sizeof(buf));
     if (status != HAL_OK) { return status; }
-    metadata->status    = buf[0];
+    metadata->status    = buf[0] & AS5600_STATUS_MASK;
     metadata->raw_angle = ((buf[1] << 8) | buf[2]) & AS5600_12BIT_MASK;
     metadata->angle     = ((buf[3] << 8) | buf[4]) & AS5600_12BIT_MASK;
 

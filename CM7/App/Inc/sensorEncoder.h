@@ -16,7 +16,7 @@
 #define sensorEncoder_printf(...) ((void)0)
 #endif
 
-#define SENSOR_ENCODER_FREQUENCY 100u // Hz, this value is primarily limited by the i2c bus speed, max: ~300Hz
+#define SENSOR_ENCODER_FREQUENCY 1u // Hz, this value is primarily limited by the i2c bus speed, max: ~300Hz
 #define SENSOR_ENCODER_WINDOW 10u // num readings
 #define SENSOR_ENCODER_STALE 100u // ms before data is considered stale
 _Static_assert(SENSOR_ENCODER_FREQUENCY > 0u && SENSOR_ENCODER_FREQUENCY <= 500u, "SENSOR_ENCODER_FREQUENCY must be 1-500Hz");
