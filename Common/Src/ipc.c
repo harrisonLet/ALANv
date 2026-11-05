@@ -11,8 +11,6 @@ const char *ipc_status_str(ipc_status_t status) {
         case IPC_STATUS_BUSY:             return "BUSY";
         case IPC_STATUS_EMPTY:            return "EMPTY";
         case IPC_STATUS_FULL:             return "FULL";
-        case IPC_STATUS_BAD_LEN:          return "BAD_LEN";
-        case IPC_STATUS_CORRUPT:          return "CORRUPT";
         case IPC_STATUS_TIMEOUT:          return "TIMEOUT";
         case IPC_STATUS_VERSION_MISMATCH: return "VERSION_MISMATCH";
     }
@@ -33,46 +31,20 @@ void ipc_unlock(uint32_t hsem_id) {
 }
 
 #ifdef CORE_CM4 // Block these functions if CM4 is not configured
-/**
-  * @brief  Copy bytes into the command ring, splitting across the end of data[] if needed.
-  * @param  pos        Free-running byte count (head), wraps to the start of data[].
-  * @param  src        Bytes to copy.
-  * @param  num_bytes  Number of bytes to copy.
-  * @retval None
-  */
-static void ipc_buf_write(uint32_t pos, const void *src, uint32_t num_bytes) {
-    // MOD 2048 to get the data's 'index' in the buffer
-    uint32_t buf_index = pos & (IPC_CMD_RING_SIZE - 1U);
-
-    // Check if amount of data to be written will overflow (needs to split across the end and start of buffer)
-    uint32_t remaining_space = IPC_CMD_RING_SIZE - buf_index;
-    if (remaining_space > num_bytes) {
-        remaining_space = num_bytes;
-    }
-
-    // First write using the amount of space left (won't overflow most of the time)
-    memcpy(&ipc_shared.cmd.data[buf_index], src, remaining_space);
-
-    // If overflowed the amount of bytes to copy to beginning of array will be > 0 here
-    memcpy(&ipc_shared.cmd.data[0], (const uint8_t *)src + remaining_space, num_bytes - remaining_space);
-}
-
 ipc_status_t ipc_cmd_push(const ipc_cmd_t *cmd) {
     uint32_t head = ipc_shared.cmd.head;
     uint32_t tail = ipc_shared.cmd.tail;
-    uint32_t space = IPC_CMD_RING_SIZE - (head - tail);
-    uint32_t record_size = IPC_CMD_RECORD_SIZE(cmd->hdr.len);
 
-    if (cmd->hdr.len > IPC_CMD_MAX_PAYLOAD) {
-        return IPC_STATUS_BAD_LEN;
-    }
-    if (record_size > space) {
+    if ((head - tail) >= IPC_CMD_RING_SLOTS) {
         return IPC_STATUS_FULL;
     }
+    __DMB(); // Read tail before overwriting the slot the CM7 just freed
 
-    ipc_buf_write(head, cmd, sizeof(ipc_cmd_hdr_t) + cmd->hdr.len);
-    __DMB(); // Complete all write operations before updating head and returning
-    ipc_shared.cmd.head = head + record_size;
+    // Write command to SRAM slot
+    ipc_shared.cmd.slot[head & IPC_CMD_RING_MASK] = *cmd;
+
+    __DMB(); // Complete the slot write before publishing it with head
+    ipc_shared.cmd.head = head + 1U;
 
     // Trigger CM7s task interrupt (ring the doorbell)
     ipc_lock(IPC_HSEM_CMD_BELL);
@@ -133,30 +105,6 @@ void ipc_init(void) {
     ipc_shared.magic = IPC_MAGIC;
 }
 
-/**
-  * @brief  Copy bytes out of the command ring, splitting across the end of data[] if needed.
-  * @param  pos        Free-running byte count (tail), wraps to the start of data[].
-  * @param  dst        Destination for the bytes.
-  * @param  num_bytes  Number of bytes to copy.
-  * @retval None
-  */
-static void ipc_buf_read(uint32_t pos, void *dst, uint32_t num_bytes) {
-    // Mod 2048 (struct is 2048 Bytes) to get its index
-    uint32_t buf_index = pos & (IPC_CMD_RING_SIZE - 1U);
-
-    // Check how much space is left in the ring buffer
-    uint32_t remaining_space = IPC_CMD_RING_SIZE - buf_index;
-    if (remaining_space > num_bytes) {
-        remaining_space = num_bytes;
-    }
-
-    // Copy data from SRAM4 into dst using the remaining_space
-    memcpy(dst, &ipc_shared.cmd.data[buf_index], remaining_space);
-
-    // Copy remaining data from the beginning of the buffer (it wrapped around due to no space)
-    memcpy((uint8_t *)dst + remaining_space, &ipc_shared.cmd.data[0], num_bytes - remaining_space);
-}
-
 ipc_status_t ipc_cmd_pop(ipc_cmd_t *cmd) {
     uint32_t head = ipc_shared.cmd.head;
     uint32_t tail = ipc_shared.cmd.tail;
@@ -164,19 +112,13 @@ ipc_status_t ipc_cmd_pop(ipc_cmd_t *cmd) {
     if (head == tail) {
         return IPC_STATUS_EMPTY;
     }
-    __DMB(); // Make sure reading is done with updated head/tail
+    __DMB(); // Read head before reading the slot it published
 
-    ipc_buf_read(tail, &cmd->hdr, sizeof(ipc_cmd_hdr_t));
-    // Check for corrupt record, clear ring buffer if so 
-    if (cmd->hdr.len > IPC_CMD_MAX_PAYLOAD) {
-        // setting tail to head marks all data as free (clears ring buffer)
-        ipc_shared.cmd.tail = head;
-        return IPC_STATUS_CORRUPT;
-    }
-    ipc_buf_read(tail + sizeof(ipc_cmd_hdr_t), cmd->payload.raw, cmd->hdr.len);
+    // Read from command slot in SRAM
+    *cmd = ipc_shared.cmd.slot[tail & IPC_CMD_RING_MASK];
 
-    __DMB(); // Finish all buffer operations before updating tail and returning
-    ipc_shared.cmd.tail = tail + IPC_CMD_RECORD_SIZE(cmd->hdr.len);
+    __DMB(); // Finish reading the slot before handing it back to the CM4
+    ipc_shared.cmd.tail = tail + 1U;
     return IPC_STATUS_OK;
 }
 
