@@ -104,6 +104,8 @@ static uint8_t metadata_sequence;
 static uint16_t metadata_magnitude_cache;
 static uint8_t metadata_agc_cache;
 
+static int16_t telemetry_angle_offset;
+
 static HAL_StatusTypeDef AS5600_readRegs(uint8_t reg, uint8_t *buf, uint16_t len);
 static HAL_StatusTypeDef AS5600_writeReg(uint8_t reg, uint8_t value) __attribute__((unused)); // it is possible we will need to write offsets to the sensor in the future
 static HAL_StatusTypeDef AS5600_read(uint8_t seq, MetadataEncoder_t *metadata);
@@ -201,6 +203,7 @@ RtosInit_e sensorEncoder_rtosInit(void)
     ang_unwrapped_sum = 0;
     ang_unwrapped = 0;
     metadata_angle_prev = ENCODER_FORWARD;
+    telemetry_angle_offset = 0;
 
     sensorEncoder_printf("sensorEncoder_rtosInit complete");
     return RTOS_INIT_SUCCESS;
@@ -263,15 +266,22 @@ void sensorEncoder_handler(void *argument)
 
         // Telemetry
         #ifdef CM7_TELEMETRY_ENABLE
-        sensorEncoder_printf("Ring count: %d\n", ang_unwrapped_ring.count);
         if (ang_unwrapped_ring.count == 0) { continue; }
         TelemetryMainSail_t telemetry = {0};
         int32_t degrees = ((ang_unwrapped_sum / (int32_t)ang_unwrapped_ring.count) * 360) / ENCODER_COUNTS;
-        sensorEncoder_printf("Degrees: %ld\n", degrees);
-        telemetry.ang_forward = ANG_WRAP_180(degrees);
-        if      (degrees > 0) { telemetry.ang_starboard = degrees; telemetry.ang_port = 0; }
-        else if (degrees < 0) { telemetry.ang_starboard = 0;       telemetry.ang_port = -degrees; }
-        else                  { telemetry.ang_starboard = 0;       telemetry.ang_port = 0; }
+        telemetry.ang_forward = ANG_WRAP_180(degrees - telemetry_angle_offset) * -1;
+        if (ang_unwrapped_ring.count == SENSOR_ENCODER_WINDOW-1) { telemetry_angle_offset = degrees; }
+        else if (ang_unwrapped_ring.count < SENSOR_ENCODER_WINDOW)
+        {
+            telemetry.ang_starboard = 0;
+            telemetry.ang_port = 0;
+        }
+        else 
+        {
+            if      (degrees > 0) { telemetry.ang_starboard = degrees; telemetry.ang_port = 0; }
+            else if (degrees < 0) { telemetry.ang_starboard = 0;       telemetry.ang_port = -degrees; }
+            else                  { telemetry.ang_starboard = 0;       telemetry.ang_port = 0; }
+        }
         telemetry_setMainSail(&telemetry);
         #endif
     }
