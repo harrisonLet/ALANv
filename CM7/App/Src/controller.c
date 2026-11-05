@@ -17,6 +17,7 @@
 #include "sensorWind.h"
 #include "fusionOrientation.h"
 #include "ipcCM7.h"
+#include "navigationRoute.h"
 
 #include "semphr.h"
 
@@ -92,7 +93,10 @@ void hardware_init(void) {
 void rtos_init()
 {
     int32_t totalStack = 0;
-    
+
+    // Route mutex, before any task that might commit or copy a route
+    if (!navigationRoute_init()) { Error_Handler(); }
+
     #ifdef CM7_LIVE_ENABLE
     cm7_printf("live_rtosInit");
     if (live_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }

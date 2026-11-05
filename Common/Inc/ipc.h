@@ -43,12 +43,12 @@
 #define IPC_MAGIC               (0x414C414EUL) // ALAN in ASCII
 #define IPC_REV                 (3U)
 
-#define IPC_CMD_DATA_SIZE       (16U)   // Largest payload: waypoint (12 B) + route commit (4 B)
+#define IPC_CMD_DATA_SIZE       (16U)   // Largest payload: waypoint (12 B). Route commit is 8 B
 #define IPC_CMD_RING_SLOTS      (64U)   // Must be a power of two
 #define IPC_CMD_RING_MASK       (IPC_CMD_RING_SLOTS - 1U)
 
 enum { IPC_MODE_MANUAL, IPC_MODE_AUTO, IPC_MODE_SAFE };
-enum { IPC_RESULT_NONE, IPC_RESULT_OK, IPC_RESULT_UNSUPPORTED, IPC_RESULT_BAD_LEN };
+enum { IPC_RESULT_NONE, IPC_RESULT_OK, IPC_RESULT_UNSUPPORTED, IPC_RESULT_BAD_LEN, IPC_RESULT_BAD_VALUE, IPC_RESULT_TOO_MANY, IPC_RESULT_INCOMPLETE, IPC_RESULT_BAD_CRC };
 
 // Return codes for the IPC API. Separate from IPC_RESULT_*, which is telemetry data sent to the ground station
 typedef enum {
@@ -66,6 +66,22 @@ typedef struct {
     uint8_t seq;                    // LoRa sequence number, echoed back as telemetry last_cmd_seq
     uint8_t raw[IPC_CMD_DATA_SIZE]; // Little-endian payload, decoded by the CM7. Unused bytes zeroed
 } ipc_cmd_t;
+
+// Payload layouts carried in ipc_cmd_t.raw, decoded by the CM7
+typedef struct {
+    uint16_t index;
+    uint16_t margin_m;
+    int32_t  lat_e7;
+    int32_t  lon_e7;
+} ipc_cmd_waypoint_t;
+
+typedef struct {
+    uint16_t count;            // number of waypoints up to 32. min 1
+    uint16_t crc16;            // CRC-16 over the waypoints 0 to count-1
+    uint8_t  arrive_m;         // arrival radius for all waypoints (0 = default of 8 meters)
+    uint8_t  margin_warning_m; // warning zone beyond each paths's margin
+    uint16_t reserved;         // 0
+} ipc_cmd_route_commit_t;
 
 // Free-running slot counts: used = head - tail, index = count & IPC_CMD_RING_MASK
 typedef struct {
@@ -88,6 +104,8 @@ extern ipc_shared_t ipc_shared;
 
 _Static_assert((IPC_CMD_RING_SLOTS & IPC_CMD_RING_MASK) == 0, "IPC_CMD_RING_SLOTS must be a power of two");
 _Static_assert(sizeof(ipc_cmd_t) == 2U + IPC_CMD_DATA_SIZE, "ipc_cmd_t must have no padding");
+_Static_assert(sizeof(ipc_cmd_waypoint_t)     <= IPC_CMD_DATA_SIZE, "waypoint payload must fit in ipc_cmd_t.raw");
+_Static_assert(sizeof(ipc_cmd_route_commit_t) <= IPC_CMD_DATA_SIZE, "route commit payload must fit in ipc_cmd_t.raw");
 _Static_assert(sizeof(ipc_shared_t) <= IPC_SHARED_SIZE, "ipc_shared_t does not fit in SRAM4");
 
 /**
