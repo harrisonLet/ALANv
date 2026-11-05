@@ -12,11 +12,12 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 #define CM4_ENABLE
 // #define CM4_LORA_COMMANDS_ENABLE // Ground -> boat commands. Off: radio only transmits telemetry, never listens
+// #define CM4_LORA_DUMMY_TELEMETRY // Test: send a fixed telemetry packet every tick instead of reading SRAM4
 
 
 
 #ifdef CM4_ENABLE
-#define CM4_DEBUG
+// #define CM4_DEBUG
 #endif
 
 
@@ -53,7 +54,7 @@
 #endif
 
 #ifdef CM7_SENSOR_ENCODER_ENABLE
-// #define CM7_SENSOR_ENCODER_DEBUG
+#define CM7_SENSOR_ENCODER_DEBUG
 #endif
 
 #ifdef CM7_SENSOR_GPS_ENABLE

@@ -125,8 +125,10 @@ void sensorWind_handler(void *argument)
     for(;;)
     {
         // Read Frequency
-        vTaskDelayUntil(&lastWake, pdMS_TO_TICKS(1000 / SENSOR_WIND_FREQUENCY));
-
+        if (!xTaskDelayUntil(&lastWake, configTICK_RATE_HZ / SENSOR_WIND_FREQUENCY)) {
+            continue;
+        }
+        
         // Metdata
         MetadataWind_t metadata = {0};
         metadata.valid = VALIDITY_UNKNOWN;
@@ -240,4 +242,4 @@ static uint16_t wind_crc16(const uint8_t *buf, int len)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-bool sensorWind_getMetadata(MetadataWind_t *metadata) { return xQueuePeek(metadata_queue, metadata, 0) == pdTRUE; }
+bool sensorWind_getMetadata(MetadataWind_t *metadata) { return (metadata_queue != NULL) && xQueuePeek(metadata_queue, metadata, 0) == pdTRUE; }

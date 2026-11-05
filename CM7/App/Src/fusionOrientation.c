@@ -101,7 +101,7 @@ void fusionOrientation_handler(void *argument)
     fusionOrientation_printf("fusionOrientation_handler start");
     for(;;)
     {
-        if (ulTaskNotifyTake(pdTRUE, SENSOR_IMU_STALE) == 0) { fusionOrientation_printf("Fused Orientation stale."); }
+        if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(SENSOR_IMU_STALE)) == 0) { fusionOrientation_printf("Fused Orientation stale."); }
         else
         {
             TelemetryBoatRelativeOrientation_t relativeOrientation = {0};
@@ -221,15 +221,15 @@ static FusionResult_e quaternion_normalize(int32_t quat[4], float quat_norm[4])
 
 static FusionResult_e quaternion_toEuler(float quat[4], int16_t euler[3])
 {
-    float roll = atan2f(2.0f * (quat[0]*quat[1] + quat[2]*quat[3]), 1.0f - 2.0f * (quat[1]*quat[1] + quat[2]*quat[2]));
+    float pitch = atan2f(2.0f * (quat[0]*quat[1] + quat[2]*quat[3]), 1.0f - 2.0f * (quat[1]*quat[1] + quat[2]*quat[2]));
     float sinp = 2.0f * (quat[0]*quat[2] - quat[3]*quat[1]);
     if (sinp >  1.0f) sinp =  1.0f;
     if (sinp < -1.0f) sinp = -1.0f;
-    float pitch = asinf(sinp);
+    float roll = asinf(sinp);
     float yaw = atan2f(2.0f * (quat[0]*quat[3] + quat[1]*quat[2]), 1.0f - 2.0f * (quat[2]*quat[2] + quat[3]*quat[3]));
     
-    euler[0] = (int16_t)(roll * RAD2DEG);
-    euler[1] = (int16_t)(pitch * RAD2DEG);
+    euler[0] = (int16_t)(roll * RAD2DEG * -1);
+    euler[1] = (int16_t)(pitch * RAD2DEG * -1);
     euler[2] = (int16_t)(yaw * RAD2DEG);
     
     return RESULT_SUCCESS;

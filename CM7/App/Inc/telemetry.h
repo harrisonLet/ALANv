@@ -9,7 +9,7 @@
 #include "sharedWind.h"
 
 #define TELEMETRY_TASK "[TELEMTRY]"
-#define TELEMETRY_TASK_PRIORITY osPriorityLow
+#define TELEMETRY_TASK_PRIORITY osPriorityAboveNormal // Above the sensor tasks: 1 Hz and short, so busy-waiting sensor reads can't starve the SRAM4 publish
 #define TELEMETRY_FREQUENCY 1u // Hz
 _Static_assert(TELEMETRY_FREQUENCY > 0u && TELEMETRY_FREQUENCY <= SYSTEM_TICK_RATE_HZ, "TELEMETRY_FREQUENCY must be between 1Hz and the tick rate");
 #if (SYSTEM_TICK_RATE_HZ % TELEMETRY_FREQUENCY) != 0u

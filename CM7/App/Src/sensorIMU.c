@@ -352,7 +352,9 @@ void sensorIMU_handler(void *argument)
     for(;;)
     {
         // Read Frequency
-        vTaskDelayUntil(&lastWake, pdMS_TO_TICKS(1000 / SENSOR_IMU_FREQUENCY));
+        if (!xTaskDelayUntil(&lastWake, configTICK_RATE_HZ / SENSOR_IMU_FREQUENCY)) {
+            continue;
+        }
 
         // Metdata
         MetadataIMU_t metadata = {0};
@@ -403,7 +405,7 @@ void sensorIMU_handler(void *argument)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-bool sensorIMU_getMetadata(MetadataIMU_t *metadata) { return xQueuePeek(metadata_queue, metadata, 0) == pdTRUE; }
+bool sensorIMU_getMetadata(MetadataIMU_t *metadata) { return (metadata_queue != NULL) && xQueuePeek(metadata_queue, metadata, 0) == pdTRUE; }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
