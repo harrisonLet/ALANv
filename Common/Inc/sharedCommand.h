@@ -76,4 +76,5 @@ typedef enum {
     CMD_RESULT_TOO_MANY    = 0x05, /**< Index or count over the limit (route waypoints). */
     CMD_RESULT_INCOMPLETE  = 0x06, /**< Route commit before every waypoint arrived. */
     CMD_RESULT_BAD_CRC     = 0x07, /**< Route checksum does not match. */
+    CMD_RESULT_DROPPED     = 0x08, /**< Command was missed on ring buffer. */
 } cmd_result_t;

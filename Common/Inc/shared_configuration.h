@@ -26,6 +26,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 #define CM7_ENABLE
 #define CM7_LIVE_ENABLE
+#define CM7_COMMANDER_ENABLE
 #define CM7_TELEMETRY_ENABLE
 #define CM7_SENSOR_BATTERY_ENABLE
 #define CM7_SENSOR_ENCODER_ENABLE
