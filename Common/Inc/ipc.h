@@ -47,12 +47,7 @@
 #define IPC_CMD_RING_SLOTS      (64U)   // Must be a power of two
 #define IPC_CMD_RING_MASK       (IPC_CMD_RING_SLOTS - 1U)
 
-enum { IPC_MODE_MANUAL, IPC_MODE_AUTO, IPC_MODE_SAFE };
-
-// Command result codes - to be sent to gound station
-enum { CMD_RESULT_NONE, CMD_RESULT_OK, CMD_RESULT_UNSUPPORTED, 
-       CMD_RESULT_BAD_LEN, CMD_RESULT_BAD_VALUE, CMD_RESULT_TOO_MANY, 
-       CMD_RESULT_INCOMPLETE, CMD_RESULT_BAD_CRC };
+// Command IDs, system modes and command results live in sharedCommand.h
 
 // Return codes for the IPC API
 typedef enum {

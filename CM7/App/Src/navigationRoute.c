@@ -64,7 +64,7 @@ bool navigationRoute_init(void)
 
 
 
-uint8_t navigationRoute_addWaypoint(const ipc_cmd_waypoint_t *wp)
+cmd_result_t navigationRoute_addWaypoint(const ipc_cmd_waypoint_t *wp)
 {
     if (wp->index >= NAV_ROUTE_MAX_WAYPOINTS) { return CMD_RESULT_TOO_MANY; }
 
@@ -80,12 +80,12 @@ uint8_t navigationRoute_addWaypoint(const ipc_cmd_waypoint_t *wp)
 
 
 
-uint8_t navigationRoute_commit(const ipc_cmd_route_commit_t *commit)
+cmd_result_t navigationRoute_commit(const ipc_cmd_route_commit_t *commit)
 {
     uint16_t count = commit->count;
     // Bits 0..count-1. (1u << 32) is undefined behavior, so a full route (or a bad count) gets all ones
     uint32_t required = (count >= NAV_ROUTE_MAX_WAYPOINTS) ? 0xFFFFFFFFu : (1u << count) - 1u;
-    uint8_t result;
+    cmd_result_t result;
 
     if (count == 0 || count > NAV_ROUTE_MAX_WAYPOINTS) { result = CMD_RESULT_TOO_MANY; }
     else if ((rx_mask & required) != required) { result = CMD_RESULT_INCOMPLETE; }

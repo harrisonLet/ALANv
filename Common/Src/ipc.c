@@ -1,4 +1,5 @@
 #include "ipc.h"
+#include "sharedCommand.h"
 #include <string.h>
 #include "stm32h7xx_hal.h"
 
@@ -96,7 +97,7 @@ void ipc_init(void) {
     // Write IPC Version to SRAM4
     ipc_shared.version = IPC_VERSION;  
     // Set default sail-boat mode in SRAM4 to AUTO
-    ipc_shared.telem.mode = IPC_MODE_AUTO;
+    ipc_shared.telem.mode = SYSTEM_MODE_AUTO;
 
     // Make sure everything is cleared/written before magic is set
     __DMB();
