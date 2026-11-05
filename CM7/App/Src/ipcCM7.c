@@ -54,9 +54,9 @@ ipc_status_t ipc_cm7_pop_command(ipc_cmd_t *cmd) {
     ipc_status_t status = ipc_cmd_pop(cmd);
 
     // EMPTY is the normal end of a drain loop, only CORRUPT is an error
-    if (status == IPC_STATUS_CORRUPT) {
-        printf("%s ERROR: %s command record (len %u > max %u), command ring flushed\r\n",
-        IPC_TASK, ipc_status_str(status), (unsigned)cmd->hdr.len, (unsigned)IPC_CMD_MAX_PAYLOAD);
+    if (status == IPC_STATUS_FULL) {
+        printf("%s WARN: %s | command buffer is full. popping command\r\n",
+        IPC_TASK, ipc_status_str(status));
     }
     return status;
 }

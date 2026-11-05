@@ -66,16 +66,16 @@ bool navigationRoute_init(void)
 
 uint8_t navigationRoute_addWaypoint(const ipc_cmd_waypoint_t *wp)
 {
-    if (wp->index >= NAV_ROUTE_MAX_WAYPOINTS) { return IPC_RESULT_TOO_MANY; }
+    if (wp->index >= NAV_ROUTE_MAX_WAYPOINTS) { return CMD_RESULT_TOO_MANY; }
 
     // Compared both ways rather than with abs(), which is undefined for INT32_MIN
     if (wp->lat_e7 > 900000000 || wp->lat_e7 < -900000000 ||
         wp->lon_e7 > 1800000000 || wp->lon_e7 < -1800000000 ||
-        wp->margin_m == 0) { return IPC_RESULT_BAD_VALUE; }
+        wp->margin_m == 0) { return CMD_RESULT_BAD_VALUE; }
 
     spare[wp->index] = *wp;
     rx_mask |= 1u << wp->index;
-    return IPC_RESULT_OK;
+    return CMD_RESULT_OK;
 }
 
 
@@ -87,10 +87,10 @@ uint8_t navigationRoute_commit(const ipc_cmd_route_commit_t *commit)
     uint32_t required = (count >= NAV_ROUTE_MAX_WAYPOINTS) ? 0xFFFFFFFFu : (1u << count) - 1u;
     uint8_t result;
 
-    if (count == 0 || count > NAV_ROUTE_MAX_WAYPOINTS) { result = IPC_RESULT_TOO_MANY; }
-    else if ((rx_mask & required) != required) { result = IPC_RESULT_INCOMPLETE; }
-    else if (crc16_ccitt((const uint8_t *)spare, count * sizeof(ipc_cmd_waypoint_t)) != commit->crc16) { result = IPC_RESULT_BAD_CRC; }
-    else if (!ROUTE_LOCK()) { result = IPC_RESULT_NONE; } // LTP held the route for 10 ms; not OK, so the ground station resends
+    if (count == 0 || count > NAV_ROUTE_MAX_WAYPOINTS) { result = CMD_RESULT_TOO_MANY; }
+    else if ((rx_mask & required) != required) { result = CMD_RESULT_INCOMPLETE; }
+    else if (crc16_ccitt((const uint8_t *)spare, count * sizeof(ipc_cmd_waypoint_t)) != commit->crc16) { result = CMD_RESULT_BAD_CRC; }
+    else if (!ROUTE_LOCK()) { result = CMD_RESULT_NONE; } // LTP held the route for 10 ms; not OK, so the ground station resends
     else
     {
         active.count = (uint8_t)count;
@@ -104,7 +104,7 @@ uint8_t navigationRoute_commit(const ipc_cmd_route_commit_t *commit)
         }
         version++;
         ROUTE_UNLOCK();
-        result = IPC_RESULT_OK;
+        result = CMD_RESULT_OK;
     }
 
     // Every path: the next upload starts from an empty spare buffer

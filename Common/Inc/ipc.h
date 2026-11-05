@@ -48,9 +48,13 @@
 #define IPC_CMD_RING_MASK       (IPC_CMD_RING_SLOTS - 1U)
 
 enum { IPC_MODE_MANUAL, IPC_MODE_AUTO, IPC_MODE_SAFE };
-enum { IPC_RESULT_NONE, IPC_RESULT_OK, IPC_RESULT_UNSUPPORTED, IPC_RESULT_BAD_LEN, IPC_RESULT_BAD_VALUE, IPC_RESULT_TOO_MANY, IPC_RESULT_INCOMPLETE, IPC_RESULT_BAD_CRC };
 
-// Return codes for the IPC API. Separate from IPC_RESULT_*, which is telemetry data sent to the ground station
+// Command result codes - to be sent to gound station
+enum { CMD_RESULT_NONE, CMD_RESULT_OK, CMD_RESULT_UNSUPPORTED, 
+       CMD_RESULT_BAD_LEN, CMD_RESULT_BAD_VALUE, CMD_RESULT_TOO_MANY, 
+       CMD_RESULT_INCOMPLETE, CMD_RESULT_BAD_CRC };
+
+// Return codes for the IPC API
 typedef enum {
     IPC_STATUS_OK = 0,
     IPC_STATUS_BUSY,                // Other core holds the HSEM, try next round
@@ -85,8 +89,8 @@ typedef struct {
 
 // Free-running slot counts: used = head - tail, index = count & IPC_CMD_RING_MASK
 typedef struct {
-    volatile uint32_t head;         // Written by CM4 only
-    volatile uint32_t tail;         // Written by CM7 only
+    volatile uint32_t head;         // Written by CM4 only (num of commands written)
+    volatile uint32_t tail;         // Written by CM7 only (num of commands read)
     ipc_cmd_t slot[IPC_CMD_RING_SLOTS];
 } ipc_cmd_ring_t;
 

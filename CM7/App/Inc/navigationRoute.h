@@ -46,19 +46,19 @@ bool navigationRoute_init(void);
 /**
   * @brief  Check a waypoint and copy it into the spare buffer.
   * @param  wp  Waypoint from the command ring.
-  * @retval IPC_RESULT_OK         Stored.
-  * @retval IPC_RESULT_BAD_VALUE  Latitude outside +-90, longitude outside +-180, or margin 0. Not stored.
-  * @retval IPC_RESULT_TOO_MANY   Index is NAV_ROUTE_MAX_WAYPOINTS or more. Not stored.
+  * @retval CMD_RESULT_OK         Stored.
+  * @retval CMD_RESULT_BAD_VALUE  Latitude outside +-90, longitude outside +-180, or margin 0. Not stored.
+  * @retval CMD_RESULT_TOO_MANY   Index is NAV_ROUTE_MAX_WAYPOINTS or more. Not stored.
   */
 uint8_t navigationRoute_addWaypoint(const ipc_cmd_waypoint_t *wp);
 
 /**
   * @brief  Make the spare buffer the active route if the upload is complete and the CRC matches.
   * @param  commit  Commit from the command ring.
-  * @retval IPC_RESULT_OK          Committed, version incremented.
-  * @retval IPC_RESULT_TOO_MANY    Count is 0 or more than NAV_ROUTE_MAX_WAYPOINTS.
-  * @retval IPC_RESULT_INCOMPLETE  A waypoint between 0 and count-1 never arrived.
-  * @retval IPC_RESULT_BAD_CRC     The checksum does not match.
+  * @retval CMD_RESULT_OK          Committed, version incremented.
+  * @retval CMD_RESULT_TOO_MANY    Count is 0 or more than NAV_ROUTE_MAX_WAYPOINTS.
+  * @retval CMD_RESULT_INCOMPLETE  A waypoint between 0 and count-1 never arrived.
+  * @retval CMD_RESULT_BAD_CRC     The checksum does not match.
   * @note   Clears the spare buffer and the received mask whatever the result. On failure the active route is untouched.
   */
 uint8_t navigationRoute_commit(const ipc_cmd_route_commit_t *commit);
