@@ -19,16 +19,15 @@ typedef enum {
 
     COMMAND_NONE              = 0x00, /**< Not a command. A zeroed ipc_cmd_t reads as this, never as a real command. */
 
-//  COMMAND_SYSTEM            = 0x00,
-    COMMAND_SYSTEM_ACTIVATE   = 0x01, /**< Activate the autonomous system remotly. */
-    COMMAND_SYSTEM_STANDBY    = 0x02, /**< Put the boat into standby mode. */
-    COMMAND_SYSTEM_STOP       = 0X03, /**< Emergency STOP */
 
-//  COMMAND_MODE              = 0x10
-    COMMAND_MODE_AUTO         = 0X11,
-    COMMAND_MODE_AUTO_SAIL_MAN_RUDDER = 0X12,
-    COMMAND_MODE_AUTO_RUDDER_MAN_SAIL = 0X13,
-    COMMAND_MODE_MAN_SAIL_RUDDER      = 0X14,
+//  COMMAND_MODE              = 0x10, one command per system_mode_t
+    COMMAND_MODE_AUTO                 = 0x10,
+    COMMAND_MODE_FULL_MAN             = 0x11,
+    COMMAND_MODE_SAFE                 = 0x12, /**< Emergency stop. */
+    COMMAND_MODE_AUTO_SAIL_MAN_RUDDER = 0x13,
+    COMMAND_MODE_AUTO_RUDDER_MAN_SAIL = 0x14,
+    COMMAND_MODE_STANDBY              = 0x15,
+    
 
 //  COMMAND_SAIL_RUDDER       = 0X20
     COMMAND_SAIL              = 0X21,
@@ -49,17 +48,19 @@ typedef enum {
 } CommandId_e;
 
 /**
- * Boat operating mode: which of the sail and rudder are autonomous and which
- * follow manual setpoints (COMMAND_SAIL / COMMAND_RUDDER). The COMMAND_MODE_*
- * command with the same suffix selects each mode. Sent to the ground station
- * in telemetry (mode).
+ * The boat's single operating mode. In the four control modes it says which of
+ * the sail and rudder are autonomous and which follow manual setpoints
+ * (COMMAND_SAIL / COMMAND_RUDDER); STANDBY and SAFE take both out of play. The
+ * COMMAND_MODE_* command with the same suffix selects each mode. Sent to the
+ * ground station in telemetry (mode).
  */
 typedef enum {
     SYSTEM_MODE_AUTO                 = 0x00, /**< Sail and rudder both autonomous. */
     SYSTEM_MODE_FULL_MAN             = 0x01, /**< Sail and rudder both manual. */
-    SYSTEM_MODE_SAFE                 = 0x02,
+    SYSTEM_MODE_SAFE                 = 0x02, /**< Emergency stop: autonomy and manual setpoints ignored. */
     SYSTEM_MODE_AUTO_SAIL_MAN_RUDDER = 0x03, /**< Sail autonomous, rudder manual. */
     SYSTEM_MODE_AUTO_RUDDER_MAN_SAIL = 0x04, /**< Rudder autonomous, sail manual. */
+    SYSTEM_MODE_STANDBY              = 0x05, /**< Idle: autonomy off, waiting for a mode command. */
 } system_mode_t;
 
 /**

@@ -29,4 +29,9 @@ RtosInit_e commander_rtos_init(void);
 
 void commander_handler(void *argument);
 
+cmd_result_t execute_cmd(ipc_cmd_t *cmd);
+cmd_result_t switch_mode(system_mode_t mode);
+cmd_result_t rudder_sail_cntrl(ipc_cmd_t *cmd);
+cmd_result_t execute_servo(ipc_cmd_t *cmd);
+
 #endif
