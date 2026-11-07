@@ -96,10 +96,7 @@ static QueueHandle_t metadata_queue;
 static uint8_t metadata_sequence;
 static uint16_t metadata_magnitude_cache;
 static uint8_t metadata_agc_cache;
-
-static int16_t telemetry_angle_offset;
-static uint16_t telemetry_angle_port;
-static uint16_t telemetry_angle_starboard;
+static uint16_t metadata_angle_offset;
 
 static HAL_StatusTypeDef AS5600_readRegs(uint8_t reg, uint8_t *buf, uint16_t len);
 static HAL_StatusTypeDef AS5600_writeReg(uint8_t reg, uint8_t value) __attribute__((unused)); // it is possible we will need to write offsets to the sensor in the future
@@ -192,18 +189,22 @@ RtosInit_e sensorEncoder_rtosInit(void)
         return RTOS_INIT_FAIL;
     }
 
-    // Initialize the windows used to integrate data
+    // Initialize the data vars
     sensorEncoder_printf("    - init data vars");
-    telemetry_angle_port = 0;
-    telemetry_angle_starboard = 0;
-    uint8_t buf[2];
-    if (AS5600_readRegs(AS5600_RAW_ANGLE_H, buf, 2) != HAL_OK) 
-    { 
-        sensorEncoder_printf("WARNING: Failed to read raw angle for start offset, will use 0 instead"); 
-        telemetry_angle_offset = 0;
-    } else {
-        telemetry_angle_offset = (buf[0] << 8) | buf[1];
+    metadata_angle_offset = 0;
+    uint8_t buf[3];
+    for (uint8_t i = 0; i < 10; i++)
+    {
+        if (AS5600_readRegs(AS5600_STATUS, buf, 3) != HAL_OK) 
+        { 
+            sensorEncoder_printf("WARNING: Failed to read raw angle for start offset, will use 0 instead"); 
+            break;
+        } else {
+            if (buf[0] & AS5600_STATUS_MD) { metadata_angle_offset = ((buf[1] << 8) | buf[2]) & AS5600_12BIT_MASK; break; }
+            else { sensorEncoder_printf("WARNING: Magnet was not detected, trying again."); HAL_Delay(50); }
+        }
     }
+    sensorEncoder_printf("    - telemetry offset: %u", metadata_angle_offset);
 
     sensorEncoder_printf("sensorEncoder_rtosInit complete");
     return RTOS_INIT_SUCCESS;
@@ -237,7 +238,7 @@ void sensorEncoder_handler(void *argument)
             if      (metadata.status & AS5600_STATUS_MH)        { metadata.valid = VALIDITY_UNTRUSTED_OVER_SATURATION; }
             else if (metadata.status & AS5600_STATUS_ML)        { metadata.valid = VALIDITY_UNTRUSTED_UNDER_SATURATION; }
             else if ((metadata.status & AS5600_STATUS_MD) == 0) { metadata.valid = VALIDITY_UNTRUSTED; }
-            else if (metadata.raw_angle > ENCODER_COUNTS)       { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
+            else if (metadata.raw_angle >= ENCODER_COUNTS)      { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
             else if (metadata.angle >= ENCODER_COUNTS)          { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
             else                                                { metadata.valid = VALIDITY_VALID; }
         }
@@ -251,19 +252,11 @@ void sensorEncoder_handler(void *argument)
         #ifdef CM7_TELEMETRY_ENABLE
         if (metadata.valid != VALIDITY_VALID) { continue; }
         TelemetryMainSail_t telemetry = {0};
-        int32_t degrees = (metadata.raw_angle * 360) / ENCODER_COUNTS;
-        telemetry.ang_forward = ANG_WRAP_180(degrees - telemetry_angle_offset) * -1;
-
-        if (telemetry.ang_forward > 0) { 
-            if (telemetry_angle_port > 0) { telemetry_angle_port -= telemetry.ang_forward; }
-            else                          { telemetry_angle_starboard += telemetry.ang_forward; }
-        }
-        else if (telemetry.ang_forward < 0) {
-            if (telemetry_angle_starboard > 0) { telemetry_angle_starboard += telemetry.ang_forward; }
-            else                               { telemetry_angle_port -= telemetry.ang_forward; }
-        }
-        telemetry.ang_starboard = telemetry_angle_starboard;
-        telemetry.ang_port = telemetry_angle_port;
+        int32_t degrees = ((metadata.raw_angle - metadata_angle_offset) * 360) / ENCODER_COUNTS;
+        telemetry.ang_forward = ANG_WRAP_180(degrees) * -1;
+        
+        if      (telemetry.ang_forward > 0) { telemetry.ang_starboard = telemetry.ang_forward; telemetry.ang_port = 0; }
+        else if (telemetry.ang_forward < 0) { telemetry.ang_port = -telemetry.ang_forward;     telemetry.ang_starboard = 0; }
 
         telemetry_setMainSail(&telemetry);
         #endif
