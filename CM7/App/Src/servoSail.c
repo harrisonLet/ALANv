@@ -62,7 +62,6 @@ void servoSail_setAngle(int16_t angle)
 {
     uint16_t pulse_length = servoSail_angleToPulse(angle);
     __HAL_TIM_SET_COMPARE(&servo_tim, TIM_CHANNEL_1, pulse_length);
-    printf("%s Setting Servo Angle To: %d\r\n", SERVO_SAIL_TASK, angle);
 }
 
 uint16_t servoSail_angleToPulse(int16_t angle) {

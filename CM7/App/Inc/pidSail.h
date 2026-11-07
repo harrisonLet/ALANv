@@ -15,7 +15,7 @@
 
 #define PID_SAIL_FREQUENCY 10u  // Hz
 #define PID_SAIL_KP 3.0f        // degrees of tail per degrees of main sail error
-#define PID_SAIL_KI 0.8f       // removes the steady offset from the wind
+#define PID_SAIL_KI 0.1f       // removes the steady offset from the wind
 #define PID_SAIL_KD 0.0f        
 #define PID_SAIL_TAIL_LIMIT 90.0f // max sail tail angle in either direction
 #define PID_SAIL_DIRECTION 1

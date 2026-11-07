@@ -40,7 +40,7 @@
 #define CM7_ARBITER_TAIL_ENABLE
 #define CM7_PID_SAIL_ENABLE
 #define CM7_PROCESS_LSP_ENABLE
-#define CM7_CONSOLE_ENABLE
+// #define CM7_CONSOLE_ENABLE
 
 
 #ifdef CM7_ENABLE
@@ -61,7 +61,7 @@
 #endif
 
 #ifdef CM7_SENSOR_ENCODER_ENABLE
-#define CM7_SENSOR_ENCODER_DEBUG
+// #define CM7_SENSOR_ENCODER_DEBUG
 #endif
 
 #ifdef CM7_SENSOR_GPS_ENABLE
@@ -95,9 +95,9 @@
 #endif
 
 #ifdef CM7_PID_SAIL_ENABLE
-#define CM7_PID_SAIL_DEBUG
+// #define CM7_PID_SAIL_DEBUG
 #endif
 
 #ifdef CM7_PROCESS_LSP_ENABLE
-#define CM7_PROCESS_LSP_DEBUG
+// #define CM7_PROCESS_LSP_DEBUG
 #endif
