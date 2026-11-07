@@ -4637,10 +4637,6 @@
 		(uuid "e0234324-d55a-4ca0-93ae-c109a8b6a487")
 	)
 	(no_connect
-		(at 237.49 213.36)
-		(uuid "e0fb423b-adb2-4312-a89d-ec738954f7c5")
-	)
-	(no_connect
 		(at 323.85 175.26)
 		(uuid "e1ec49a8-0f27-49ff-8d4d-8dd45574c21b")
 	)
@@ -5530,6 +5526,16 @@
 	)
 	(wire
 		(pts
+			(xy 237.49 213.36) (xy 218.44 213.36)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f75dba26-67e2-4f79-aba4-91025fd4efce")
+	)
+	(wire
+		(pts
 			(xy 450.85 176.53) (xy 450.85 179.07)
 		)
 		(stroke
@@ -5607,6 +5613,16 @@
 			(justify left bottom)
 		)
 		(uuid "274adcb7-7df4-4c34-9c83-ff25fab9ac5a")
+	)
+	(label "tailSailServo"
+		(at 218.44 213.36 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "3002b442-7348-4d5f-a814-b3b08f58798e")
 	)
 	(label "sensorGPS_UART7Rx"
 		(at 218.44 165.1 180)
