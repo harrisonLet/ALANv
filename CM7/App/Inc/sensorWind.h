@@ -15,8 +15,8 @@
 #define sensorWind_printf(...) ((void)0)
 #endif
 
-#define SENSOR_WIND_FREQUENCY 10u // Hz, This is mostly limited by the UART timeout, max is about 40Hz
-#define SENSOR_WIND_WINDOW 10u // num readings
+#define SENSOR_WIND_FREQUENCY 5u // Hz, This is mostly limited by the UART timeout, max is about 40Hz
+#define SENSOR_WIND_WINDOW 20u // num readings
 #define SENSOR_WIND_STALE 100u // ms before data is considered stale
 _Static_assert(SENSOR_WIND_FREQUENCY > 0u && SENSOR_WIND_FREQUENCY <= 40u, "SENSOR_WIND_FREQUENCY must be 1-30Hz");
 #if (SYSTEM_TICK_RATE_HZ % SENSOR_WIND_FREQUENCY) != 0u
