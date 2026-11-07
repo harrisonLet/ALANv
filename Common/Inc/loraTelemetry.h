@@ -2,6 +2,14 @@
 #define LORA_TELEMETRY_H
 
 #include <stdint.h>
+#include "sharedBattery.h"
+
+typedef enum {
+    LORA_TELEMETRY_INVALID          = 0x0, // 0b00
+    LORA_TELEMETRY_METADATA_VALID   = 0x1, // 0b01
+    LORA_TELEMETRY_TELEMETRY_VALID  = 0x2, // 0b10
+    LORA_TELEMETRY_ALL_VALID        = 0x3  // 0b11
+} LoRaTelemetryValidity_e;
 
 /*
  * Telemetry record sent from the boat to the ground station over LoRa.
@@ -11,7 +19,7 @@ typedef struct __attribute__((packed)) {
 
     /* Battery */
     uint16_t battery_voltage;        /* whole pack, mV */
-    uint16_t cell_voltage[4];        /* each cell, mV */
+    uint16_t cell_voltage[BATTERY_CELL_COUNT];        /* each cell, mV */
     uint8_t  battery_valid;          /* Validity_e */
 
     /* Main sail encoder (AS5600) */

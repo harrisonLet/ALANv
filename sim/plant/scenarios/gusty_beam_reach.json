@@ -1,0 +1,14 @@
+{
+  "description": "Gusty day with a 40-degree wind shift at 60 s, a GPS dropout from 90 to 100 s, and a wind vane dropout at 120 s.",
+  "origin": [40.7649, -111.8421],
+  "seed": 7,
+  "wind": {"direction_deg": 270, "speed_ms": 4.0, "gust_ms": 1.2, "shift_deg": 10, "tau_s": 6},
+  "initial": {"heading_deg": 0, "wing_deg": -90},
+  "events": [
+    {"t": 60,  "cmd": "wind 310"},
+    {"t": 90,  "cmd": "gps off"},
+    {"t": 100, "cmd": "gps on"},
+    {"t": 120, "cmd": "vane off"},
+    {"t": 125, "cmd": "vane on"}
+  ]
+}

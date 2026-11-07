@@ -9,6 +9,11 @@
 #include "servoShared.h"
 #include "servoSail.h"
 #include "servoRudder.h"
+#include "arbiterRudder.h"
+#include "pidHeading.h"
+#include "arbiterTail.h"
+#include "pidSail.h"
+#include "processLSP.h"
 
 #include "sensorBattery.h"
 #include "sensorEncoder.h"
@@ -17,6 +22,7 @@
 #include "sensorWind.h"
 #include "fusionOrientation.h"
 #include "ipcCM7.h"
+#include "console.h"
 
 #include "semphr.h"
 
@@ -32,28 +38,36 @@ void live_handler(void *argument);
 
 void hardware_init(void) {
     #ifdef CM7_LIVE_ENABLE
+    cm7_printf("live_hardwareInit");
     live_hardwareInit();
     #endif
     #ifdef CM7_TELEMETRY_ENABLE
+    cm7_printf("telemetry_hardwareInit");
     telemetry_hardwareInit();
     #endif
 
     #ifdef CM7_SENSOR_BATTERY_ENABLE
+    cm7_printf("sensorBattery_hardwareInit");
     sensorBattery_hardwareInit();
     #endif
     #ifdef CM7_SENSOR_ENCODER_ENABLE
+    cm7_printf("sensorEncoder_hardwareInit");
     sensorEncoder_hardwareInit();
     #endif
     #ifdef CM7_SENSOR_GPS_ENABLE
+    cm7_printf("sensorGPS_hardwareInit");
     sensorGPS_hardwareInit();
     #endif
     #ifdef CM7_SENSOR_IMU_ENABLE
+    cm7_printf("sensorIMU_hardwareInit");
     sensorIMU_hardwareInit();
     #endif
     #ifdef CM7_SENSOR_WIND_ENABLE
+    cm7_printf("sensorWind_hardwareInit");
     sensorWind_hardwareInit();
     #endif
     #if defined(CM7_FUSION_ORIENTATION_ENABLE) && defined(CM7_SENSOR_IMU_ENABLE) && defined(CM7_SENSOR_GPS_ENABLE)
+    cm7_printf("fusionOrientation_hardwareInit");
     fusionOrientation_hardwareInit();
     #endif
 
@@ -71,7 +85,32 @@ void hardware_init(void) {
     servoRudder_hardwareInit();
     #endif
 
+    #if defined(CM7_ARBITER_RUDDER_ENABLE) && defined(CM7_SERVO_RUDDER_ENABLE)
+    arbiterRudder_hardwareInit();
+    #endif
+
+    #if defined(CM7_PID_HEADING_ENABLE) && defined(CM7_ARBITER_RUDDER_ENABLE)
+    pidHeading_hardwareInit();
+    #endif
+
+    #if defined(CM7_ARBITER_TAIL_ENABLE) && defined(CM7_SERVO_SAIL_ENABLE)
+    arbiterTail_hardwareInit();
+    #endif
+
+    #if defined(CM7_PID_SAIL_ENABLE) && defined(CM7_ARBITER_TAIL_ENABLE)
+    pidSail_hardwareInit();
+    #endif
+
+    #if defined(CM7_PROCESS_LSP_ENABLE) && defined(CM7_PID_SAIL_ENABLE)
+    processLSP_hardwareInit();
+    #endif
+
+    #ifdef CM7_CONSOLE_ENABLE
+    console_hardwareInit();
+    #endif
+
     #ifdef IPC_ENABLE
+    cm7_printf("ipc_init");
     ipc_init(); // Common Shared Memory (SRAM4) init
     #endif
 }
@@ -85,49 +124,98 @@ void rtos_init()
     int32_t totalStack = 0;
     
     #ifdef CM7_LIVE_ENABLE
+    cm7_printf("live_rtosInit");
     if (live_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
     if (xTaskCreate(live_handler, LIVE_TASK, LIVE_TASK_HEAP, NULL, LIVE_TASK_PRIORITY, &task_live) != pdPASS) { Error_Handler(); }
     totalStack += LIVE_TASK_HEAP;
     #endif
     #ifdef CM7_TELEMETRY_ENABLE
+    cm7_printf("telemetry_rtosInit");
     if (telemetry_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
     if (xTaskCreate(telemetry_handler, TELEMETRY_TASK, TELEMETRY_TASK_HEAP, NULL, TELEMETRY_TASK_PRIORITY, &telemetry_task) != pdPASS) { Error_Handler(); }
     totalStack += TELEMETRY_TASK_HEAP;
     #endif
 
     #ifdef CM7_SENSOR_BATTERY_ENABLE
+    cm7_printf("sensorBattery_rtosInit");
     if (sensorBattery_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
     if (xTaskCreate(sensorBattery_handler, SENSOR_BATTERY_TASK, SENSOR_BATTERY_TASK_HEAP, NULL, SENSOR_BATTERY_TASK_PRIORITY, &sensorBattery_task) != pdPASS) { Error_Handler(); }
     totalStack += SENSOR_BATTERY_TASK_HEAP;
     #endif
     #ifdef CM7_SENSOR_ENCODER_ENABLE
+    cm7_printf("sensorEncoder_rtosInit");
     if (sensorEncoder_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
     if (xTaskCreate(sensorEncoder_handler, SENSOR_ENCODER_TASK, SENSOR_ENCODER_TASK_HEAP, NULL, SENSOR_ENCODER_TASK_PRIORITY, &sensorEncoder_task) != pdPASS) { Error_Handler(); }
     totalStack += SENSOR_ENCODER_TASK_HEAP;
     #endif
     #ifdef CM7_SENSOR_GPS_ENABLE
+    cm7_printf("sensorGPS_rtosInit");
     if (sensorGPS_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
     if (xTaskCreate(sensorGPS_handler, SENSOR_GPS_TASK, SENSOR_GPS_TASK_HEAP, NULL, SENSOR_GPS_TASK_PRIORITY, &sensorGPS_task) != pdPASS) { Error_Handler(); }
     totalStack += SENSOR_GPS_TASK_HEAP;
     #endif
     #ifdef CM7_SENSOR_IMU_ENABLE
+    cm7_printf("sensorIMU_rtosInit");
     if (sensorIMU_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
     if (xTaskCreate(sensorIMU_handler, SENSOR_IMU_TASK, SENSOR_IMU_TASK_HEAP, NULL, SENSOR_IMU_TASK_PRIORITY, &sensorIMU_task) != pdPASS) { Error_Handler(); }
     totalStack += SENSOR_IMU_TASK_HEAP;
     #endif
     #ifdef CM7_SENSOR_WIND_ENABLE
+    cm7_printf("sensorWind_rtosInit");
     if (sensorWind_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
     if (xTaskCreate(sensorWind_handler, SENSOR_WIND_TASK, SENSOR_WIND_TASK_HEAP, NULL, SENSOR_WIND_TASK_PRIORITY, &sensorWind_task) != pdPASS) { Error_Handler(); }
     totalStack += SENSOR_WIND_TASK_HEAP;
     #endif
     #if defined(CM7_FUSION_ORIENTATION_ENABLE) && defined(CM7_SENSOR_IMU_ENABLE) && defined(CM7_SENSOR_GPS_ENABLE)
+    cm7_printf("fusionOrientation_rtosInit");
     if (fusionOrientation_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
     if (xTaskCreate(fusionOrientation_handler, FUSION_ORIENTATION_TASK, FUSION_ORIENTATION_TASK_HEAP, NULL, FUSION_ORIENTATION_TASK_PRIORITY, &fusionOrientation_task) != pdPASS) { Error_Handler(); }
     totalStack += FUSION_ORIENTATION_TASK_HEAP;
     #endif
 
+    #if defined(CM7_ARBITER_RUDDER_ENABLE) && defined(CM7_SERVO_RUDDER_ENABLE)
+    if (arbiterRudder_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(arbiterRudder_handler, ARBITER_RUDDER_TASK, ARBITER_RUDDER_TASK_HEAP,
+    NULL, ARBITER_RUDDER_TASK_PRIORITY, &arbiterRudder_task) != pdPASS) { Error_Handler(); }
+    totalStack += ARBITER_RUDDER_TASK_HEAP;
+    #endif
+
+    #if defined(CM7_PID_HEADING_ENABLE) && defined(CM7_ARBITER_RUDDER_ENABLE)
+    if (pidHeading_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(pidHeading_handler, PID_HEADING_TASK, PID_HEADING_TASK_HEAP, NULL,
+    PID_HEADING_TASK_PRIORITY, &pidHeading_task) != pdPASS) { Error_Handler(); }
+    totalStack += PID_HEADING_TASK_HEAP;
+    #endif
+
+    #if defined(CM7_ARBITER_TAIL_ENABLE) && defined(CM7_SERVO_SAIL_ENABLE)
+    if (arbiterTail_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(arbiterTail_handler, ARBITER_TAIL_TASK, ARBITER_TAIL_TASK_HEAP, NULL,
+    ARBITER_TAIL_TASK_PRIORITY, &arbiterTail_task) != pdPASS) { Error_Handler(); }
+    totalStack += ARBITER_TAIL_TASK_HEAP;
+    #endif
+
+    #if defined(CM7_PID_SAIL_ENABLE) && defined(CM7_ARBITER_TAIL_ENABLE)
+    if (pidSail_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(pidSail_handler, PID_SAIL_TASK, PID_SAIL_TASK_HEAP, NULL,
+    PID_SAIL_TASK_PRIORITY, &pidSail_task) != pdPASS) { Error_Handler(); }
+    totalStack += PID_SAIL_TASK_HEAP;
+    #endif
+
+    #if defined(CM7_PROCESS_LSP_ENABLE) && defined(CM7_PID_SAIL_ENABLE)
+    if (processLSP_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(processLSP_handler, PROCESS_LSP_TASK, PROCESS_LSP_TASK_HEAP, NULL,
+    PROCESS_LSP_TASK_PRIORITY, &processLSP_task) != pdPASS) { Error_Handler(); }
+    totalStack += PROCESS_LSP_TASK_HEAP;
+    #endif
+
+    #ifdef CM7_CONSOLE_ENABLE
+    if (xTaskCreate(console_handler, "[CONSOLE-]", 512, NULL,
+    osPriorityLow, &task_console) != pdPASS) { Error_Handler(); }
+    totalStack += 512;
+    #endif
+
     #ifdef CM7_DEBUG
-    printf("Total stack allocated: %u B / %u B\r\n", (unsigned)(totalStack * 4), (unsigned)configTOTAL_HEAP_SIZE);
+    cm7_printf("Total stack allocated: %u B / %u B\r\n", (unsigned)(totalStack * 4), (unsigned)configTOTAL_HEAP_SIZE);
     #endif
 }
 

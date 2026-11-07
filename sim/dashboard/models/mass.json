@@ -1,0 +1,25 @@
+{
+  "_note": "Masses in kg at CAD mm (x port+/starboard-, y bow-/stern+, z up; z=0 hull bottom). The simulator computes the CG, waterline and stability from this list. Add corrections as extra items (negative kg removes mass).",
+  "items": [
+    {
+      "name": "Onshape assembly (as modelled)",
+      "kg": 4.657,
+      "at_mm": [
+        0.341,
+        11.252,
+        -140.883
+      ],
+      "note": "10.267 lb from Onshape Mass properties; check materials (rods: carbon vs aluminium)"
+    },
+    {
+      "name": "counterweight (not in CAD)",
+      "kg": 0.25,
+      "at_mm": [
+        0.0,
+        -376.6,
+        745.0
+      ],
+      "note": "ESTIMATE position: end of the forward boom"
+    }
+  ]
+}

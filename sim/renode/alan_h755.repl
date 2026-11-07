@@ -1,0 +1,28 @@
+// ALAN virtual board: NUCLEO-H755ZI-Q, CM7 core, with the boat's sensors attached.
+// Built on Renode's NUCLEO-H753ZI model: same CM7-side memory map and peripherals
+// (USART3 virtual COM port, UART4, UART7, I2C1/2, TIM1, TIM6, HSEM, LEDs, user button).
+// Not modeled: the CM4 core and SPI1 (LoRa).
+// The sensor models live in models/*.cs and are compiled by alan_cm7.resc before this file loads.
+using "platforms/boards/nucleo_h753zi.repl"
+
+// BNO055 IMU on I2C2 (PB10/PB11), address 0x28
+bno055: Sensors.AlanBNO055 @ i2c2 0x28
+
+// AS5600 wing encoder on I2C1 (PB6/PB7), address 0x36
+as5600: Sensors.AlanAS5600 @ i2c1 0x36
+
+// Wind vane (Modbus over RS485) on UART4 (PC10/PC11) and GPS on UART7 (PF6/PF7).
+// The sysbus addresses are unused dummies that only make them reachable from the monitor.
+windvane: Sensors.AlanWindVane @ sysbus 0x5C200000
+    uart: uart4
+
+gps: Sensors.AlanGPS @ sysbus 0x5C200100
+    uart: uart7
+
+// Lockstep link to the boat physics simulator (sim/plant/run_plant.py): reads the servo PWM,
+// writes the simulated sensor values. Harmless if no plant is running.
+plant: Sensors.AlanPlantBridge @ sysbus 0x5C200200
+    imu: bno055
+    encoder: as5600
+    windVane: windvane
+    gps: gps

@@ -22,8 +22,8 @@
 #include "ipcCM4.h"
 
 #include "lora.h"
-#include "servoRudder.h"
-#include "servoSail.h"
+#include "loraTelemetry.h"
+#include "telemetryReceive.h"
 #include <stdint.h>
 #include <string.h>
 
@@ -87,6 +87,7 @@ volatile uint8_t  dio0_flag = 0; /* set by EXTI ISR when DIO0 (PG9) fires */
 /* USER CODE BEGIN PFP */
 static void MX_SPI1_Init(void);
 static void MX_TIM6_Init(void);
+static void MX_StatusLED_Init(void);
 static void SystemClock_Config(void);
 /* USER CODE END PFP */
 
@@ -94,8 +95,7 @@ static void SystemClock_Config(void);
 /* USER CODE BEGIN 0 */
 
 
-// initialize gpio pins for di0-3 interrupt and rst 
-// initialize led's for debugging
+// initialize gpio pins for di0-3 interrupt and rst
 
 /* USER CODE END 0 */
 
@@ -156,43 +156,66 @@ int main(void)
 #if defined(CM4_ENABLE)
   MX_SPI1_Init();
   MX_TIM6_Init();
+  MX_StatusLED_Init();
 
-  Debug_LED_Init();
-
+  bool ipc_attached = false;
   #if defined(IPC_ENABLE)
-  // Initialize IPC and wait 5s for Cm7 to setup shared memory 
-  if (ipc_cm4_attach(5000U) != IPC_STATUS_OK) {
-    // Set Red LED if IPC handshake with CM7 fails
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
-  }
+  // Initialize IPC and wait 5s for Cm7 to setup shared memory.
+  // A failed handshake is reported to the ground station through FLAG_NO_IPC
+  ipc_attached = (ipc_cm4_attach(5000U) == IPC_STATUS_OK);
   #endif
-
-  #if defined(CM4_SERVOS_ENABLE)
-  servoRudder_init();
-  servoSail_init();
-  #endif
-
-  // Debug_LED_Toggle('y');  // toggle yellow LED to indicate SPI initialized
+  telemetryRec_init(ipc_attached);
 
   if (LoRa_init() != 0)
   {
       printf("LoRa init FAILED\r\n");
-      Debug_LED_Toggle('o');
   }
+  #if defined(CM4_LORA_COMMANDS_ENABLE)
   LoRa_StartRX();
+  #endif
 
-  static int16_t rudder_angle = 0;
-  static int16_t sail_angle   = 0;
-  /* LoRa_init() toggles yellow LED once for version check, so yellow starts ON */
-  static uint8_t led_status   = 0x04;  /* bitmask: bit0=green, bit1=red, bit2=yellow */
   static uint8_t tx_seq       = 0;
 
-  TelemetryPacket_t pkt = {
-      .lat        = 40.7128f,
-      .lon        = -74.0060f,
-      .heading    = 180,
-      .battery    = 95,
+  #if defined(CM4_LORA_DUMMY_TELEMETRY)
+  // Fixed, easy-to-recognise values so the ground station decode can be checked by eye
+  LoRaTelemetry_t telemetryPacket = {
+      .battery_voltage        = 14800,
+      .cell_voltage           = { 3700, 3700, 3700, 3700 },
+      .battery_valid          = LORA_TELEMETRY_ALL_VALID,
+      .sail_ang_forward       = 15,
+      .sail_encoder_magnitude = 2048,
+      .sail_encoder_status    = 0x20,
+      .encoder_valid          = LORA_TELEMETRY_ALL_VALID,
+      .ang_wind               = -45,
+      .wind_valid             = LORA_TELEMETRY_ALL_VALID,
+      .latitude               = 40.7608,
+      .longitude              = -111.8910,
+      .altitude               = 1300.0f,
+      .satellites             = 8,
+      .fix_valid              = 1,
+      .utc_hours              = 12,
+      .utc_minutes            = 34,
+      .utc_seconds            = 56,
+      .gps_valid              = LORA_TELEMETRY_ALL_VALID,
+      .imu_cal                = 0xFF,
+      .imu_temp               = 25,
+      .imu_valid              = LORA_TELEMETRY_ALL_VALID,
+      .heading                = 180,
+      .roll                   = 5,
+      .pitch                  = -3,
+      .orientation_valid      = LORA_TELEMETRY_ALL_VALID,
+      .rudder_servo_angle     = 10,
+      .sail_servo_angle       = -20,
+      .mode                   = 1,
+      .desired_heading        = 190,
+      .route_segment          = 2,
+      .drift_distance         = 7,
+      .last_cmd_seq           = 0,
   };
+  #else
+  LoRaTelemetry_t telemetryPacket = {0};
+  #endif
+  #define LORA_HDR_LEN_BYTES (5U) // dest, src, seq, len, flags
 
   // char message[] = "Hello from harrisons laptop!\n";
 
@@ -204,68 +227,52 @@ int main(void)
   {
       __WFI();   /* sleep until any interrupt fires */
 
+      // Every 1 s (TIM6): read the latest telemetry from SRAM4 and send it over LoRa.
+      // If the CM7 is mid-write, tx_flag stays set and the read retries on the next wake (~1 ms)
       if (tx_flag) {
+        printf("[CM4 TX] tx_flag set, reading telemetry from SRAM4\r\n");
+        uint8_t telem_status_flags = 0;
+        #if defined(CM4_LORA_DUMMY_TELEMETRY)
+        // Test mode: skip SRAM4, send the fixed packet with a live uptime
+        telemetryPacket.uptime_ms = HAL_GetTick();
+        bool telem_ready = true;
+        #else
+        // Only send LoRa for succefull read or 5 busy attempts in a row
+        bool telem_ready = telemetryRec_read(&telem_status_flags, &telemetryPacket);
+        #endif
+        if (telem_ready) {
           tx_flag = 0;
-          char payload[40];
-          uint8_t plen = snprintf(payload, sizeof(payload), "STATUS,%d,%d,%d", rudder_angle, sail_angle, led_status);
-          uint8_t pkt[36];
+          LoRaTelemetry_t *payload = &telemetryPacket;
+          uint8_t plen = sizeof(LoRaTelemetry_t);
+          uint8_t pkt[LORA_HDR_LEN_BYTES + plen];
           pkt[0] = ADDR_SAMD21;   /* dest */
           pkt[1] = ADDR_STM32;    /* src */
           pkt[2] = tx_seq++;
-          pkt[3] = plen;
-          memcpy(pkt + 4, payload, plen);
-          LoRa_Send(pkt, 4 + plen);
-          printf("[TX] %s\r\n", payload);
+          pkt[3] = 1 + plen; // payload len (1 is the telem_status flags)
+          pkt[4] = telem_status_flags;
+          memcpy(pkt + LORA_HDR_LEN_BYTES, payload, plen);
+          LoRa_Send(pkt, LORA_HDR_LEN_BYTES + plen);
+          HAL_GPIO_TogglePin(STATUS_LED_PORT, STATUS_LED_PIN);
+          printf("[TX] seq=%u flags=0x%02X len=%u uptime_ms=%lu\r\n",
+                 pkt[2], pkt[4], pkt[3], (unsigned long)payload->uptime_ms);
+        }
+
+        
+        // LoRa_Send("Hello from CM4!\n", 20);
+        // tx_flag = 0;
       }
 
       if (dio0_flag) {
           dio0_flag = 0;
           LoRa_ProcessDIO0();
 
+          #if defined(CM4_LORA_COMMANDS_ENABLE)
           uint8_t cmd[64];
           uint8_t len = LoRa_GetCmd(cmd);
           if (len > 0) {
               printf("[RX] cmd len=%d byte0=0x%02X\r\n", len, cmd[0]);
-
-              /* LED toggles */
-              if      (cmd[0] == 'g') { led_status ^= 0x01; Debug_LED_Toggle('g'); }
-              else if (cmd[0] == 'r') { led_status ^= 0x02; Debug_LED_Toggle('r'); }
-              else if (cmd[0] == 'y') { led_status ^= 0x04; Debug_LED_Toggle('y'); }
-
-              #if defined(CM4_SERVOS_ENABLE)
-              /* Rudder steps */
-              int16_t delta = 0;
-              if      (cmd[0] == 'q') delta = +20;
-              else if (cmd[0] == 'e') delta = -20;
-              else if (cmd[0] == 'a') delta = +10;
-              else if (cmd[0] == 'd') delta = -10;
-              else if (cmd[0] == 'z') delta = +5;
-              else if (cmd[0] == 'c') delta = -5;
-
-              if (delta != 0) {
-                rudder_angle += delta;
-                if (rudder_angle >  135) rudder_angle =  135;
-                if (rudder_angle < -135) rudder_angle = -135;
-                servoRudder_setAngle(rudder_angle);
-              }
-
-              /* Sail steps */
-              delta = 0;
-              if      (cmd[0] == 'w') delta = +20;
-              else if (cmd[0] == 'r') delta = -20;
-              else if (cmd[0] == 's') delta = +10;
-              else if (cmd[0] == 'f') delta = -10;
-              else if (cmd[0] == 'x') delta = +5;
-              else if (cmd[0] == 'v') delta = -5;
-
-              if (delta != 0) {
-                sail_angle += delta;
-                if (sail_angle >  135) sail_angle =  135;
-                if (sail_angle < -135) sail_angle = -135;
-                servoSail_setAngle(sail_angle);
-              }
-              #endif
           }
+          #endif
       }
   }
 #endif
@@ -297,6 +304,25 @@ static void MX_SPI1_Init(void)
     {
         Error_Handler();
     }
+}
+
+static void MX_StatusLED_Init(void)
+{
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    GPIO_InitStruct.Pin   = STATUS_LED_PIN;
+    GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull  = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(STATUS_LED_PORT, &GPIO_InitStruct);
+
+    __HAL_RCC_GPIOE_CLK_ENABLE();
+    GPIO_InitStruct.Pin   = TICK_LED_PIN;
+    HAL_GPIO_Init(TICK_LED_PORT, &GPIO_InitStruct);
+
+    HAL_GPIO_WritePin(STATUS_LED_PORT, STATUS_LED_PIN, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(TICK_LED_PORT, TICK_LED_PIN, GPIO_PIN_RESET);
 }
 
 static void MX_TIM6_Init(void)

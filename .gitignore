@@ -20,5 +20,6 @@ Autonomous_Sailboat-backups/
 _autosave-Autonomous_Sailboat.*
 *.lck
 
+.DS_Store
 tmp_*
 secret_*

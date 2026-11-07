@@ -25,6 +25,7 @@ typedef enum {
 
 // Change the below value to set the magnetic declination
 #define MAGNORTH_DECLINATION MAGNORTH_DECLINATION_SLC
+#define COMPASS_OFFSET 50
 
 #define GPS_LAT2MM 111320000.0
 
@@ -145,7 +146,7 @@ void fusionOrientation_handler(void *argument)
 
             globalOrientation.angP_roll = ANG_WRAP_180(euler[0]);
             globalOrientation.angP_pitch = ANG_WRAP_180(euler[1]);
-            globalOrientation.angP_heading = ANG_WRAP_360(euler[2] + MAGNORTH_DECLINATION);
+            globalOrientation.angP_heading = ANG_WRAP_360(euler[2] + MAGNORTH_DECLINATION - COMPASS_OFFSET);
 
             MetadataGPS_t gps = {0};
             if (!sensorGPS_getMetadata(&gps)) { fusionOrientation_printf("Failed to get GPS metadata"); continue; }
@@ -221,16 +222,16 @@ static FusionResult_e quaternion_normalize(int32_t quat[4], float quat_norm[4])
 
 static FusionResult_e quaternion_toEuler(float quat[4], int16_t euler[3])
 {
-    float roll = atan2f(2.0f * (quat[0]*quat[1] + quat[2]*quat[3]), 1.0f - 2.0f * (quat[1]*quat[1] + quat[2]*quat[2]));
+    float pitch = atan2f(2.0f * (quat[0]*quat[1] + quat[2]*quat[3]), 1.0f - 2.0f * (quat[1]*quat[1] + quat[2]*quat[2]));
     float sinp = 2.0f * (quat[0]*quat[2] - quat[3]*quat[1]);
     if (sinp >  1.0f) sinp =  1.0f;
     if (sinp < -1.0f) sinp = -1.0f;
-    float pitch = asinf(sinp);
+    float roll = asinf(sinp);
     float yaw = atan2f(2.0f * (quat[0]*quat[3] + quat[1]*quat[2]), 1.0f - 2.0f * (quat[2]*quat[2] + quat[3]*quat[3]));
     
-    euler[0] = (int16_t)(roll * RAD2DEG);
-    euler[1] = (int16_t)(pitch * RAD2DEG);
-    euler[2] = (int16_t)(yaw * RAD2DEG);
+    euler[0] = (int16_t)(roll * RAD2DEG * -1);
+    euler[1] = (int16_t)(pitch * RAD2DEG * -1);
+    euler[2] = (int16_t)(yaw * RAD2DEG * -1);
     
     return RESULT_SUCCESS;
 }

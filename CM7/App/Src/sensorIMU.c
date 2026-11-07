@@ -94,11 +94,12 @@
 #define BNO055_REG_CALIB_OFFSET 0x55
 #define BNO055_REG_CALIB_OFFSET_SIZE 22u
 #ifdef CM7_SENSOR_IMU_PRE_CALIBRATED
-static uint8_t BNO055_CALIB_OFFSETS[BNO055_REG_CALIB_OFFSET_SIZE] = {
-    0xDD, 0xFF, 0xCC, 0xFF, 0xDD, 0xFF,   // accel X, Y, Z
-    0xE2, 0xFF, 0x01, 0x00, 0xEF, 0xFD,   // mag   X, Y, Z
-    0xFE, 0xFF, 0x01, 0x00, 0x00, 0x00,   // gyro  X, Y, Z
-    0xE8, 0x03, 0xE5, 0x01                // accel radius, mag radius
+static uint8_t BNO055_CALIB_OFFSETS[BNO055_REG_CALIB_OFFSET_SIZE] = 
+{
+    0xED, 0xFF, 0xDE, 0xFF, 0xD8, 0xFF, // accel X, Y, Z
+    0x46, 0x02, 0x06, 0x01, 0xE3, 0xFD, // mag   X, Y, Z
+    0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, // gyro  X, Y, Z
+    0xE8, 0x03, 0x6E, 0x02              // accel radius, mag radius
 };
 #endif
 
@@ -405,7 +406,7 @@ void sensorIMU_handler(void *argument)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-bool sensorIMU_getMetadata(MetadataIMU_t *metadata) { return xQueuePeek(metadata_queue, metadata, 0) == pdTRUE; }
+bool sensorIMU_getMetadata(MetadataIMU_t *metadata) { return (metadata_queue != NULL) && xQueuePeek(metadata_queue, metadata, 0) == pdTRUE; }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -532,8 +533,8 @@ static HAL_StatusTypeDef BNO055_readAllSensors(int16_t accXYZ[3], int16_t magXYZ
     gravXYZ[0] =   (int16_t)(buf[39] << 8 | buf[38]);
     gravXYZ[1] =   (int16_t)(buf[41] << 8 | buf[40]);
     gravXYZ[2] =   (int16_t)(buf[43] << 8 | buf[42]);
-    temp[0] =       (int8_t)(buf[44]);
-    cal[0] =        (uint8_t)(buf[45]);
+    temp[0] =      (int8_t)(buf[44]);
+    cal[0] =       (uint8_t)(buf[45]);
 
     return result;
 }
@@ -581,17 +582,21 @@ static void BNO055_printCalibOffset(void)
     HAL_StatusTypeDef result;
     uint8_t calib_offsets[BNO055_REG_CALIB_OFFSET_SIZE];
 
-    if ((result = BNO055_read(BNO055_REG_CALIB_OFFSET, calib_offsets, BNO055_REG_CALIB_OFFSET_SIZE)) != HAL_OK) 
-    {
-        sensorIMU_printf("ERROR: Failed to read BNO055 calibration offsets: %d", result);
-        return;
-    }
+    for (int i = 0; i < 60; i++) {
+        if ((result = BNO055_read(BNO055_REG_CALIB_OFFSET, calib_offsets, BNO055_REG_CALIB_OFFSET_SIZE)) != HAL_OK) 
+        {
+            sensorIMU_printf("ERROR: Failed to read BNO055 calibration offsets: %d", result);
+            return;
+        }
 
-    sensorIMU_printf("        - read BNO055 calibration offsets\r\n    {\r\n    0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X,\r\n    0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X,\r\n    0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X,\r\n    0x%02X, 0x%02X, 0x%02X, 0x%02X\r\n    }",
-        calib_offsets[0], calib_offsets[1], calib_offsets[2], calib_offsets[3], calib_offsets[4], calib_offsets[5],
-        calib_offsets[6], calib_offsets[7], calib_offsets[8], calib_offsets[9], calib_offsets[10], calib_offsets[11],
-        calib_offsets[12], calib_offsets[13], calib_offsets[14], calib_offsets[15], calib_offsets[16], calib_offsets[17],
-        calib_offsets[18], calib_offsets[19], calib_offsets[20], calib_offsets[21]
-    );
+        sensorIMU_printf("        - read BNO055 calibration offsets\r\n    {\r\n    0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X,\r\n    0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X,\r\n    0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X,\r\n    0x%02X, 0x%02X, 0x%02X, 0x%02X\r\n    }",
+            calib_offsets[0], calib_offsets[1], calib_offsets[2], calib_offsets[3], calib_offsets[4], calib_offsets[5],
+            calib_offsets[6], calib_offsets[7], calib_offsets[8], calib_offsets[9], calib_offsets[10], calib_offsets[11],
+            calib_offsets[12], calib_offsets[13], calib_offsets[14], calib_offsets[15], calib_offsets[16], calib_offsets[17],
+            calib_offsets[18], calib_offsets[19], calib_offsets[20], calib_offsets[21]
+        );
+        HAL_Delay(10000);
+    }
+    
     #endif
 }
