@@ -112,6 +112,42 @@ Due 11/9 Harrison
 Due 11/2
 -----------------------------
 
+
+
+
+Commands:
+
+Rudder PID On		(Must be on if LTP is one)
+Rudder PID Off
+
+LTP On
+LTP Off
+
+Sail PID On		(Must be on if LSP is on)
+Sail PID Off
+
+Live Sail Planning On
+Live Sail Planning Off
+
+Set Desired Heading <int heading>	(RPID must be on, LTP must be off)
+	- Change heading global variable, can only be set if LTP is off, read by sail pid if its running
+
+Set rudder servo <int angle>		(RPID must be off, LTP must be off)
+	- Change servo angle directly, read by arbiter
+
+Set Desired Sail Angle <int angle>	(SPID must be on, LSP must be off)
+	- Change sail angle global variable, can only be set if lsp is off, read by sail pid if its running
+
+Set sail tail servo <int angle>		(SPID must be off, LSP must be off)
+	- Change servo angle directly, read by arbiter
+
+Kill Switch
+	- Turn off everything, turn off mosfet to ground on sim
+
+
+
+
+
 PROCESSES
 
 Path planning (locally)
