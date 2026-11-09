@@ -116,8 +116,8 @@ void telemetry_handler(void *argument)
         #endif
         #if defined(CM7_FUSION_ORIENTATION_ENABLE) && defined(CM7_SENSOR_IMU_ENABLE) && defined(CM7_SENSOR_GPS_ENABLE)
         {
-            char telemetryStr[TELEMETRY_BOAT_RELATIVE_ORIENTATION_STR_SIZE];
-            telemetry_printf("%s", telemetryBoatRelativeOrientation_toString(&telemetry_boatRelative, telemetryStr));
+            // char telemetryStr[TELEMETRY_BOAT_RELATIVE_ORIENTATION_STR_SIZE];
+            // telemetry_printf("%s", telemetryBoatRelativeOrientation_toString(&telemetry_boatRelative, telemetryStr));
 
             char telemetryStrGlobal[TELEMETRY_BOAT_GLOBAL_ORIENTATION_STR_SIZE];
             telemetry_printf("%s", telemetryBoatGlobalOrientation_toString(&telemetry_boatGlobal, telemetryStrGlobal));

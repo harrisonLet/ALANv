@@ -159,14 +159,14 @@ HardwareInit_e sensorEncoder_hardwareInit(void)
     // Initialize AS5600 sensor
     sensorEncoder_printf("    - init AS5600 sensor");
     // AS5600 power-up time T_PU = 10ms max (datasheet p.8)
-    HAL_Delay(100); // wait for power-up
-    HAL_StatusTypeDef ready;
-    for (uint8_t i = 0; i < 5; i++)
-    {
-        HAL_Delay(50);
-        ready = HAL_I2C_IsDeviceReady(&i2c_handler, AS5600_ADDR << 1, 3, 100);
-        if (ready == HAL_OK) break;
-        else sensorEncoder_printf("AS5600 not ready, will try again in 50ms");
+  HAL_Delay(100); // wait for power-up
+      HAL_StatusTypeDef ready;
+      for (uint8_t i = 0; i < 5; i++)
+      {
+          HAL_Delay(50);
+          ready = HAL_I2C_IsDeviceReady(&i2c_handler, AS5600_ADDR << 1, 3, 100);
+          if (ready == HAL_OK) break;
+          else sensorEncoder_printf("AS5600 not ready, will try again in 50ms");
     }
     if (ready != HAL_OK) { sensorEncoder_printf("ERROR: AS5600 not responding at 0x%02X, I2C error: 0x%lX\r\n", AS5600_ADDR, HAL_I2C_GetError(&i2c_handler)); return HARDWARE_INIT_FAIL; }
 

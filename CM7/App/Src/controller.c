@@ -9,6 +9,11 @@
 #include "servoShared.h"
 #include "servoSail.h"
 #include "servoRudder.h"
+#include "arbiterRudder.h"
+#include "pidHeading.h"
+#include "arbiterTail.h"
+#include "pidSail.h"
+#include "processLSP.h"
 
 #include "sensorBattery.h"
 #include "sensorEncoder.h"
@@ -18,6 +23,7 @@
 #include "fusionOrientation.h"
 #include "ipcCM7.h"
 #include "navigationRoute.h"
+#include "console.h"
 
 #include "semphr.h"
 
@@ -78,6 +84,30 @@ void hardware_init(void) {
     
     #ifdef CM7_SERVO_RUDDER_ENABLE
     servoRudder_hardwareInit();
+    #endif
+
+    #if defined(CM7_ARBITER_RUDDER_ENABLE) && defined(CM7_SERVO_RUDDER_ENABLE)
+    arbiterRudder_hardwareInit();
+    #endif
+
+    #if defined(CM7_PID_HEADING_ENABLE) && defined(CM7_ARBITER_RUDDER_ENABLE)
+    pidHeading_hardwareInit();
+    #endif
+
+    #if defined(CM7_ARBITER_TAIL_ENABLE) && defined(CM7_SERVO_SAIL_ENABLE)
+    arbiterTail_hardwareInit();
+    #endif
+
+    #if defined(CM7_PID_SAIL_ENABLE) && defined(CM7_ARBITER_TAIL_ENABLE)
+    pidSail_hardwareInit();
+    #endif
+
+    #if defined(CM7_PROCESS_LSP_ENABLE) && defined(CM7_PID_SAIL_ENABLE)
+    processLSP_hardwareInit();
+    #endif
+
+    #ifdef CM7_CONSOLE_ENABLE
+    console_hardwareInit();
     #endif
 
     #ifdef IPC_ENABLE
@@ -145,6 +175,47 @@ void rtos_init()
     if (fusionOrientation_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
     if (xTaskCreate(fusionOrientation_handler, FUSION_ORIENTATION_TASK, FUSION_ORIENTATION_TASK_HEAP, NULL, FUSION_ORIENTATION_TASK_PRIORITY, &fusionOrientation_task) != pdPASS) { Error_Handler(); }
     totalStack += FUSION_ORIENTATION_TASK_HEAP;
+    #endif
+
+    #if defined(CM7_ARBITER_RUDDER_ENABLE) && defined(CM7_SERVO_RUDDER_ENABLE)
+    if (arbiterRudder_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(arbiterRudder_handler, ARBITER_RUDDER_TASK, ARBITER_RUDDER_TASK_HEAP,
+    NULL, ARBITER_RUDDER_TASK_PRIORITY, &arbiterRudder_task) != pdPASS) { Error_Handler(); }
+    totalStack += ARBITER_RUDDER_TASK_HEAP;
+    #endif
+
+    #if defined(CM7_PID_HEADING_ENABLE) && defined(CM7_ARBITER_RUDDER_ENABLE)
+    if (pidHeading_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(pidHeading_handler, PID_HEADING_TASK, PID_HEADING_TASK_HEAP, NULL,
+    PID_HEADING_TASK_PRIORITY, &pidHeading_task) != pdPASS) { Error_Handler(); }
+    totalStack += PID_HEADING_TASK_HEAP;
+    #endif
+
+    #if defined(CM7_ARBITER_TAIL_ENABLE) && defined(CM7_SERVO_SAIL_ENABLE)
+    if (arbiterTail_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(arbiterTail_handler, ARBITER_TAIL_TASK, ARBITER_TAIL_TASK_HEAP, NULL,
+    ARBITER_TAIL_TASK_PRIORITY, &arbiterTail_task) != pdPASS) { Error_Handler(); }
+    totalStack += ARBITER_TAIL_TASK_HEAP;
+    #endif
+
+    #if defined(CM7_PID_SAIL_ENABLE) && defined(CM7_ARBITER_TAIL_ENABLE)
+    if (pidSail_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(pidSail_handler, PID_SAIL_TASK, PID_SAIL_TASK_HEAP, NULL,
+    PID_SAIL_TASK_PRIORITY, &pidSail_task) != pdPASS) { Error_Handler(); }
+    totalStack += PID_SAIL_TASK_HEAP;
+    #endif
+
+    #if defined(CM7_PROCESS_LSP_ENABLE) && defined(CM7_PID_SAIL_ENABLE)
+    if (processLSP_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(processLSP_handler, PROCESS_LSP_TASK, PROCESS_LSP_TASK_HEAP, NULL,
+    PROCESS_LSP_TASK_PRIORITY, &processLSP_task) != pdPASS) { Error_Handler(); }
+    totalStack += PROCESS_LSP_TASK_HEAP;
+    #endif
+
+    #ifdef CM7_CONSOLE_ENABLE
+    if (xTaskCreate(console_handler, "[CONSOLE-]", 512, NULL,
+    osPriorityLow, &task_console) != pdPASS) { Error_Handler(); }
+    totalStack += 512;
     #endif
 
     #ifdef CM7_DEBUG

@@ -1,0 +1,4 @@
+plant/logs/
+renode/build/
+.venv/
+__pycache__/

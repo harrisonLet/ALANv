@@ -1,5 +1,4 @@
-#ifndef CM7_COMMANDER_ENABLE
-#define CM7_COMMANDER_ENABLE
+#pragma once
 
 #include "ipcCM7.h"
 #include "system.h"
@@ -33,5 +32,3 @@ cmd_result_t execute_cmd(ipc_cmd_t *cmd);
 cmd_result_t switch_mode(system_mode_t mode);
 cmd_result_t rudder_sail_cntrl(ipc_cmd_t *cmd);
 cmd_result_t execute_servo(ipc_cmd_t *cmd);
-
-#endif

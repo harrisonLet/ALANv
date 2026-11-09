@@ -33,8 +33,15 @@
 #define CM7_SENSOR_GPS_ENABLE
 #define CM7_SENSOR_IMU_ENABLE
 #define CM7_SENSOR_WIND_ENABLE
-#define CM7_FUSION_ORIENTATION_ENABLE // This module requires data from the SENSOR_GPS and SENSOR_IMU tasks, it will not run if they are not also enabled, it also requires the Telemetry task be enabled
-
+#define CM7_FUSION_ORIENTATION_ENABLE // This module requires data from the SENSOR_GPS and SENSOR_IMU tasks, it will not run if they are not also enabled
+//#define CM7_SERVO_RUDDER_ENABLE
+//#define CM7_ARBITER_RUDDER_ENABLE
+//#define CM7_PID_HEADING_ENABLE
+#define CM7_SERVO_SAIL_ENABLE
+#define CM7_ARBITER_TAIL_ENABLE
+#define CM7_PID_SAIL_ENABLE
+#define CM7_PROCESS_LSP_ENABLE
+// #define CM7_CONSOLE_ENABLE
 
 
 #ifdef CM7_ENABLE
@@ -55,7 +62,7 @@
 #endif
 
 #ifdef CM7_SENSOR_ENCODER_ENABLE
-#define CM7_SENSOR_ENCODER_DEBUG
+// #define CM7_SENSOR_ENCODER_DEBUG
 #endif
 
 #ifdef CM7_SENSOR_GPS_ENABLE
@@ -74,4 +81,24 @@
 
 #ifdef CM7_FUSION_ORIENTATION_ENABLE
 // #define CM7_FUSION_ORIENTATION_DEBUG
+#endif
+
+#ifdef CM7_ARBITER_RUDDER_ENABLE
+// #define CM7_ARBITER_RUDDER_DEBUG
+#endif
+
+#ifdef CM7_PID_HEADING_ENABLE
+#define CM7_PID_HEADING_DEBUG
+#endif
+
+#ifdef CM7_ARBITER_TAIL_ENABLE
+// #define CM7_ARBITER_TAIL_DEBUG
+#endif
+
+#ifdef CM7_PID_SAIL_ENABLE
+// #define CM7_PID_SAIL_DEBUG
+#endif
+
+#ifdef CM7_PROCESS_LSP_ENABLE
+// #define CM7_PROCESS_LSP_DEBUG
 #endif

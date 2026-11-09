@@ -1,0 +1,10 @@
+{
+  "description": "Calm start: 3 m/s westerly, light gusts, boat pointing north at the origin.",
+  "origin": [40.7649, -111.8421],
+  "seed": 1,
+  "wind": {"direction_deg": 270, "speed_ms": 3.0, "gust_ms": 0.5, "shift_deg": 5, "tau_s": 8},
+  "initial": {"heading_deg": 0, "wing_deg": -90},
+  "boat": {},
+  "noise": {},
+  "events": []
+}

@@ -53,7 +53,7 @@ void servoSail_hardwareInit()
     HAL_Delay(1000);
   }
 
-  printf("%s Initialized, centered at %d degrees\r\n", SERVO_SAIL_TASK, servoSail_pulseToAngle(SERVO_CENTER_PULSE));
+  // printf("%s Initialized, centered at %d degrees\r\n", SERVO_SAIL_TASK, servoSail_pulseToAngle(SERVO_CENTER_PULSE));
 }
 
 
@@ -62,7 +62,6 @@ void servoSail_setAngle(int16_t angle)
 {
     uint16_t pulse_length = servoSail_angleToPulse(angle);
     __HAL_TIM_SET_COMPARE(&servo_tim, TIM_CHANNEL_1, pulse_length);
-    printf("%s Setting Servo Angle To: %d\r\n", SERVO_SAIL_TASK, angle);
 }
 
 uint16_t servoSail_angleToPulse(int16_t angle) {

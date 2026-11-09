@@ -1,4 +1,6 @@
 #include "commander.h"
+#include "arbiterRudder.h"
+#include "arbiterTail.h"
 
 typedef struct {
     system_mode_t mode;
@@ -10,6 +12,9 @@ typedef struct {
 } commander_state_t;
 
 commander_state_t state;
+
+// Converts a system mode into the mode each arbiter runs in. No default case, so the compiler flags a new system mode missing here.
+static bool arbiter_modes_for(system_mode_t mode, ArbiterMode_e *rudder, ArbiterMode_e *tail);
 
 HardwareInit_e commander_hardware_init(void) {
     return HARDWARE_INIT_SUCCESS;
@@ -82,16 +87,49 @@ cmd_result_t switch_mode(system_mode_t mode) {
     if (mode == state.mode) {
         return CMD_RESULT_NONE;
     }
-    switch(mode) {
+
+    ArbiterMode_e rudder;
+    ArbiterMode_e tail;
+    if (!arbiter_modes_for(mode, &rudder, &tail)) {
+        return CMD_RESULT_UNSUPPORTED;
+    }
+
+    arbiterRudder_setMode(rudder);
+    arbiterTail_setMode(tail);
+    state.mode = mode;
+    return CMD_RESULT_OK;
+}
+
+static bool arbiter_modes_for(system_mode_t mode, ArbiterMode_e *rudder, ArbiterMode_e *tail) {
+    switch (mode) {
         case SYSTEM_MODE_AUTO:
+            *rudder = ARBITER_MODE_AUTO;
+            *tail = ARBITER_MODE_AUTO;
+            return true;
+
         case SYSTEM_MODE_FULL_MAN:
+            *rudder = ARBITER_MODE_MANUAL;
+            *tail = ARBITER_MODE_MANUAL;
+            return true;
+
         case SYSTEM_MODE_AUTO_SAIL_MAN_RUDDER:
+            *rudder = ARBITER_MODE_MANUAL;
+            *tail = ARBITER_MODE_AUTO;
+            return true;
+
         case SYSTEM_MODE_AUTO_RUDDER_MAN_SAIL:
+            *rudder = ARBITER_MODE_AUTO;
+            *tail = ARBITER_MODE_MANUAL;
+            return true;
+
+        // Both take the actuators out of play
         case SYSTEM_MODE_STANDBY:
         case SYSTEM_MODE_SAFE:
-        return CMD_RESULT_OK;
+            *rudder = ARBITER_MODE_SAFE;
+            *tail = ARBITER_MODE_SAFE;
+            return true;
     }
-    return CMD_RESULT_UNSUPPORTED;
+    return false; // mode came from a radio byte, so it can be out of range
 }
 
 cmd_result_t rudder_sail_cntrl(ipc_cmd_t *cmd) {

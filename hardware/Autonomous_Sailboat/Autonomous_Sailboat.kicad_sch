@@ -4585,10 +4585,6 @@
 		(uuid "bc78b4b2-9b3a-459e-82ac-005f7dd90dad")
 	)
 	(no_connect
-		(at 323.85 187.96)
-		(uuid "bded4e4f-0ed4-4a2e-8184-74e77b289cc6")
-	)
-	(no_connect
 		(at 237.49 200.66)
 		(uuid "bee7705c-cc6d-4bfb-8cbd-14c252c36204")
 	)
@@ -4621,10 +4617,6 @@
 		(uuid "cb40b14a-79db-4d63-b650-96a0bbaae21b")
 	)
 	(no_connect
-		(at 237.49 193.04)
-		(uuid "cd927e84-f2a8-49e4-898e-01cce666ec1f")
-	)
-	(no_connect
 		(at 237.49 205.74)
 		(uuid "d8b5e399-d04e-4791-818c-798f0569f47d")
 	)
@@ -4643,10 +4635,6 @@
 	(no_connect
 		(at 323.85 134.62)
 		(uuid "e0234324-d55a-4ca0-93ae-c109a8b6a487")
-	)
-	(no_connect
-		(at 237.49 213.36)
-		(uuid "e0fb423b-adb2-4312-a89d-ec738954f7c5")
 	)
 	(no_connect
 		(at 323.85 175.26)
@@ -4835,6 +4823,16 @@
 			(type default)
 		)
 		(uuid "2bbbb321-e33a-48f8-af1b-3ec25d3b3fb1")
+	)
+	(wire
+		(pts
+			(xy 323.85 187.96) (xy 342.9 187.96)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2ec17e88-2acc-443b-b9f4-e67d3ad9511d")
 	)
 	(wire
 		(pts
@@ -5418,6 +5416,16 @@
 	)
 	(wire
 		(pts
+			(xy 237.49 193.04) (xy 218.44 193.04)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d3cf320d-ee56-413c-8d60-1d14b9c2f525")
+	)
+	(wire
+		(pts
 			(xy 262.89 99.06) (xy 265.43 99.06)
 		)
 		(stroke
@@ -5518,6 +5526,16 @@
 	)
 	(wire
 		(pts
+			(xy 237.49 213.36) (xy 218.44 213.36)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f75dba26-67e2-4f79-aba4-91025fd4efce")
+	)
+	(wire
+		(pts
 			(xy 450.85 176.53) (xy 450.85 179.07)
 		)
 		(stroke
@@ -5566,7 +5584,7 @@
 		)
 		(uuid "1adc7173-38ed-4ddf-ac9f-11461dc8b1cb")
 	)
-	(label "live_LEDGreen"
+	(label "LEDGreen"
 		(at 342.9 152.4 0)
 		(effects
 			(font
@@ -5595,6 +5613,16 @@
 			(justify left bottom)
 		)
 		(uuid "274adcb7-7df4-4c34-9c83-ff25fab9ac5a")
+	)
+	(label "tailSailServo"
+		(at 218.44 213.36 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "3002b442-7348-4d5f-a814-b3b08f58798e")
 	)
 	(label "sensorGPS_UART7Rx"
 		(at 218.44 165.1 180)
@@ -5675,6 +5703,26 @@
 			(justify right bottom)
 		)
 		(uuid "8855b327-c4eb-4f3f-91ae-4de9114b29af")
+	)
+	(label "LEDRed"
+		(at 342.9 187.96 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "9a388add-c651-462d-836d-fbb18b884a94")
+	)
+	(label "LEDYellow"
+		(at 218.44 193.04 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "a3fb5626-0852-4ef8-b6a1-a6d4a141d454")
 	)
 	(label "sensorIMU_I2C2SCL"
 		(at 342.9 175.26 0)
