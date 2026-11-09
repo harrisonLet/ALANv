@@ -2,7 +2,7 @@
 #include "arbiterRudder.h"
 #include "arbiterTail.h"
 
-static typedef struct {
+typedef struct {
     system_mode_t mode;
     uint16_t rudder_delta;
     uint16_t sail_delta;
@@ -11,9 +11,9 @@ static typedef struct {
     volatile uint8_t prev_cmd_seq;
 } commander_state_t;
 
-TaskHandle_t commander_task == NULL;
+TaskHandle_t commander_task = NULL;
 
-commander_state_t state;
+static commander_state_t state;
 
 // Converts a system mode into the mode each arbiter runs in. No default case, so the compiler flags a new system mode missing here.
 static bool arbiter_modes_for(system_mode_t mode, ArbiterMode_e *rudder, ArbiterMode_e *tail);
@@ -182,13 +182,18 @@ cmd_result_t execute_servo(ipc_cmd_t *cmd) {
     if ((cmd->type >> 4) != 2U) {
         return CMD_RESULT_UNSUPPORTED;
     }
+
+    // Signed angle in degrees, little-endian in raw[0..1] like the route packing
+    int16_t deg;
+    memcpy(&deg, cmd->raw, sizeof deg);
+
     switch (cmd->type) {
         case COMMAND_SAIL:
-            // TODO: decode sail setpoint from cmd->raw, range check, drive sail servo
+            // TODO: range check deg, drive sail servo
             return CMD_RESULT_OK;
 
         case COMMAND_RUDDER:
-            // TODO: decode rudder setpoint from cmd->raw, range check, drive rudder servo
+            // TODO: range check deg, drive rudder servo
             return CMD_RESULT_OK;
 
         default:
