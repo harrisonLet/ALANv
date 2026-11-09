@@ -53,6 +53,11 @@
 // #define CM7_LIVE_DEBUG_STACK // CM7_LIVE_DEBUG must be enabled
 #endif
 
+#ifdef CM7_COMMANDER_ENABLE
+#define CM7_COMMANDER_DEBUG
+// #define COMMANDER_SELFTEST // Bench test: runs a scripted command list at boot. Needs CM7_COMMANDER_DEBUG to print. Leave CM7_CONSOLE_ENABLE off
+#endif
+
 #ifdef CM7_TELEMETRY_ENABLE
 // #define CM7_TELEMETRY_DEBUG
 #endif

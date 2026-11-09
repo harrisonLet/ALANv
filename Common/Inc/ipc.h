@@ -41,7 +41,7 @@
 #define IPC_SHARED_BASE         (0x38000000UL)
 #define IPC_SHARED_SIZE         (64UL * 1024UL)
 #define IPC_MAGIC               (0x414C414EUL) // ALAN in ASCII
-#define IPC_REV                 (3U)
+#define IPC_REV                 (4U)
 
 #define IPC_CMD_DATA_SIZE       (16U)   // Largest payload: waypoint (12 B). Route commit is 8 B
 #define IPC_CMD_RING_SLOTS      (64U)   // Must be a power of two

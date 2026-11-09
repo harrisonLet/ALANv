@@ -75,7 +75,8 @@ for(;;){
 
 void arbiterRudder_request(ArbiterRudderSource_e source, int16_t turn)
 {
-    if (source >= ARBITER_RUDDER_SOURCE_COUNT) { return; }
+    // The queue is NULL when this arbiter is disabled in shared_configuration.h
+    if (source >= ARBITER_RUDDER_SOURCE_COUNT || request_queue[source] == NULL) { return; }
     ArbiterRudderRequest_t request = { .source = source, .turn = turn, .timestamp =
 xTaskGetTickCount() };
     xQueueOverwrite(request_queue[source], &request);

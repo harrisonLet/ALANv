@@ -17,6 +17,7 @@
 #include "queue.h"
 #include "ipc.h"
 #include "loraTelemetry.h"
+#include "commander.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -233,11 +234,12 @@ static bool telemetry_pack(
     // TODO: The following values don't have fillers yet
     telemetry->rudder_servo_angle = 0;
     telemetry->sail_servo_angle = 0;
-    telemetry->mode = 0;
+    telemetry->mode = commander_getMode();
     telemetry->desired_heading = 0;
     telemetry->route_segment = 0;
     telemetry->drift_distance = 0;
-    telemetry->last_cmd_seq = 0;
+    telemetry->last_cmd_seq = commander_getLastSeq();
+    telemetry->last_cmd_result = commander_getLastResult();
     
     telemetry->uptime_ms = HAL_GetTick();
 

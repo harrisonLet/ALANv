@@ -75,7 +75,8 @@ void arbiterTail_handler(void *argument)
 
 void arbiterTail_request(ArbiterTailSource_e source, int16_t angle)
 {
-    if (source >= ARBITER_TAIL_SOURCE_COUNT) { return; }
+    // The queue is NULL when this arbiter is disabled in shared_configuration.h
+    if (source >= ARBITER_TAIL_SOURCE_COUNT || request_queue[source] == NULL) { return; }
     ArbiterTailRequest_t request = { .source = source, .angle = angle, .timestamp = xTaskGetTickCount() };
     xQueueOverwrite(request_queue[source], &request);
 }

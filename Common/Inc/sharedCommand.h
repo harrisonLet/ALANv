@@ -30,6 +30,7 @@ typedef enum {
     
 
 //  COMMAND_SAIL_RUDDER       = 0X20
+//  0x21/0x22: raw[0..1] = int16 degrees, + = starboard, rest 0
     COMMAND_SAIL              = 0X21,
     COMMAND_RUDDER            = 0X22,  
 
