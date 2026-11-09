@@ -16,9 +16,9 @@
 #endif
 
 #define COMMANDER_FREQ 100U // Hz, NEEDS TESTING
-_Static_assert(COMMANDER_FREQ > 0u && COMMANDER_FREQ <= 1000u, "SENSOR_IMU_FREQUENCY must be 1Hz-1KHz");
+_Static_assert(COMMANDER_FREQ > 0u && COMMANDER_FREQ <= 1000u, "COMMANDER_FREQ must be 1Hz-1KHz");
 #if (SYSTEM_TICK_RATE_HZ % COMMANDER_FREQ) != 0u
-#warning "SENSOR_IMU_FREQUENCY does not divide the tick rate, the period will be rounded down"
+#warning "COMMANDER_FREQ does not divide the tick rate, the period will be rounded down"
 #endif
 
 extern TaskHandle_t commander_task;

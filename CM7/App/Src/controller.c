@@ -24,6 +24,9 @@
 #include "ipcCM7.h"
 #include "navigationRoute.h"
 #include "console.h"
+#ifdef CM7_COMMANDER_ENABLE
+#include "commander.h"
+#endif
 
 #include "semphr.h"
 
@@ -210,6 +213,13 @@ void rtos_init()
     if (xTaskCreate(processLSP_handler, PROCESS_LSP_TASK, PROCESS_LSP_TASK_HEAP, NULL,
     PROCESS_LSP_TASK_PRIORITY, &processLSP_task) != pdPASS) { Error_Handler(); }
     totalStack += PROCESS_LSP_TASK_HEAP;
+    #endif
+
+    #if defined(CM7_COMMANDER_ENABLE) && defined(IPC_ENABLE)
+    if (commander_rtos_init() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(commander_handler, COMMANDER_TASK, CM7_COMMANDER_HEAP, NULL,
+    COMMANDER_TASK_PRIORITY, &commander_task) != pdPASS) { Error_Handler(); }
+    totalStack += CM7_COMMANDER_HEAP;
     #endif
 
     #ifdef CM7_CONSOLE_ENABLE

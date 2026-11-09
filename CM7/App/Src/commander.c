@@ -11,6 +11,8 @@ typedef struct {
     volatile uint8_t prev_cmd_seq;
 } commander_state_t;
 
+TaskHandle_t commander_task;
+
 commander_state_t state;
 
 // Converts a system mode into the mode each arbiter runs in. No default case, so the compiler flags a new system mode missing here.
