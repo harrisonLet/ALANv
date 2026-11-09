@@ -2,7 +2,7 @@
 #include "arbiterRudder.h"
 #include "arbiterTail.h"
 
-typedef struct {
+static typedef struct {
     system_mode_t mode;
     uint16_t rudder_delta;
     uint16_t sail_delta;
@@ -11,7 +11,7 @@ typedef struct {
     volatile uint8_t prev_cmd_seq;
 } commander_state_t;
 
-TaskHandle_t commander_task;
+TaskHandle_t commander_task == NULL;
 
 commander_state_t state;
 
@@ -87,7 +87,7 @@ cmd_result_t execute_cmd(ipc_cmd_t *cmd) {
 
 cmd_result_t switch_mode(system_mode_t mode) {
     if (mode == state.mode) {
-        return CMD_RESULT_NONE;
+        return CMD_RESULT_OK;
     }
 
     ArbiterMode_e rudder;
@@ -168,9 +168,10 @@ cmd_result_t rudder_sail_cntrl(ipc_cmd_t *cmd) {
             return execute_servo(cmd);
 
         case SYSTEM_MODE_STANDBY:
+            return CMD_RESULT_UNSUPPORTED;
         case SYSTEM_MODE_SAFE:
             // In safe/standby mode do not control servo
-            return CMD_RESULT_NONE;
+            return CMD_RESULT_UNSUPPORTED;
     }
     // System is in undefined state
     return CMD_RESULT_BAD_VALUE;
