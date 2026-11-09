@@ -26,7 +26,7 @@
 #endif
 
 // Manual modes fall back to SAFE after this long with no command, including COMMAND_NONE heartbeats
-#define COMMANDER_LINK_TIMEOUT_MS 3000U
+#define COMMANDER_LINK_TIMEOUT_MS 5000U
 
 #define COMMANDER_FREQ 100U // Hz, NEEDS TESTING
 _Static_assert(COMMANDER_FREQ > 0u && COMMANDER_FREQ <= 1000u, "COMMANDER_FREQ must be 1Hz-1KHz");
