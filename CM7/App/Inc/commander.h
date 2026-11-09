@@ -25,7 +25,7 @@
 #endif
 #endif
 
-// Manual modes fall back to SAFE after this long with no command, including COMMAND_NONE heartbeats
+// Modes with a manual or semi-auto part fall back to SAFE after this long with no command, including COMMAND_NONE heartbeats
 #define COMMANDER_LINK_TIMEOUT_MS 5000U
 
 #define COMMANDER_FREQ 100U // Hz, NEEDS TESTING

@@ -21,13 +21,18 @@ typedef enum {
 
 
 //  COMMAND_MODE              = 0x10, one command per system_mode_t
-    COMMAND_MODE_AUTO                 = 0x10,
-    COMMAND_MODE_FULL_MAN             = 0x11,
-    COMMAND_MODE_SAFE                 = 0x12, /**< Emergency stop. */
-    COMMAND_MODE_AUTO_SAIL_MAN_RUDDER = 0x13,
-    COMMAND_MODE_AUTO_RUDDER_MAN_SAIL = 0x14,
-    COMMAND_MODE_STANDBY              = 0x15,
-    
+    COMMAND_MODE_AUTO                  = 0x10,
+    COMMAND_MODE_FULL_MAN              = 0x11,
+    COMMAND_MODE_SAFE                  = 0x12, /**< Emergency stop. */
+    COMMAND_MODE_AUTO_SAIL_MAN_RUDDER  = 0x13,
+    COMMAND_MODE_AUTO_RUDDER_MAN_SAIL  = 0x14,
+    COMMAND_MODE_STANDBY               = 0x15,
+    COMMAND_MODE_FULL_SEMI             = 0x16,
+    COMMAND_MODE_SEMI_RUDDER_MAN_SAIL  = 0x17,
+    COMMAND_MODE_SEMI_RUDDER_AUTO_SAIL = 0x18,
+    COMMAND_MODE_SEMI_SAIL_MAN_RUDDER  = 0x19,
+    COMMAND_MODE_SEMI_SAIL_AUTO_RUDDER = 0x1A,
+
 
 //  COMMAND_SAIL_RUDDER       = 0X20
 //  0x21/0x22: raw[0..1] = int16 degrees, + = starboard, rest 0
@@ -49,19 +54,27 @@ typedef enum {
 } CommandId_e;
 
 /**
- * The boat's single operating mode. In the four control modes it says which of
- * the sail and rudder are autonomous and which follow manual setpoints
- * (COMMAND_SAIL / COMMAND_RUDDER); STANDBY and SAFE take both out of play. The
- * COMMAND_MODE_* command with the same suffix selects each mode. Sent to the
+ * The boat's single operating mode. In the control modes it says how each of
+ * the sail and rudder is driven:
+ *   auto   PID runs, the planner sets its target
+ *   semi   PID runs, the ground station sets its target (arbiter support to come)
+ *   manual no PID, the servo follows COMMAND_SAIL / COMMAND_RUDDER directly
+ * STANDBY and SAFE take both out of play. The COMMAND_MODE_* command with the
+ * same suffix selects each mode, so a mode must stay below 0x10. Sent to the
  * ground station in telemetry (mode).
  */
 typedef enum {
-    SYSTEM_MODE_AUTO                 = 0x00, /**< Sail and rudder both autonomous. */
-    SYSTEM_MODE_FULL_MAN             = 0x01, /**< Sail and rudder both manual. */
-    SYSTEM_MODE_SAFE                 = 0x02, /**< Emergency stop: autonomy and manual setpoints ignored. */
-    SYSTEM_MODE_AUTO_SAIL_MAN_RUDDER = 0x03, /**< Sail autonomous, rudder manual. */
-    SYSTEM_MODE_AUTO_RUDDER_MAN_SAIL = 0x04, /**< Rudder autonomous, sail manual. */
-    SYSTEM_MODE_STANDBY              = 0x05, /**< Idle: autonomy off, waiting for a mode command. */
+    SYSTEM_MODE_AUTO                  = 0x00, /**< Sail and rudder both autonomous. */
+    SYSTEM_MODE_FULL_MAN              = 0x01, /**< Sail and rudder both manual. */
+    SYSTEM_MODE_SAFE                  = 0x02, /**< Emergency stop: autonomy and manual setpoints ignored. */
+    SYSTEM_MODE_AUTO_SAIL_MAN_RUDDER  = 0x03, /**< Sail autonomous, rudder manual. */
+    SYSTEM_MODE_AUTO_RUDDER_MAN_SAIL  = 0x04, /**< Rudder autonomous, sail manual. */
+    SYSTEM_MODE_STANDBY               = 0x05, /**< Idle: autonomy off, waiting for a mode command. */
+    SYSTEM_MODE_FULL_SEMI             = 0x06, /**< Sail and rudder both semi-auto. */
+    SYSTEM_MODE_SEMI_RUDDER_MAN_SAIL  = 0x07, /**< Rudder semi-auto, sail manual. */
+    SYSTEM_MODE_SEMI_RUDDER_AUTO_SAIL = 0x08, /**< Rudder semi-auto, sail autonomous. */
+    SYSTEM_MODE_SEMI_SAIL_MAN_RUDDER  = 0x09, /**< Sail semi-auto, rudder manual. */
+    SYSTEM_MODE_SEMI_SAIL_AUTO_RUDDER = 0x0A, /**< Sail semi-auto, rudder autonomous. */
 } system_mode_t;
 
 /**
@@ -79,4 +92,5 @@ typedef enum {
     CMD_RESULT_INCOMPLETE  = 0x06, /**< Route commit before every waypoint arrived. */
     CMD_RESULT_BAD_CRC     = 0x07, /**< Route checksum does not match. */
     CMD_RESULT_DROPPED     = 0x08, /**< Command was missed on ring buffer. */
+    CMD_RESULT_WRONG_MODE  = 0x09, /**< Not allowed in the current mode (e.g. COMMAND_RUDDER while the rudder is not manual). */
 } cmd_result_t;

@@ -27,8 +27,9 @@ static bool arbiter_modes_for(system_mode_t mode, ArbiterMode_e *rudder, Arbiter
 // Puts both arbiters in the modes for this system mode. Returns false if the mode is not valid.
 static bool apply_arbiter_modes(system_mode_t mode);
 
-// True if the sail or the rudder is following manual setpoints. No default case, so the compiler flags a new system mode missing here.
-static bool mode_has_manual(system_mode_t mode);
+// True if the sail or the rudder follows the ground station (manual or semi-auto), so the mode needs the radio link.
+// No default case, so the compiler flags a new system mode missing here.
+static bool mode_needs_lora(system_mode_t mode);
 
 // Decodes and range checks a sail or rudder setpoint. Returns CMD_RESULT_OK if deg can be used.
 static cmd_result_t decode_servo_setpoint(const ipc_cmd_t *cmd, int16_t *deg);
@@ -91,8 +92,8 @@ void commander_handler(void *argument) {
             }
         }
 
-        // AUTO keeps sailing its route without the radio, so only manual modes time out
-        if (mode_has_manual(state.mode) &&
+        // AUTO keeps sailing its route without the radio, so only modes driven from the ground station time out
+        if (mode_needs_lora(state.mode) &&
             (xTaskGetTickCount() - state.last_cmd_tick) > pdMS_TO_TICKS(COMMANDER_LINK_TIMEOUT_MS)) {
             commander_printf("WARN: no command for %u ms in mode %u, switching to SAFE",
                 (unsigned)COMMANDER_LINK_TIMEOUT_MS, (unsigned)state.mode);
@@ -174,6 +175,31 @@ static bool arbiter_modes_for(system_mode_t mode, ArbiterMode_e *rudder, Arbiter
             *tail = ARBITER_MODE_MANUAL;
             return true;
 
+        case SYSTEM_MODE_FULL_SEMI:
+            *rudder = ARBITER_MODE_SEMI;
+            *tail = ARBITER_MODE_SEMI;
+            return true;
+
+        case SYSTEM_MODE_SEMI_RUDDER_MAN_SAIL:
+            *rudder = ARBITER_MODE_SEMI;
+            *tail = ARBITER_MODE_MANUAL;
+            return true;
+
+        case SYSTEM_MODE_SEMI_RUDDER_AUTO_SAIL:
+            *rudder = ARBITER_MODE_SEMI;
+            *tail = ARBITER_MODE_AUTO;
+            return true;
+
+        case SYSTEM_MODE_SEMI_SAIL_MAN_RUDDER:
+            *rudder = ARBITER_MODE_MANUAL;
+            *tail = ARBITER_MODE_SEMI;
+            return true;
+
+        case SYSTEM_MODE_SEMI_SAIL_AUTO_RUDDER:
+            *rudder = ARBITER_MODE_AUTO;
+            *tail = ARBITER_MODE_SEMI;
+            return true;
+
         // Both take the actuators out of play
         case SYSTEM_MODE_STANDBY:
         case SYSTEM_MODE_SAFE:
@@ -190,48 +216,34 @@ cmd_result_t rudder_sail_cntrl(ipc_cmd_t *cmd) {
         return CMD_RESULT_BAD_VALUE;
     }
 
-    // Reject a bad setpoint here so it cannot change the mode below
-    int16_t deg;
-    cmd_result_t setpoint = decode_servo_setpoint(cmd, &deg);
-    if (setpoint != CMD_RESULT_OK) {
-        return setpoint;
+    // Read the actuator's mode from the same table the arbiters were set from, so the two can never disagree
+    ArbiterMode_e rudder;
+    ArbiterMode_e tail;
+    if (!arbiter_modes_for(state.mode, &rudder, &tail)) {
+        // System is in undefined state
+        return CMD_RESULT_BAD_VALUE;
     }
 
-    // A manual cmd takes that actuator off autonomy.
-    switch (state.mode) {
-        case SYSTEM_MODE_AUTO:
-            if (cmd->type == COMMAND_SAIL) {
-                switch_mode(SYSTEM_MODE_AUTO_RUDDER_MAN_SAIL);
-            } else if (cmd->type == COMMAND_RUDDER) {
-                switch_mode(SYSTEM_MODE_AUTO_SAIL_MAN_RUDDER);
-            }
-            return execute_servo(cmd);
+    ArbiterMode_e actuator;
+    switch (cmd->type) {
+        case COMMAND_SAIL:
+            actuator = tail;
+            break;
 
-        case SYSTEM_MODE_AUTO_RUDDER_MAN_SAIL:
-            // Sail already manual, a manual rudder cmd makes both manual
-            if (cmd->type == COMMAND_RUDDER) {
-                switch_mode(SYSTEM_MODE_FULL_MAN);
-            }
-            return execute_servo(cmd);
+        case COMMAND_RUDDER:
+            actuator = rudder;
+            break;
 
-        case SYSTEM_MODE_AUTO_SAIL_MAN_RUDDER:
-            // Rudder already manual, a manual sail cmd makes both manual
-            if (cmd->type == COMMAND_SAIL) {
-                switch_mode(SYSTEM_MODE_FULL_MAN);
-            }
-            return execute_servo(cmd);
-
-        case SYSTEM_MODE_FULL_MAN:
-            return execute_servo(cmd);
-
-        case SYSTEM_MODE_STANDBY:
-            return CMD_RESULT_UNSUPPORTED;
-        case SYSTEM_MODE_SAFE:
-            // In safe/standby mode do not control servo
+        default:
             return CMD_RESULT_UNSUPPORTED;
     }
-    // System is in undefined state
-    return CMD_RESULT_BAD_VALUE;
+
+    // A servo cmd never changes the mode. The ground station has to put that actuator on manual first.
+    if (actuator != ARBITER_MODE_MANUAL) {
+        return CMD_RESULT_WRONG_MODE;
+    }
+
+    return execute_servo(cmd);
 }
 
 cmd_result_t execute_servo(ipc_cmd_t *cmd) {
@@ -260,11 +272,19 @@ cmd_result_t execute_servo(ipc_cmd_t *cmd) {
     }
 }
 
-static bool mode_has_manual(system_mode_t mode) {
+static bool mode_needs_lora(system_mode_t mode) {
     switch (mode) {
         case SYSTEM_MODE_FULL_MAN:
         case SYSTEM_MODE_AUTO_SAIL_MAN_RUDDER:
         case SYSTEM_MODE_AUTO_RUDDER_MAN_SAIL:
+            return true;
+
+        // A semi-auto actuator holds a target the operator picked, with no route behind it
+        case SYSTEM_MODE_FULL_SEMI:
+        case SYSTEM_MODE_SEMI_RUDDER_MAN_SAIL:
+        case SYSTEM_MODE_SEMI_RUDDER_AUTO_SAIL:
+        case SYSTEM_MODE_SEMI_SAIL_MAN_RUDDER:
+        case SYSTEM_MODE_SEMI_SAIL_AUTO_RUDDER:
             return true;
 
         case SYSTEM_MODE_AUTO:
@@ -383,11 +403,16 @@ static void commander_selftest(void) {
     commander_printf("SELFTEST start");
     switch_mode(SYSTEM_MODE_AUTO); // the script assumes AUTO, whatever the boot mode is
 
+    selftest_step("sail in AUTO", COMMAND_SAIL, 20, CMD_RESULT_WRONG_MODE, SYSTEM_MODE_AUTO);
+    selftest_step("mode AUTO_RUDDER_MAN_SAIL", COMMAND_MODE_AUTO_RUDDER_MAN_SAIL, 0, CMD_RESULT_OK, SYSTEM_MODE_AUTO_RUDDER_MAN_SAIL);
     selftest_step("sail +20", COMMAND_SAIL, 20, CMD_RESULT_OK, SYSTEM_MODE_AUTO_RUDDER_MAN_SAIL);
+    selftest_step("rudder with rudder on auto", COMMAND_RUDDER, 20, CMD_RESULT_WRONG_MODE, SYSTEM_MODE_AUTO_RUDDER_MAN_SAIL);
     selftest_step("sail 200 rejected", COMMAND_SAIL, 200, CMD_RESULT_BAD_VALUE, SYSTEM_MODE_AUTO_RUDDER_MAN_SAIL);
+    selftest_step("mode FULL_SEMI", COMMAND_MODE_FULL_SEMI, 0, CMD_RESULT_OK, SYSTEM_MODE_FULL_SEMI);
+    selftest_step("sail in FULL_SEMI", COMMAND_SAIL, 20, CMD_RESULT_WRONG_MODE, SYSTEM_MODE_FULL_SEMI);
     selftest_step("mode SAFE", COMMAND_MODE_SAFE, 0, CMD_RESULT_OK, SYSTEM_MODE_SAFE);
     selftest_step("mode SAFE again", COMMAND_MODE_SAFE, 0, CMD_RESULT_OK, SYSTEM_MODE_SAFE);
-    selftest_step("sail in SAFE", COMMAND_SAIL, 20, CMD_RESULT_UNSUPPORTED, SYSTEM_MODE_SAFE);
+    selftest_step("sail in SAFE", COMMAND_SAIL, 20, CMD_RESULT_WRONG_MODE, SYSTEM_MODE_SAFE);
     selftest_step("mode AUTO", COMMAND_MODE_AUTO, 0, CMD_RESULT_OK, SYSTEM_MODE_AUTO);
 
     uint16_t crc = crc16_ccitt((const uint8_t *)route, sizeof route);
