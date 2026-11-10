@@ -15,10 +15,6 @@
 #define fusionOrientation_printf(...) ((void)0)
 #endif
 
-#define SENSOR_BATTERY_FREQUENCY 1u // Hz
-#define SENSOR_BATTERY_WINDOW 2u // num readings
-#define SENSOR_BATTERY_STALE 5000u // ms before data is considered stale
-
 extern TaskHandle_t fusionOrientation_task;
 
 HardwareInit_e fusionOrientation_hardwareInit(void);
