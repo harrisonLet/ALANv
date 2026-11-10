@@ -1,6 +1,7 @@
 #include "processLSP.h"
 #include "pidSail.h"
 #include "telemetry.h"
+#include "arbiterTail.h"
 
 #include <stdlib.h>
 
@@ -24,8 +25,7 @@ RtosInit_e processLSP_rtosInit(void)
 }
 
 // the handler picks the main sail angle based on the wind direction and the sailing zone
-void processLSP_handler(void *argument)
-{
+void processLSP_handler(void *argument){
     processLSP_printf("processLSP_handler start");
     TickType_t lastWakeup = xTaskGetTickCount();
     bool have_target = false;
@@ -33,10 +33,14 @@ void processLSP_handler(void *argument)
     uint32_t loop_count = 0;
 
     // loop that runs at 2 Hz, reads the wind and picks a main sail angle
-    for (;;)
-    {
+    for (;;){
         if (!xTaskDelayUntil(&lastWakeup, configTICK_RATE_HZ / PROCESS_LSP_FREQUENCY))
         {
+            continue;
+        }
+        // Only plan the sail in AUTO; in SEMI the ground station sets the target
+        if (arbiterTail_getMode() != ARBITER_MODE_AUTO) {
+            have_target = false;
             continue;
         }
 

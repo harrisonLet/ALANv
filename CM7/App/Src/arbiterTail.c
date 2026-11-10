@@ -86,6 +86,11 @@ void arbiterTail_setMode(ArbiterMode_e mode)
     current_mode = mode;
 }
 
+ArbiterMode_e arbiterTail_getMode(void)
+{
+    return current_mode;
+}
+
 static int16_t clamped_angle(int16_t requested_angle, int16_t low, int16_t high)
 {
     if (requested_angle < low)

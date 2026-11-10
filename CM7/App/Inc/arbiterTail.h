@@ -36,5 +36,6 @@ void arbiterTail_handler(void *argument);
 
 void arbiterTail_request(ArbiterTailSource_e source, int16_t angle);
 void arbiterTail_setMode(ArbiterMode_e mode);
+ArbiterMode_e arbiterTail_getMode(void);
 
 #endif // ARBITER_TAIL_H
