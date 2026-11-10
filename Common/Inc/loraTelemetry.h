@@ -59,7 +59,7 @@ typedef struct __attribute__((packed)) {
     int16_t  sail_servo_angle;       /* -135..135 deg */
 
     /* Control */
-    uint8_t  mode;                   /* current mode from the control task */
+    uint8_t  mode;                   /* SYSTEM_STATE_* bits from the Commander (sharedCommand.h) */
     uint16_t desired_heading;        /* 0..359 deg, from LTP */
     uint8_t  route_segment;          /* index of the active nautical vector */
     int16_t  drift_distance;         /* cross-track distance from the segment, m, + = starboard of path */

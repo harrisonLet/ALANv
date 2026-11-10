@@ -96,8 +96,8 @@ void ipc_init(void) {
     
     // Write IPC Version to SRAM4
     ipc_shared.version = IPC_VERSION;  
-    // Set default sail-boat mode in SRAM4 to AUTO
-    ipc_shared.telem.mode = SYSTEM_MODE_AUTO;
+    // Report the Commander boot state until the first telemetry publish
+    ipc_shared.telem.mode = SYSTEM_STATE_AUTO;
 
     // Make sure everything is cleared/written before magic is set
     __DMB();

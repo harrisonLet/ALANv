@@ -28,5 +28,7 @@ void pidSail_handler(void *argument);
 
 void pidSail_setTarget(int16_t angle);
 int16_t pidSail_getTarget(void); // -180 to 179, or INT16_MIN before a target is set
+// Commander turns the PID on and off. While off it sends nothing, and it restarts when turned back on.
+void pidSail_setEnabled(bool enabled);
 
 #endif // PID_SAIL_H

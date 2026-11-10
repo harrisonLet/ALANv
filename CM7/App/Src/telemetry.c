@@ -234,7 +234,7 @@ static bool telemetry_pack(
     // TODO: The following values don't have fillers yet
     telemetry->rudder_servo_angle = 0;
     telemetry->sail_servo_angle = 0;
-    telemetry->mode = commander_getMode();
+    telemetry->mode = commander_getState();
     telemetry->desired_heading = 0;
     telemetry->route_segment = 0;
     telemetry->drift_distance = 0;

@@ -29,5 +29,7 @@ void pidHeading_handler(void *argument);
 
 void pidHeading_setTarget(uint16_t heading);
 int16_t pidHeading_getTarget(void); // 0 to 359, or -1 before a target is set or held
+// Commander turns the PID on and off. While off it sends nothing, and it restarts when turned back on.
+void pidHeading_setEnabled(bool enabled);
 
 #endif // PID_HEADING_H

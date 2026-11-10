@@ -12,6 +12,7 @@ TaskHandle_t pidHeading_task;
 static PIDController pid;
 static volatile int16_t target_heading;  // 0-359 degrees, or PID_HEADING_NO_TARGET until one is set
 static volatile bool pid_restart;        // set when the PID's history is no longer valid
+static volatile bool pid_enabled;        // set by the Commander
 
 HardwareInit_e pidHeading_hardwareInit(void)
 {
@@ -28,6 +29,7 @@ RtosInit_e pidHeading_rtosInit(void)
         -PID_HEADING_RUDDER_LIMIT, PID_HEADING_RUDDER_LIMIT);
     target_heading = PID_HEADING_NO_TARGET;
     pid_restart = true;
+    pid_enabled = true; // runs on its own when the Commander is not built in, which then sets it from its boot state
     pidHeading_printf("pidHeading_rtosInit complete");
     return RTOS_INIT_SUCCESS;
 }
@@ -80,6 +82,12 @@ void pidHeading_handler(void *argument)
             continue;
         }
 
+        // Turned off by the Commander, so send nothing (and do not lock a heading while off)
+        if (!pid_enabled) {
+            pid_restart = true;
+            continue;
+        }
+
         // With no target from LoRa, hold whatever heading the boat settles on after boot
         if (target_heading == PID_HEADING_NO_TARGET) {
             if ((now - first_heading_tick) < pdMS_TO_TICKS(PID_HEADING_HOLD_DELAY)) 
@@ -117,4 +125,12 @@ void pidHeading_setTarget(uint16_t heading)
 int16_t pidHeading_getTarget(void)
 {
     return target_heading;
+}
+
+void pidHeading_setEnabled(bool enabled)
+{
+    if (enabled && !pid_enabled) {
+        pid_restart = true; // history from before it was off is stale
+    }
+    pid_enabled = enabled;
 }

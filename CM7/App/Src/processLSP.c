@@ -1,13 +1,13 @@
 #include "processLSP.h"
 #include "pidSail.h"
 #include "telemetry.h"
-#include "arbiterTail.h"
 
 #include <stdlib.h>
 
 TaskHandle_t processLSP_task;
 
-static volatile bool resend_target; // set by processLSP_resendTarget, cleared when the target is sent
+static volatile bool lsp_enabled;   // set by the Commander
+static volatile bool resend_target; // set when LSP is turned on, cleared when the target is sent
 
 static int16_t aoa_zone(int16_t wind_abs);
 static int16_t sail_target(int16_t wind);
@@ -22,6 +22,7 @@ HardwareInit_e processLSP_hardwareInit(void)
 RtosInit_e processLSP_rtosInit(void)
 {
     processLSP_printf("processLSP_rtosInit start");
+    lsp_enabled = true; // runs on its own when the Commander is not built in, which then sets it from its boot state
     processLSP_printf("processLSP_rtosInit complete");
     return RTOS_INIT_SUCCESS;
 }
@@ -40,8 +41,8 @@ void processLSP_handler(void *argument){
         {
             continue;
         }
-        // Only plan the sail in AUTO; in SEMI the ground station sets the target
-        if (arbiterTail_getMode() != ARBITER_MODE_AUTO) {
+        // Turned off by the Commander, so the ground station owns the sail target
+        if (!lsp_enabled) {
             have_target = false;
             continue;
         }
@@ -82,9 +83,12 @@ static int16_t aoa_zone(int16_t off_bow)
     return PROCESS_LSP_AOA_RUNNING;
 }
 
-void processLSP_resendTarget(void)
+void processLSP_setEnabled(bool enabled)
 {
-    resend_target = true;
+    if (enabled && !lsp_enabled) {
+        resend_target = true; // pidSail may still hold the operator's target
+    }
+    lsp_enabled = enabled;
 }
 
 // Point the sail at the wind, then move it back toward the bow by the zone's AoA

@@ -10,9 +10,7 @@ _Static_assert(sizeof(ipc_cmd_waypoint_t) <= IPC_CMD_DATA_SIZE, "ipc_cmd_waypoin
 _Static_assert(sizeof(ipc_cmd_route_commit_t) <= IPC_CMD_DATA_SIZE, "ipc_cmd_route_commit_t must fit in ipc_cmd_t.raw");
 
 typedef struct {
-    volatile system_mode_t mode;
-    uint16_t rudder_delta;
-    uint16_t sail_delta;
+    volatile uint8_t state; // SYSTEM_STATE_* bits, written by this task only
     ipc_cmd_t current_cmd;
     volatile cmd_result_t prev_cmd_result;
     volatile uint8_t prev_cmd_seq;
@@ -24,20 +22,19 @@ TaskHandle_t commander_task = NULL;
 
 static commander_state_t state;
 
-// Converts a system mode into the mode each arbiter runs in. No default case, so the compiler flags a new system mode missing here.
-static bool arbiter_modes_for(system_mode_t mode, ArbiterMode_e *rudder, ArbiterMode_e *tail);
+// True if no planner bit is set without its PID bit, and KILLED is not mixed with anything
+static bool state_is_valid(uint8_t s);
 
-// Puts both arbiters in the modes for this system mode and pauses or resumes the planners to match.
-// Returns false if the mode is not valid.
-static bool apply_arbiter_modes(system_mode_t mode);
+// Turns the PIDs and planners on or off and sets both arbiters to match s, then records s as the state.
+// s must already be valid.
+static void apply_state(uint8_t s);
 
-// Suspends a semi-auto actuator's planner so it cannot overwrite the operator's PID target, and resumes it
-// when the actuator goes back to auto. Manual and safe leave it alone, since the arbiter ignores the PID there.
-static void apply_planners(ArbiterMode_e rudder, ArbiterMode_e tail);
+// Arbiter mode for one actuator: killed -> SAFE, PID off -> MANUAL, PID on -> SEMI, PID and planner on -> AUTO
+static ArbiterMode_e arbiter_mode_for(uint8_t s, uint8_t pid_bit, uint8_t planner_bit);
 
-// True if the sail or the rudder follows the ground station (manual or semi-auto), so the mode needs lora.
-// No default case, so the compiler flags a new system mode missing here.
-static bool mode_needs_lora(system_mode_t mode);
+// True if the sail or the rudder follows the ground station (not killed and not fully autonomous),
+// so losing the link should kill the boat
+static bool state_needs_lora(uint8_t s);
 
 // Decodes and range checks a sail or rudder servo angle or PID target. Returns CMD_RESULT_OK if deg can be used.
 static cmd_result_t decode_setpoint(const ipc_cmd_t *cmd, int16_t *deg);
@@ -52,7 +49,7 @@ HardwareInit_e commander_hardware_init(void) {
 
 RtosInit_e commander_rtos_init(void) {
     memset(&state, 0 , sizeof(commander_state_t));
-    state.mode = COMMANDER_BOOT_MODE;
+    state.state = COMMANDER_BOOT_STATE;
     state.prev_cmd_result = CMD_RESULT_NONE;
     // Start at 255 so the first command (seq 0) is not flagged as dropped
     state.prev_cmd_seq = 255U;
@@ -63,8 +60,8 @@ RtosInit_e commander_rtos_init(void) {
 void commander_handler(void *argument) {
     ipc_cm7_init();
 
-    // Agree with the arbiters from the first cycle, whatever order they initialized in
-    apply_arbiter_modes(COMMANDER_BOOT_MODE);
+    // Agree with the PIDs, planners and arbiters from the first cycle, whatever order they initialized in
+    apply_state(COMMANDER_BOOT_STATE);
 
     #ifdef COMMANDER_SELFTEST
     commander_selftest();
@@ -77,7 +74,6 @@ void commander_handler(void *argument) {
         if (!xTaskDelayUntil(&lastWake, configTICK_RATE_HZ / COMMANDER_FREQ)) {
             continue;
         }
-        lastWake = xTaskGetTickCount();
 
         // Drain every queued command, pop returns EMPTY once the ring is drained
         while (ipc_cm7_pop_command(&state.current_cmd) == IPC_STATUS_OK) {
@@ -100,12 +96,12 @@ void commander_handler(void *argument) {
             }
         }
 
-        // AUTO keeps sailing its route without the radio, so only modes driven from the ground station time out
-        if (mode_needs_lora(state.mode) &&
+        // Fully autonomous keeps sailing without the radio, so only a ground-station-driven actuator times out
+        if (state_needs_lora(state.state) &&
             (xTaskGetTickCount() - state.last_cmd_tick) > pdMS_TO_TICKS(COMMANDER_LINK_TIMEOUT_MS)) {
-            commander_printf("WARN: no command for %u ms in mode %u, switching to SAFE",
-                (unsigned)COMMANDER_LINK_TIMEOUT_MS, (unsigned)state.mode);
-            switch_mode(SYSTEM_MODE_SAFE);
+            commander_printf("WARN: no command for %u ms in state 0x%02X, killing",
+                (unsigned)COMMANDER_LINK_TIMEOUT_MS, (unsigned)state.state);
+            apply_state(SYSTEM_STATE_KILLED);
         }
     }
 }
@@ -113,14 +109,13 @@ void commander_handler(void *argument) {
 cmd_result_t execute_cmd(ipc_cmd_t *cmd) {
 
     switch (cmd->type >> 4) {
-        // CMD 0x0 is a no-op
+        // 0x00 is the heartbeat, the rest of 0x0X is not a command
         case (0U):
-            return CMD_RESULT_NONE;
+            return (cmd->type == COMMAND_NONE) ? CMD_RESULT_NONE : CMD_RESULT_UNSUPPORTED;
 
-        // 0x1 is a switch mode command
-        case (1U): 
-            // Isolate last 4 bits (actual mode num)
-            return switch_mode(cmd->type & 0x0F);
+        // 0x1 turns a PID or planner on or off, or kills the boat
+        case (1U):
+            return state_cmd(cmd);
 
         // 0x2 is a sail/rudder servo angle or PID target
         case (2U):
@@ -136,110 +131,82 @@ cmd_result_t execute_cmd(ipc_cmd_t *cmd) {
     }
 }
 
-cmd_result_t switch_mode(system_mode_t mode) {
-    if (mode == state.mode) {
-        return CMD_RESULT_OK;
+cmd_result_t state_cmd(ipc_cmd_t *cmd) {
+    uint8_t bit;
+    bool on;
+    switch (cmd->type) {
+        case COMMAND_RUDDER_PID_ON:  bit = SYSTEM_STATE_RUDDER_PID; on = true;  break;
+        case COMMAND_RUDDER_PID_OFF: bit = SYSTEM_STATE_RUDDER_PID; on = false; break;
+        case COMMAND_LTP_ON:         bit = SYSTEM_STATE_LTP;        on = true;  break;
+        case COMMAND_LTP_OFF:        bit = SYSTEM_STATE_LTP;        on = false; break;
+        case COMMAND_SAIL_PID_ON:    bit = SYSTEM_STATE_SAIL_PID;   on = true;  break;
+        case COMMAND_SAIL_PID_OFF:   bit = SYSTEM_STATE_SAIL_PID;   on = false; break;
+        case COMMAND_LSP_ON:         bit = SYSTEM_STATE_LSP;        on = true;  break;
+        case COMMAND_LSP_OFF:        bit = SYSTEM_STATE_LSP;        on = false; break;
+
+        case COMMAND_KILL:
+            if (state.state != SYSTEM_STATE_KILLED) {
+                apply_state(SYSTEM_STATE_KILLED);
+            }
+            return CMD_RESULT_OK;
+
+        default:
+            return CMD_RESULT_UNSUPPORTED;
     }
 
-    if (!apply_arbiter_modes(mode)) {
-        return CMD_RESULT_UNSUPPORTED;
+    // Any on/off command leaves the kill, starting from everything off
+    uint8_t current = (state.state & SYSTEM_STATE_KILLED) ? 0U : state.state;
+    uint8_t next = on ? (uint8_t)(current | bit) : (uint8_t)(current & ~bit);
+
+    // A planner without its PID is not allowed: ignore the command, nothing changes (kill included)
+    if (!state_is_valid(next)) {
+        return CMD_RESULT_WRONG_MODE;
     }
 
-    state.mode = mode;
+    // Repeats change nothing, so they do not restart the PIDs or resend the LSP target
+    if (next != state.state) {
+        apply_state(next);
+    }
     return CMD_RESULT_OK;
 }
 
-static bool apply_arbiter_modes(system_mode_t mode) {
-    ArbiterMode_e rudder;
-    ArbiterMode_e tail;
-    if (!arbiter_modes_for(mode, &rudder, &tail)) {
+static bool state_is_valid(uint8_t s) {
+    if (s & SYSTEM_STATE_KILLED) {
+        return s == SYSTEM_STATE_KILLED;
+    }
+    if ((s & SYSTEM_STATE_LTP) && !(s & SYSTEM_STATE_RUDDER_PID)) {
         return false;
     }
-
-    arbiterRudder_setMode(rudder);
-    arbiterTail_setMode(tail);
-    apply_planners(rudder, tail);
-    return true;
+    if ((s & SYSTEM_STATE_LSP) && !(s & SYSTEM_STATE_SAIL_PID)) {
+        return false;
+    }
+    return (s & (uint8_t)~(SYSTEM_STATE_AUTO | SYSTEM_STATE_KILLED)) == 0U; // no unknown bits
 }
 
-static void apply_planners(ArbiterMode_e rudder, ArbiterMode_e tail) {
-    // NULL when LSP is not built in, and vTaskSuspend(NULL) would suspend the Commander itself
-    if (processLSP_task != NULL) {
-        if (tail == ARBITER_MODE_SEMI) {
-            vTaskSuspend(processLSP_task);
-        } else if (tail == ARBITER_MODE_AUTO) {
-            processLSP_resendTarget(); // pidSail may still hold the operator's target
-            vTaskResume(processLSP_task); // no-op if it was never suspended
-        }
-    }
+static void apply_state(uint8_t s) {
+    // Arbiters first, so the servos stop listening to a PID before it is turned off
+    arbiterRudder_setMode(arbiter_mode_for(s, SYSTEM_STATE_RUDDER_PID, SYSTEM_STATE_LTP));
+    arbiterTail_setMode(arbiter_mode_for(s, SYSTEM_STATE_SAIL_PID, SYSTEM_STATE_LSP));
 
-    // TODO uncomment when the LTP task is implemented. Like LSP it has to send a fresh heading target
-    // after it resumes, or pidHeading keeps holding the operator's heading in AUTO.
-    // if (processLTP_task != NULL) {
-    //     if (rudder == ARBITER_MODE_SEMI) {
-    //         vTaskSuspend(processLTP_task);
-    //     } else if (rudder == ARBITER_MODE_AUTO) {
-    //         vTaskResume(processLTP_task);
-    //     }
-    // }
-    (void)rudder; // TODO remove with the LTP block above
+    pidHeading_setEnabled((s & SYSTEM_STATE_RUDDER_PID) != 0U);
+    pidSail_setEnabled((s & SYSTEM_STATE_SAIL_PID) != 0U);
+    processLSP_setEnabled((s & SYSTEM_STATE_LSP) != 0U);
+    // TODO when the LTP task is implemented: processLTP_setEnabled((s & SYSTEM_STATE_LTP) != 0U).
+    // Like LSP it has to resend its heading target when turned on, or pidHeading keeps the operator's heading.
+
+    // TODO kill switch: also cut servo power through the MOSFET once it has a pin
+
+    state.state = s;
 }
 
-static bool arbiter_modes_for(system_mode_t mode, ArbiterMode_e *rudder, ArbiterMode_e *tail) {
-    switch (mode) {
-        case SYSTEM_MODE_AUTO:
-            *rudder = ARBITER_MODE_AUTO;
-            *tail = ARBITER_MODE_AUTO;
-            return true;
-
-        case SYSTEM_MODE_FULL_MAN:
-            *rudder = ARBITER_MODE_MANUAL;
-            *tail = ARBITER_MODE_MANUAL;
-            return true;
-
-        case SYSTEM_MODE_AUTO_SAIL_MAN_RUDDER:
-            *rudder = ARBITER_MODE_MANUAL;
-            *tail = ARBITER_MODE_AUTO;
-            return true;
-
-        case SYSTEM_MODE_AUTO_RUDDER_MAN_SAIL:
-            *rudder = ARBITER_MODE_AUTO;
-            *tail = ARBITER_MODE_MANUAL;
-            return true;
-
-        case SYSTEM_MODE_FULL_SEMI:
-            *rudder = ARBITER_MODE_SEMI;
-            *tail = ARBITER_MODE_SEMI;
-            return true;
-
-        case SYSTEM_MODE_SEMI_RUDDER_MAN_SAIL:
-            *rudder = ARBITER_MODE_SEMI;
-            *tail = ARBITER_MODE_MANUAL;
-            return true;
-
-        case SYSTEM_MODE_SEMI_RUDDER_AUTO_SAIL:
-            *rudder = ARBITER_MODE_SEMI;
-            *tail = ARBITER_MODE_AUTO;
-            return true;
-
-        case SYSTEM_MODE_SEMI_SAIL_MAN_RUDDER:
-            *rudder = ARBITER_MODE_MANUAL;
-            *tail = ARBITER_MODE_SEMI;
-            return true;
-
-        case SYSTEM_MODE_SEMI_SAIL_AUTO_RUDDER:
-            *rudder = ARBITER_MODE_AUTO;
-            *tail = ARBITER_MODE_SEMI;
-            return true;
-
-        // Both take the actuators out of play
-        case SYSTEM_MODE_STANDBY:
-        case SYSTEM_MODE_SAFE:
-            *rudder = ARBITER_MODE_SAFE;
-            *tail = ARBITER_MODE_SAFE;
-            return true;
+static ArbiterMode_e arbiter_mode_for(uint8_t s, uint8_t pid_bit, uint8_t planner_bit) {
+    if (s & SYSTEM_STATE_KILLED) {
+        return ARBITER_MODE_SAFE;
     }
-    return false; // mode came from a radio byte, so it can be out of range
+    if (!(s & pid_bit)) {
+        return ARBITER_MODE_MANUAL;
+    }
+    return (s & planner_bit) ? ARBITER_MODE_AUTO : ARBITER_MODE_SEMI;
 }
 
 cmd_result_t rudder_sail_cntrl(ipc_cmd_t *cmd) {
@@ -248,16 +215,12 @@ cmd_result_t rudder_sail_cntrl(ipc_cmd_t *cmd) {
         return CMD_RESULT_BAD_VALUE;
     }
 
-    // Read the actuator's mode from the same table the arbiters were set from, so the two can never disagree
-    ArbiterMode_e rudder;
-    ArbiterMode_e tail;
-    if (!arbiter_modes_for(state.mode, &rudder, &tail)) {
-        // System is in undefined state
-        return CMD_RESULT_BAD_VALUE;
-    }
+    // Read the actuator's mode the same way the arbiters were set, so the two can never disagree
+    ArbiterMode_e rudder = arbiter_mode_for(state.state, SYSTEM_STATE_RUDDER_PID, SYSTEM_STATE_LTP);
+    ArbiterMode_e tail = arbiter_mode_for(state.state, SYSTEM_STATE_SAIL_PID, SYSTEM_STATE_LSP);
 
-    // A servo cmd needs its actuator on manual and a PID cmd needs it on semi-auto. Neither changes the
-    // mode, the ground station has to send the mode command first.
+    // A servo cmd needs its PID off (manual) and a PID cmd needs its PID on with the planner off (semi).
+    // Anything else is ignored. Neither changes the state, the ground station has to send the on/off commands first.
     switch (cmd->type) {
         case COMMAND_SAIL_SERVO:
             return (tail == ARBITER_MODE_MANUAL) ? execute_servo(cmd) : CMD_RESULT_WRONG_MODE;
@@ -329,31 +292,12 @@ cmd_result_t execute_pid(ipc_cmd_t *cmd) {
     }
 }
 
-static bool mode_needs_lora(system_mode_t mode) {
-    switch (mode) {
-        case SYSTEM_MODE_FULL_MAN:
-        case SYSTEM_MODE_AUTO_SAIL_MAN_RUDDER:
-        case SYSTEM_MODE_AUTO_RUDDER_MAN_SAIL:
-            return true;
-
-        // A semi-auto actuator holds a target the operator picked, with no route behind it
-        case SYSTEM_MODE_FULL_SEMI:
-        case SYSTEM_MODE_SEMI_RUDDER_MAN_SAIL:
-        case SYSTEM_MODE_SEMI_RUDDER_AUTO_SAIL:
-        case SYSTEM_MODE_SEMI_SAIL_MAN_RUDDER:
-        case SYSTEM_MODE_SEMI_SAIL_AUTO_RUDDER:
-            return true;
-
-        case SYSTEM_MODE_AUTO:
-        case SYSTEM_MODE_STANDBY:
-        case SYSTEM_MODE_SAFE:
-            return false;
-    }
-    return false;
+static bool state_needs_lora(uint8_t s) {
+    return !(s & SYSTEM_STATE_KILLED) && (s != SYSTEM_STATE_AUTO);
 }
 
-uint8_t commander_getMode(void) {
-    return (uint8_t)state.mode;
+uint8_t commander_getState(void) {
+    return state.state;
 }
 
 uint8_t commander_getLastSeq(void) {
@@ -449,18 +393,11 @@ static void selftest_send(const char *name, uint8_t type, const void *payload, s
     selftest_report(name, result == expected, (unsigned)result, (unsigned)expected);
 }
 
-// One servo or mode command, then checks the mode and waits so the tail can be watched
-static void selftest_step(const char *name, uint8_t type, int16_t deg, cmd_result_t expected, system_mode_t expected_mode) {
+// One command, then checks the state and waits so the tail can be watched
+static void selftest_step(const char *name, uint8_t type, int16_t deg, cmd_result_t expected, uint8_t expected_state) {
     selftest_send(name, type, &deg, sizeof deg, expected);
-    selftest_report("  mode", state.mode == expected_mode, (unsigned)state.mode, (unsigned)expected_mode);
+    selftest_report("  state", state.state == expected_state, (unsigned)state.state, (unsigned)expected_state);
     vTaskDelay(pdMS_TO_TICKS(SELFTEST_STEP_MS));
-}
-
-// Checks whether LSP is suspended. Skipped when LSP is not built in.
-static void selftest_lsp(bool expect_suspended) {
-    if (processLSP_task == NULL) { return; }
-    bool suspended = (eTaskGetState(processLSP_task) == eSuspended);
-    selftest_report("  LSP suspended", suspended == expect_suspended, (unsigned)suspended, (unsigned)expect_suspended);
 }
 
 static void selftest_route(const char *name, const ipc_cmd_waypoint_t *route, uint16_t crc, cmd_result_t expected) {
@@ -478,30 +415,38 @@ static void commander_selftest(void) {
         { .index = 2, .margin_m = 20, .lat_e7 = 407628000, .lon_e7 = -1118900000 },
     };
 
-    commander_printf("SELFTEST start");
-    switch_mode(SYSTEM_MODE_AUTO); // the script assumes AUTO, whatever the boot mode is
+    const uint8_t rudder_auto = SYSTEM_STATE_RUDDER_PID | SYSTEM_STATE_LTP;
 
-    selftest_step("sail servo in AUTO", COMMAND_SAIL_SERVO, 20, CMD_RESULT_WRONG_MODE, SYSTEM_MODE_AUTO);
-    selftest_step("mode AUTO_RUDDER_MAN_SAIL", COMMAND_MODE_AUTO_RUDDER_MAN_SAIL, 0, CMD_RESULT_OK, SYSTEM_MODE_AUTO_RUDDER_MAN_SAIL);
-    selftest_step("sail servo +20", COMMAND_SAIL_SERVO, 20, CMD_RESULT_OK, SYSTEM_MODE_AUTO_RUDDER_MAN_SAIL);
-    selftest_step("rudder servo with rudder on auto", COMMAND_RUDDER_SERVO, 20, CMD_RESULT_WRONG_MODE, SYSTEM_MODE_AUTO_RUDDER_MAN_SAIL);
-    selftest_step("sail servo 200 rejected", COMMAND_SAIL_SERVO, 200, CMD_RESULT_BAD_VALUE, SYSTEM_MODE_AUTO_RUDDER_MAN_SAIL);
-    selftest_step("sail PID with sail on manual", COMMAND_SAIL_PID, 30, CMD_RESULT_WRONG_MODE, SYSTEM_MODE_AUTO_RUDDER_MAN_SAIL);
-    selftest_step("mode FULL_SEMI", COMMAND_MODE_FULL_SEMI, 0, CMD_RESULT_OK, SYSTEM_MODE_FULL_SEMI);
-    selftest_lsp(true);
-    selftest_step("sail servo in FULL_SEMI", COMMAND_SAIL_SERVO, 20, CMD_RESULT_WRONG_MODE, SYSTEM_MODE_FULL_SEMI);
-    selftest_step("sail PID 30", COMMAND_SAIL_PID, 30, CMD_RESULT_OK, SYSTEM_MODE_FULL_SEMI);
+    commander_printf("SELFTEST start");
+    apply_state(SYSTEM_STATE_AUTO); // the script assumes everything on, whatever the boot state is
+
+    selftest_step("sail servo with everything on", COMMAND_SAIL_SERVO, 20, CMD_RESULT_WRONG_MODE, SYSTEM_STATE_AUTO);
+    selftest_step("sail PID off while LSP on", COMMAND_SAIL_PID_OFF, 0, CMD_RESULT_WRONG_MODE, SYSTEM_STATE_AUTO);
+    selftest_step("sail PID target while LSP on", COMMAND_SAIL_PID, 30, CMD_RESULT_WRONG_MODE, SYSTEM_STATE_AUTO);
+    selftest_step("LSP off", COMMAND_LSP_OFF, 0, CMD_RESULT_OK, rudder_auto | SYSTEM_STATE_SAIL_PID);
+    selftest_step("LSP off repeat", COMMAND_LSP_OFF, 0, CMD_RESULT_OK, rudder_auto | SYSTEM_STATE_SAIL_PID);
+    selftest_step("sail servo with sail PID on", COMMAND_SAIL_SERVO, 20, CMD_RESULT_WRONG_MODE, rudder_auto | SYSTEM_STATE_SAIL_PID);
+    selftest_step("sail PID 30", COMMAND_SAIL_PID, 30, CMD_RESULT_OK, rudder_auto | SYSTEM_STATE_SAIL_PID);
     selftest_report("  sail PID target", pidSail_getTarget() == 30, (unsigned)pidSail_getTarget(), 30U);
-    selftest_step("sail PID 30 repeat", COMMAND_SAIL_PID, 30, CMD_RESULT_OK, SYSTEM_MODE_FULL_SEMI);
-    selftest_step("sail PID 200 rejected", COMMAND_SAIL_PID, 200, CMD_RESULT_BAD_VALUE, SYSTEM_MODE_FULL_SEMI);
-    selftest_step("rudder PID 400 rejected", COMMAND_RUDDER_PID, 400, CMD_RESULT_BAD_VALUE, SYSTEM_MODE_FULL_SEMI);
-    selftest_step("mode SAFE", COMMAND_MODE_SAFE, 0, CMD_RESULT_OK, SYSTEM_MODE_SAFE);
-    selftest_lsp(true); // SAFE leaves the planners alone
-    selftest_step("mode SAFE again", COMMAND_MODE_SAFE, 0, CMD_RESULT_OK, SYSTEM_MODE_SAFE);
-    selftest_step("sail servo in SAFE", COMMAND_SAIL_SERVO, 20, CMD_RESULT_WRONG_MODE, SYSTEM_MODE_SAFE);
-    selftest_step("sail PID in SAFE", COMMAND_SAIL_PID, 30, CMD_RESULT_WRONG_MODE, SYSTEM_MODE_SAFE);
-    selftest_step("mode AUTO", COMMAND_MODE_AUTO, 0, CMD_RESULT_OK, SYSTEM_MODE_AUTO);
-    selftest_lsp(false);
+    selftest_step("sail PID 30 repeat", COMMAND_SAIL_PID, 30, CMD_RESULT_OK, rudder_auto | SYSTEM_STATE_SAIL_PID);
+    selftest_step("sail PID 200 rejected", COMMAND_SAIL_PID, 200, CMD_RESULT_BAD_VALUE, rudder_auto | SYSTEM_STATE_SAIL_PID);
+    selftest_step("rudder PID target while LTP on", COMMAND_RUDDER_PID, 90, CMD_RESULT_WRONG_MODE, rudder_auto | SYSTEM_STATE_SAIL_PID);
+    selftest_step("sail PID off", COMMAND_SAIL_PID_OFF, 0, CMD_RESULT_OK, rudder_auto);
+    selftest_step("sail servo +20", COMMAND_SAIL_SERVO, 20, CMD_RESULT_OK, rudder_auto);
+    selftest_step("sail servo 200 rejected", COMMAND_SAIL_SERVO, 200, CMD_RESULT_BAD_VALUE, rudder_auto);
+    selftest_step("LSP on with sail PID off", COMMAND_LSP_ON, 0, CMD_RESULT_WRONG_MODE, rudder_auto);
+    selftest_step("rudder PID off while LTP on", COMMAND_RUDDER_PID_OFF, 0, CMD_RESULT_WRONG_MODE, rudder_auto);
+    selftest_step("LTP off", COMMAND_LTP_OFF, 0, CMD_RESULT_OK, SYSTEM_STATE_RUDDER_PID);
+    selftest_step("rudder PID 400 rejected", COMMAND_RUDDER_PID, 400, CMD_RESULT_BAD_VALUE, SYSTEM_STATE_RUDDER_PID);
+    selftest_step("kill", COMMAND_KILL, 0, CMD_RESULT_OK, SYSTEM_STATE_KILLED);
+    selftest_step("kill repeat", COMMAND_KILL, 0, CMD_RESULT_OK, SYSTEM_STATE_KILLED);
+    selftest_step("sail servo while killed", COMMAND_SAIL_SERVO, 20, CMD_RESULT_WRONG_MODE, SYSTEM_STATE_KILLED);
+    selftest_step("LTP on while killed", COMMAND_LTP_ON, 0, CMD_RESULT_WRONG_MODE, SYSTEM_STATE_KILLED);
+    selftest_step("sail PID on leaves kill", COMMAND_SAIL_PID_ON, 0, CMD_RESULT_OK, SYSTEM_STATE_SAIL_PID);
+    selftest_step("LSP on", COMMAND_LSP_ON, 0, CMD_RESULT_OK, SYSTEM_STATE_SAIL_PID | SYSTEM_STATE_LSP);
+    selftest_step("rudder PID on", COMMAND_RUDDER_PID_ON, 0, CMD_RESULT_OK, SYSTEM_STATE_AUTO & (uint8_t)~SYSTEM_STATE_LTP);
+    selftest_step("LTP on", COMMAND_LTP_ON, 0, CMD_RESULT_OK, SYSTEM_STATE_AUTO);
+    selftest_step("unknown 0x0X type", 0x05, 0, CMD_RESULT_UNSUPPORTED, SYSTEM_STATE_AUTO);
 
     uint16_t crc = crc16_ccitt((const uint8_t *)route, sizeof route);
     selftest_route("route good CRC", route, crc, CMD_RESULT_OK);

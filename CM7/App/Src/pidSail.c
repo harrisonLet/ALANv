@@ -12,6 +12,7 @@ TaskHandle_t pidSail_task;
 static PIDController pid;
 static volatile int16_t target_angle;  // -180 to 179 degrees, or PID_SAIL_NO_TARGET until LSP sets one
 static volatile bool pid_restart;      // set when the PID's history is no longer valid
+static volatile bool pid_enabled;      // set by the Commander
 
 HardwareInit_e pidSail_hardwareInit(void)
 {
@@ -26,6 +27,7 @@ RtosInit_e pidSail_rtosInit(void)
     pid_init(&pid, PID_SAIL_KP, PID_SAIL_KI, PID_SAIL_KD, -PID_SAIL_TAIL_LIMIT, PID_SAIL_TAIL_LIMIT);
     target_angle = PID_SAIL_NO_TARGET;
     pid_restart = true;
+    pid_enabled = true; // runs on its own when the Commander is not built in, which then sets it from its boot state
     pidSail_printf("pidSail_rtosInit complete");
     return RTOS_INIT_SUCCESS;
 }
@@ -41,6 +43,12 @@ void pidSail_handler(void *argument)
     for (;;)
     {
         if (!xTaskDelayUntil(&lastWakeup, configTICK_RATE_HZ / PID_SAIL_FREQUENCY)) {
+            continue;
+        }
+
+        // Turned off by the Commander, so send nothing
+        if (!pid_enabled) {
+            pid_restart = true;
             continue;
         }
 
@@ -83,4 +91,12 @@ void pidSail_setTarget(int16_t angle)
 int16_t pidSail_getTarget(void)
 {
     return target_angle;
+}
+
+void pidSail_setEnabled(bool enabled)
+{
+    if (enabled && !pid_enabled) {
+        pid_restart = true; // history from before it was off is stale
+    }
+    pid_enabled = enabled;
 }
