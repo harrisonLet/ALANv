@@ -13,9 +13,9 @@
 #define pidHeading_printf(...) ((void)0)
 #endif
 
-#define PID_HEADING_FREQUENCY 20u // Hz
+#define PID_HEADING_FREQUENCY 10u // Hz
 #define PID_HEADING_KP 1.0f   // deg of rudder per deg of heading error
-#define PID_HEADING_KI 0.05f
+#define PID_HEADING_KI 0.0f
 #define PID_HEADING_KD 0.0f
 #define PID_HEADING_RUDDER_LIMIT 35.0f // degree limit for either side of the rudder
 #define PID_HEADING_HOLD_DELAY 5000u  // ms after the first heading before locking the target

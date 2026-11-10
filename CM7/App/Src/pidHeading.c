@@ -50,13 +50,14 @@ void pidHeading_handler(void *argument)
     for (;;)
     {
         if (!xTaskDelayUntil(&lastWakeup, configTICK_RATE_HZ / PID_HEADING_FREQUENCY)) {
-            continue;
+            pidHeading_printf("WARNING: this task did not delay");
         }
         TickType_t now = xTaskGetTickCount();
 
         // No heading yet so send nothing and let the arbiter center
         TelemetryBoatGlobalOrientation_t orientation;
         if (telemetry_getBoatGlobalOrientation(&orientation) != TELEMETRY_OK) {
+            pidHeading_printf("Global orientation unavailable.");
             pid_restart = true;
             continue;
         }
@@ -71,14 +72,15 @@ void pidHeading_handler(void *argument)
         }
 
         // the heading will wobble a little so if it hasn't changed for a while, it is dead 
-        if (heading != last_heading) {
-            last_heading = heading;
-            last_change_tick = now;
-        }
-        if ((now - last_change_tick) > pdMS_TO_TICKS(PID_HEADING_FROZEN)) {
-            pid_restart = true;
-            continue;
-        }
+        // if (heading != last_heading) {
+        //     last_heading = heading;
+        //     last_change_tick = now;
+        // }
+        // if ((now - last_change_tick) > pdMS_TO_TICKS(PID_HEADING_FROZEN)) {
+        //     pidHeading_printf("Heading frozen.");
+        //     pid_restart = true;
+        //     continue;
+        // }
 
         // With no target from LoRa, hold whatever heading the boat settles on after boot
         if (target_heading == PID_HEADING_NO_TARGET) {
