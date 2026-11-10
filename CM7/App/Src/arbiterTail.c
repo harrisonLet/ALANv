@@ -53,7 +53,7 @@ void arbiterTail_handler(void *argument)
         int16_t target = ARBITER_TAIL_SAFE;
         if (current_mode == ARBITER_MODE_MANUAL) {
             get_request(ARBITER_TAIL_SOURCE_MANUAL, 0, &target);
-        } else if (current_mode == ARBITER_MODE_AUTO) {
+        } else if (current_mode == ARBITER_MODE_AUTO || current_mode == ARBITER_MODE_SEMI) {
             get_request(ARBITER_TAIL_SOURCE_PID, pdMS_TO_TICKS(ARBITER_TAIL_STALE), &target);
         }
 

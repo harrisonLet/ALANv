@@ -53,7 +53,7 @@ for(;;){
         int16_t target = 0;
         if (current_mode == ARBITER_MODE_MANUAL) {
             get_request(ARBITER_RUDDER_SOURCE_MANUAL, 0, &target);
-        } else if (current_mode == ARBITER_MODE_AUTO) {
+        } else if (current_mode == ARBITER_MODE_AUTO || current_mode == ARBITER_MODE_SEMI) {
             get_request(ARBITER_RUDDER_SOURCE_PID, pdMS_TO_TICKS(ARBITER_RUDDER_STALE), &target);
         }
 
