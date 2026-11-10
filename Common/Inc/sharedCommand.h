@@ -35,9 +35,13 @@ typedef enum {
 
 
 //  COMMAND_SAIL_RUDDER       = 0X20
-//  0x21/0x22: raw[0..1] = int16 degrees, + = starboard, rest 0
-    COMMAND_SAIL              = 0X21,
-    COMMAND_RUDDER            = 0X22,  
+//  raw[0..1] = int16 degrees, little-endian, rest 0. Each one only works while its actuator is in the
+//  matching mode (SERVO: manual, PID: semi-auto), otherwise CMD_RESULT_WRONG_MODE. None of them change the mode.
+//  A new PID target restarts the PID. Resending the target it already holds is ignored, so repeats are safe.
+    COMMAND_SAIL_SERVO        = 0X21, /**< Tail servo angle, + = starboard. */
+    COMMAND_RUDDER_SERVO      = 0X22, /**< Rudder servo angle, + = starboard. */
+    COMMAND_SAIL_PID          = 0x23, /**< Main sail angle for the sail PID to hold, -180 to 180. */
+    COMMAND_RUDDER_PID        = 0x24, /**< Heading for the heading PID to hold, 0 to 359. */
 
 //  COMMAND_NVS               = 0x30,
     COMMAND_NVS_LOAD_START    = 0x31, /**< */
@@ -57,8 +61,8 @@ typedef enum {
  * The boat's single operating mode. In the control modes it says how each of
  * the sail and rudder is driven:
  *   auto   PID runs, the planner sets its target
- *   semi   PID runs, the ground station sets its target (arbiter support to come)
- *   manual no PID, the servo follows COMMAND_SAIL / COMMAND_RUDDER directly
+ *   semi   PID runs, COMMAND_SAIL_PID / COMMAND_RUDDER_PID set its target (arbiter support to come)
+ *   manual no PID, the servo follows COMMAND_SAIL_SERVO / COMMAND_RUDDER_SERVO directly
  * STANDBY and SAFE take both out of play. The COMMAND_MODE_* command with the
  * same suffix selects each mode, so a mode must stay below 0x10. Sent to the
  * ground station in telemetry (mode).
@@ -92,5 +96,5 @@ typedef enum {
     CMD_RESULT_INCOMPLETE  = 0x06, /**< Route commit before every waypoint arrived. */
     CMD_RESULT_BAD_CRC     = 0x07, /**< Route checksum does not match. */
     CMD_RESULT_DROPPED     = 0x08, /**< Command was missed on ring buffer. */
-    CMD_RESULT_WRONG_MODE  = 0x09, /**< Not allowed in the current mode (e.g. COMMAND_RUDDER while the rudder is not manual). */
+    CMD_RESULT_WRONG_MODE  = 0x09, /**< Not allowed in the current mode (e.g. COMMAND_RUDDER_SERVO while the rudder is not manual). */
 } cmd_result_t;

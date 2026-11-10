@@ -113,3 +113,8 @@ void pidHeading_setTarget(uint16_t heading)
     target_heading = (int16_t)(heading % 360);
     pid_restart = true;
 }
+
+int16_t pidHeading_getTarget(void)
+{
+    return target_heading;
+}

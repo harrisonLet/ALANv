@@ -45,6 +45,7 @@ cmd_result_t execute_cmd(ipc_cmd_t *cmd);
 cmd_result_t switch_mode(system_mode_t mode);
 cmd_result_t rudder_sail_cntrl(ipc_cmd_t *cmd);
 cmd_result_t execute_servo(ipc_cmd_t *cmd);
+cmd_result_t execute_pid(ipc_cmd_t *cmd);
 cmd_result_t navigation_cmd(ipc_cmd_t *cmd);
 
 // Single bytes, safe to read from another task

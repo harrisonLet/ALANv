@@ -28,5 +28,6 @@ RtosInit_e pidHeading_rtosInit(void);
 void pidHeading_handler(void *argument);
 
 void pidHeading_setTarget(uint16_t heading);
+int16_t pidHeading_getTarget(void); // 0 to 359, or -1 before a target is set or held
 
 #endif // PID_HEADING_H

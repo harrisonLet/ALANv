@@ -79,3 +79,8 @@ void pidSail_setTarget(int16_t angle)
     target_angle = ANG_WRAP_180(angle);
     pid_restart = true;
 }
+
+int16_t pidSail_getTarget(void)
+{
+    return target_angle;
+}
