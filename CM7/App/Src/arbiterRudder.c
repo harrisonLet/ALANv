@@ -49,9 +49,10 @@ for(;;){
         continue;
     }
 
-        // center unless the active source has a request
+        // center unless the active source has a request. Manual holds where it is until the first servo command
         int16_t target = 0;
         if (current_mode == ARBITER_MODE_MANUAL) {
+            target = current_turn;
             get_request(ARBITER_RUDDER_SOURCE_MANUAL, 0, &target);
         } else if (current_mode == ARBITER_MODE_AUTO || current_mode == ARBITER_MODE_SEMI) {
             get_request(ARBITER_RUDDER_SOURCE_PID, pdMS_TO_TICKS(ARBITER_RUDDER_STALE), &target);
@@ -84,6 +85,11 @@ xTaskGetTickCount() };
 
 void arbiterRudder_setMode(ArbiterMode_e mode)
 {
+    // Drop the last manual angle on the way into manual, so the rudder holds instead of jumping to an old command
+    if (mode == ARBITER_MODE_MANUAL && current_mode != ARBITER_MODE_MANUAL &&
+        request_queue[ARBITER_RUDDER_SOURCE_MANUAL] != NULL) {
+        xQueueReset(request_queue[ARBITER_RUDDER_SOURCE_MANUAL]);
+    }
     current_mode = mode;
 }
 

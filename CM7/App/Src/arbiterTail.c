@@ -49,9 +49,10 @@ void arbiterTail_handler(void *argument)
             continue;
         }
 
-        // go to the safe angle unless the active source has a request
+        // go to the safe angle unless the active source has a request. Manual holds where it is until the first servo command
         int16_t target = ARBITER_TAIL_SAFE;
         if (current_mode == ARBITER_MODE_MANUAL) {
+            target = current_angle;
             get_request(ARBITER_TAIL_SOURCE_MANUAL, 0, &target);
         } else if (current_mode == ARBITER_MODE_AUTO || current_mode == ARBITER_MODE_SEMI) {
             get_request(ARBITER_TAIL_SOURCE_PID, pdMS_TO_TICKS(ARBITER_TAIL_STALE), &target);
@@ -83,6 +84,11 @@ void arbiterTail_request(ArbiterTailSource_e source, int16_t angle)
 
 void arbiterTail_setMode(ArbiterMode_e mode)
 {
+    // Drop the last manual angle on the way into manual, so the tail holds instead of jumping to an old command
+    if (mode == ARBITER_MODE_MANUAL && current_mode != ARBITER_MODE_MANUAL &&
+        request_queue[ARBITER_TAIL_SOURCE_MANUAL] != NULL) {
+        xQueueReset(request_queue[ARBITER_TAIL_SOURCE_MANUAL]);
+    }
     current_mode = mode;
 }
 
