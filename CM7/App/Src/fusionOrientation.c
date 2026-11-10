@@ -25,7 +25,7 @@ typedef enum {
 
 // Change the below value to set the magnetic declination
 #define MAGNORTH_DECLINATION MAGNORTH_DECLINATION_SLC
-#define COMPASS_OFFSET 200
+#define COMPASS_OFFSET 187
 
 #define GPS_LAT2MM 111320000.0
 
