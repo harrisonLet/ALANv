@@ -3,7 +3,6 @@
 #include "arbiterTail.h"
 #include "pidHeading.h"
 #include "pidSail.h"
-#include "processLSP.h"
 #include "navigationRoute.h"
 
 _Static_assert(sizeof(ipc_cmd_waypoint_t) <= IPC_CMD_DATA_SIZE, "ipc_cmd_waypoint_t must fit in ipc_cmd_t.raw");
@@ -27,13 +26,10 @@ static commander_state_t state;
 // Converts a system mode into the mode each arbiter runs in. No default case, so the compiler flags a new system mode missing here.
 static bool arbiter_modes_for(system_mode_t mode, ArbiterMode_e *rudder, ArbiterMode_e *tail);
 
-// Puts both arbiters in the modes for this system mode and pauses or resumes the planners to match.
+// Puts both arbiters in the modes for this system mode. The planners pause themselves from the arbiter
+// mode: LSP skips any cycle where the tail is not in AUTO, and LTP will need the same check on the rudder.
 // Returns false if the mode is not valid.
 static bool apply_arbiter_modes(system_mode_t mode);
-
-// Suspends a semi-auto actuator's planner so it cannot overwrite the operator's PID target, and resumes it
-// when the actuator goes back to auto. Manual and safe leave it alone, since the arbiter ignores the PID there.
-static void apply_planners(ArbiterMode_e rudder, ArbiterMode_e tail);
 
 // True if the sail or the rudder follows the ground station (manual or semi-auto), so the mode needs lora.
 // No default case, so the compiler flags a new system mode missing here.
@@ -158,31 +154,7 @@ static bool apply_arbiter_modes(system_mode_t mode) {
 
     arbiterRudder_setMode(rudder);
     arbiterTail_setMode(tail);
-    apply_planners(rudder, tail);
     return true;
-}
-
-static void apply_planners(ArbiterMode_e rudder, ArbiterMode_e tail) {
-    // NULL when LSP is not built in, and vTaskSuspend(NULL) would suspend the Commander itself
-    if (processLSP_task != NULL) {
-        if (tail == ARBITER_MODE_SEMI) {
-            vTaskSuspend(processLSP_task);
-        } else if (tail == ARBITER_MODE_AUTO) {
-            processLSP_resendTarget(); // pidSail may still hold the operator's target
-            vTaskResume(processLSP_task); // no-op if it was never suspended
-        }
-    }
-
-    // TODO uncomment when the LTP task is implemented. Like LSP it has to send a fresh heading target
-    // after it resumes, or pidHeading keeps holding the operator's heading in AUTO.
-    // if (processLTP_task != NULL) {
-    //     if (rudder == ARBITER_MODE_SEMI) {
-    //         vTaskSuspend(processLTP_task);
-    //     } else if (rudder == ARBITER_MODE_AUTO) {
-    //         vTaskResume(processLTP_task);
-    //     }
-    // }
-    (void)rudder; // TODO remove with the LTP block above
 }
 
 static bool arbiter_modes_for(system_mode_t mode, ArbiterMode_e *rudder, ArbiterMode_e *tail) {
@@ -456,13 +428,6 @@ static void selftest_step(const char *name, uint8_t type, int16_t deg, cmd_resul
     vTaskDelay(pdMS_TO_TICKS(SELFTEST_STEP_MS));
 }
 
-// Checks whether LSP is suspended. Skipped when LSP is not built in.
-static void selftest_lsp(bool expect_suspended) {
-    if (processLSP_task == NULL) { return; }
-    bool suspended = (eTaskGetState(processLSP_task) == eSuspended);
-    selftest_report("  LSP suspended", suspended == expect_suspended, (unsigned)suspended, (unsigned)expect_suspended);
-}
-
 static void selftest_route(const char *name, const ipc_cmd_waypoint_t *route, uint16_t crc, cmd_result_t expected) {
     for (uint16_t i = 0; i < SELFTEST_ROUTE_LEN; i++) {
         selftest_send("  waypoint", COMMAND_NVS_LOAD, &route[i], sizeof route[i], CMD_RESULT_OK);
@@ -488,7 +453,6 @@ static void commander_selftest(void) {
     selftest_step("sail servo 200 rejected", COMMAND_SAIL_SERVO, 200, CMD_RESULT_BAD_VALUE, SYSTEM_MODE_AUTO_RUDDER_MAN_SAIL);
     selftest_step("sail PID with sail on manual", COMMAND_SAIL_PID, 30, CMD_RESULT_WRONG_MODE, SYSTEM_MODE_AUTO_RUDDER_MAN_SAIL);
     selftest_step("mode FULL_SEMI", COMMAND_MODE_FULL_SEMI, 0, CMD_RESULT_OK, SYSTEM_MODE_FULL_SEMI);
-    selftest_lsp(true);
     selftest_step("sail servo in FULL_SEMI", COMMAND_SAIL_SERVO, 20, CMD_RESULT_WRONG_MODE, SYSTEM_MODE_FULL_SEMI);
     selftest_step("sail PID 30", COMMAND_SAIL_PID, 30, CMD_RESULT_OK, SYSTEM_MODE_FULL_SEMI);
     selftest_report("  sail PID target", pidSail_getTarget() == 30, (unsigned)pidSail_getTarget(), 30U);
@@ -496,12 +460,10 @@ static void commander_selftest(void) {
     selftest_step("sail PID 200 rejected", COMMAND_SAIL_PID, 200, CMD_RESULT_BAD_VALUE, SYSTEM_MODE_FULL_SEMI);
     selftest_step("rudder PID 400 rejected", COMMAND_RUDDER_PID, 400, CMD_RESULT_BAD_VALUE, SYSTEM_MODE_FULL_SEMI);
     selftest_step("mode SAFE", COMMAND_MODE_SAFE, 0, CMD_RESULT_OK, SYSTEM_MODE_SAFE);
-    selftest_lsp(true); // SAFE leaves the planners alone
     selftest_step("mode SAFE again", COMMAND_MODE_SAFE, 0, CMD_RESULT_OK, SYSTEM_MODE_SAFE);
     selftest_step("sail servo in SAFE", COMMAND_SAIL_SERVO, 20, CMD_RESULT_WRONG_MODE, SYSTEM_MODE_SAFE);
     selftest_step("sail PID in SAFE", COMMAND_SAIL_PID, 30, CMD_RESULT_WRONG_MODE, SYSTEM_MODE_SAFE);
     selftest_step("mode AUTO", COMMAND_MODE_AUTO, 0, CMD_RESULT_OK, SYSTEM_MODE_AUTO);
-    selftest_lsp(false);
 
     uint16_t crc = crc16_ccitt((const uint8_t *)route, sizeof route);
     selftest_route("route good CRC", route, crc, CMD_RESULT_OK);

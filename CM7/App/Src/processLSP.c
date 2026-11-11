@@ -7,8 +7,6 @@
 
 TaskHandle_t processLSP_task;
 
-static volatile bool resend_target; // set by processLSP_resendTarget, cleared when the target is sent
-
 static int16_t aoa_zone(int16_t wind_abs);
 static int16_t sail_target(int16_t wind);
 
@@ -56,8 +54,7 @@ void processLSP_handler(void *argument){
         int16_t target = sail_target(wind.ang_wind);
 
         // Only send a new target when it moved more than the deadband, or when switching back to auto_mode
-        if (resend_target || !have_target || abs(ANG_WRAP_180(target - last_target)) > PROCESS_LSP_DEADBAND) {
-            resend_target = false;
+        if (!have_target || abs(ANG_WRAP_180(target - last_target)) > PROCESS_LSP_DEADBAND) {
             pidSail_setTarget(target);
             last_target = target;
             have_target = true;
@@ -80,11 +77,6 @@ static int16_t aoa_zone(int16_t off_bow)
     if (off_bow < SAILZONE_TRAININGRUN_MIN) { return PROCESS_LSP_AOA_BROADREACH; }
     if (off_bow < SAILZONE_RUNNING_____MIN) { return PROCESS_LSP_AOA_TRAININGRUN; }
     return PROCESS_LSP_AOA_RUNNING;
-}
-
-void processLSP_resendTarget(void)
-{
-    resend_target = true;
 }
 
 // Point the sail at the wind, then move it back toward the bow by the zone's AoA

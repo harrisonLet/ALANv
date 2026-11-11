@@ -258,9 +258,9 @@ int main(void)
               { 
                 printf("[RX] ring full, dropped\r\n"); 
               }
-              else {
+            }
+            else {
                 printf("[RX] ignored len=%u dest=0x%02X\r\n", len, cmd[0]);
-              }
             }
           }
           #endif

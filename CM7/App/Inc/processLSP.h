@@ -31,8 +31,4 @@ HardwareInit_e processLSP_hardwareInit(void);
 RtosInit_e processLSP_rtosInit(void);
 void processLSP_handler(void *argument);
 
-// The next cycle sends its target even inside the deadband. Commander calls this when it resumes LSP,
-// since pidSail still holds the target the ground station set while LSP was suspended.
-void processLSP_resendTarget(void);
-
 #endif // PROCESS_LSP_H
