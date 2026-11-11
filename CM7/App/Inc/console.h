@@ -4,9 +4,16 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-// Serial command console on the ST-LINK virtual COM port (USART3, 115200 baud).
-// Type commands in a terminal (screen) to drive the servos by hand; see console.c for the list.
-// Enabled with CM7_CONSOLE_ENABLE.
+#define CONSOLE_TASK "[CONSOLE-]"
+#define CONSOLE_TASK_PRIORITY osPriorityLow
+
+#ifdef CM7_CONSOLE_DEBUG
+#define CONSOLE_TASK_HEAP 300
+#define console_printf(fmt, ...) DEBUG_PRINTF(CONSOLE_TASK, fmt, ##__VA_ARGS__)
+#else
+#define CONSOLE_TASK_HEAP 300
+#define console_printf(...) ((void)0)
+#endif
 
 extern TaskHandle_t task_console;
 

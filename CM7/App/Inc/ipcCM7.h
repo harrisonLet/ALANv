@@ -20,6 +20,12 @@
 
 #define IPC_TASK "[IPC]"
 
+#ifdef IPC_DEBUG
+#define ipc_printf(fmt, ...) DEBUG_PRINTF(IPC_TASK, fmt, ##__VA_ARGS__)
+#else
+#define ipc_printf(...) ((void)0)
+#endif
+
 /**
   * @brief  Arm the HSEM 2 doorbell interrupt and record the calling task as the one to wake.
   * @retval None

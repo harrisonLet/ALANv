@@ -55,8 +55,8 @@ ipc_status_t ipc_cm7_pop_command(ipc_cmd_t *cmd) {
 
     // EMPTY is the normal end of a drain loop, only CORRUPT is an error
     if (status == IPC_STATUS_CORRUPT) {
-        printf("%s ERROR: %s command record (len %u > max %u), command ring flushed\r\n",
-        IPC_TASK, ipc_status_str(status), (unsigned)cmd->hdr.len, (unsigned)IPC_CMD_MAX_PAYLOAD);
+        ipc_printf("ERROR: %s command record (len %u > max %u), command ring flushed",
+        ipc_status_str(status), (unsigned)cmd->hdr.len, (unsigned)IPC_CMD_MAX_PAYLOAD);
     }
     return status;
 }
@@ -66,14 +66,14 @@ ipc_status_t ipc_cm7_publish_telemetry(LoRaTelemetry_t *telem) {
 
     if (status == IPC_STATUS_OK) {
         if (telem_busy_count >= TELEM_BUSY_WARN_COUNT) {
-            printf("%s Telemetry publish recovered after %lu skipped rounds\r\n",
-                   IPC_TASK, (unsigned long)telem_busy_count);
+            ipc_printf("Telemetry publish recovered after %lu skipped rounds",
+                   (unsigned long)telem_busy_count);
         }
         telem_busy_count = 0;
     }
     else if (++telem_busy_count == TELEM_BUSY_WARN_COUNT) {
-        printf("%s ERROR: Telemetry publish %s %lu times in a row, CM4 may be stuck holding HSEM %u\r\n",
-               IPC_TASK, ipc_status_str(status), (unsigned long)telem_busy_count, (unsigned)IPC_HSEM_TELEM);
+        ipc_printf("ERROR: Telemetry publish %s %lu times in a row, CM4 may be stuck holding HSEM %u",
+               ipc_status_str(status), (unsigned long)telem_busy_count, (unsigned)IPC_HSEM_TELEM);
     }
     return status;
 }

@@ -5,11 +5,12 @@
 
 #define PROCESS_LSP_TASK "[LSP-----]"
 #define PROCESS_LSP_TASK_PRIORITY osPriorityLow
-#define PROCESS_LSP_TASK_HEAP 300
 
 #ifdef CM7_PROCESS_LSP_DEBUG
+#define PROCESS_LSP_TASK_HEAP 300
 #define processLSP_printf(fmt, ...) DEBUG_PRINTF(PROCESS_LSP_TASK, fmt, ##__VA_ARGS__)
 #else
+#define PROCESS_LSP_TASK_HEAP 300
 #define processLSP_printf(...) ((void)0)
 #endif
 
