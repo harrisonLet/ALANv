@@ -50,6 +50,7 @@
 #define CM7_CONSOLE_ENABLE
 
 
+
 #ifdef CM7_ENABLE
 #define CM7_DEBUG
 #endif
