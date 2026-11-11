@@ -8,10 +8,10 @@
 #define ARBITER_TAIL_TASK_PRIORITY osPriorityAboveNormal
 
 #ifdef CM7_ARBITER_TAIL_DEBUG
-#define ARBITER_TAIL_TASK_HEAP 300
+#define ARBITER_TAIL_TASK_HEAP (RTOS_MIN_STACK+256)
 #define arbiterTail_printf(fmt, ...) DEBUG_PRINTF(ARBITER_TAIL_TASK, fmt, ##__VA_ARGS__)
 #else
-#define ARBITER_TAIL_TASK_HEAP 300
+#define ARBITER_TAIL_TASK_HEAP (RTOS_MIN_STACK+256)
 #define arbiterTail_printf(...) ((void)0)
 #endif
 

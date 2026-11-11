@@ -7,10 +7,10 @@
 #define PID_SAIL_TASK_PRIORITY osPriorityNormal
 
 #ifdef CM7_PID_SAIL_DEBUG
-#define PID_SAIL_TASK_HEAP 300
+#define PID_SAIL_TASK_HEAP (RTOS_MIN_STACK+128)
 #define pidSail_printf(fmt, ...) DEBUG_PRINTF(PID_SAIL_TASK, fmt, ##__VA_ARGS__)
 #else
-#define PID_SAIL_TASK_HEAP 300
+#define PID_SAIL_TASK_HEAP (RTOS_MIN_STACK+128)
 #define pidSail_printf(...) ((void)0)
 #endif
 

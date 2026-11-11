@@ -8,10 +8,10 @@
 #define ARBITER_RUDDER_TASK_PRIORITY osPriorityAboveNormal
 
 #ifdef CM7_ARBITER_RUDDER_DEBUG
-#define ARBITER_RUDDER_TASK_HEAP 300
+#define ARBITER_RUDDER_TASK_HEAP (RTOS_MIN_STACK+256)
 #define arbiterRudder_printf(fmt, ...) DEBUG_PRINTF(ARBITER_RUDDER_TASK, fmt, ##__VA_ARGS__)
 #else
-#define ARBITER_RUDDER_TASK_HEAP 300
+#define ARBITER_RUDDER_TASK_HEAP (RTOS_MIN_STACK+256)
 #define arbiterRudder_printf(...) ((void)0)
 #endif
 

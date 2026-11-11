@@ -7,10 +7,10 @@
 #define PID_HEADING_TASK_PRIORITY osPriorityNormal
 
 #ifdef CM7_PID_HEADING_DEBUG
-#define PID_HEADING_TASK_HEAP 300
+#define PID_HEADING_TASK_HEAP (RTOS_MIN_STACK+128)
 #define pidHeading_printf(fmt, ...) DEBUG_PRINTF(PID_HEADING_TASK, fmt, ##__VA_ARGS__)
 #else
-#define PID_HEADING_TASK_HEAP 300
+#define PID_HEADING_TASK_HEAP (RTOS_MIN_STACK+128)
 #define pidHeading_printf(...) ((void)0)
 #endif
 

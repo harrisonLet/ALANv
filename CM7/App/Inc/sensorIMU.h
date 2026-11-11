@@ -8,10 +8,10 @@
 #define SENSOR_IMU_TASK_PRIORITY osPriorityNormal
 
 #ifdef CM7_SENSOR_IMU_DEBUG
-#define SENSOR_IMU_TASK_HEAP 280 // ~64B of extra
+#define SENSOR_IMU_TASK_HEAP (RTOS_MIN_STACK+128)
 #define sensorIMU_printf(fmt, ...) DEBUG_PRINTF(SENSOR_IMU_TASK, fmt, ##__VA_ARGS__)
 #else
-#define SENSOR_IMU_TASK_HEAP 170 // ~64B of extra
+#define SENSOR_IMU_TASK_HEAP (RTOS_MIN_STACK+64)
 #define sensorIMU_printf(...) ((void)0)
 #endif
 

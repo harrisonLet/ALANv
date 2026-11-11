@@ -9,10 +9,10 @@
 #define SENSOR_BATTERY_TASK_PRIORITY osPriorityLow
 
 #ifdef CM7_SENSOR_BATTERY_DEBUG
-#define SENSOR_BATTERY_TASK_HEAP 230 // ~64B of extra
+#define SENSOR_BATTERY_TASK_HEAP (RTOS_MIN_STACK+128)
 #define sensorBattery_printf(fmt, ...) DEBUG_PRINTF(SENSOR_BATTERY_TASK, fmt, ##__VA_ARGS__)
 #else
-#define SENSOR_BATTERY_TASK_HEAP 130 // ~64B of extra
+#define SENSOR_BATTERY_TASK_HEAP (RTOS_MIN_STACK+64)
 #define sensorBattery_printf(...) ((void)0)
 #endif
 

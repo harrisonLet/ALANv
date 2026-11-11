@@ -55,8 +55,8 @@
 #endif
 
 #ifdef CM7_LIVE_ENABLE
-// #define CM7_LIVE_DEBUG
-// #define CM7_LIVE_DEBUG_STACK // CM7_LIVE_DEBUG must be enabled
+#define CM7_LIVE_DEBUG
+#define CM7_LIVE_DEBUG_STACK // CM7_LIVE_DEBUG must be enabled
 #endif
 
 #ifdef CM7_TELEMETRY_ENABLE

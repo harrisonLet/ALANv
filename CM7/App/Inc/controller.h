@@ -9,13 +9,13 @@
 #define cm7_printf(...) ((void)0)
 #endif
 
+#define LIVE_TASK_PRIORITY osPriorityLow
+
 #ifdef CM7_LIVE_DEBUG
-#define LIVE_TASK_PRIORITY osPriorityHigh
-#define LIVE_TASK_HEAP 500
+#define LIVE_TASK_HEAP (RTOS_MIN_STACK+512)
 #define live_printf(fmt, ...) DEBUG_PRINTF(LIVE_TASK, fmt, ##__VA_ARGS__)
 #else
-#define LIVE_TASK_PRIORITY osPriorityLow
-#define LIVE_TASK_HEAP 32
+#define LIVE_TASK_HEAP (RTOS_MIN_STACK+0)
 #define live_printf(...) ((void)0)
 #endif
 

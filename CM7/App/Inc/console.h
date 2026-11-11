@@ -8,10 +8,10 @@
 #define CONSOLE_TASK_PRIORITY osPriorityLow
 
 #ifdef CM7_CONSOLE_DEBUG
-#define CONSOLE_TASK_HEAP 300
+#define CONSOLE_TASK_HEAP (RTOS_MIN_STACK+128)
 #define console_printf(fmt, ...) DEBUG_PRINTF(CONSOLE_TASK, fmt, ##__VA_ARGS__)
 #else
-#define CONSOLE_TASK_HEAP 300
+#define CONSOLE_TASK_HEAP (RTOS_MIN_STACK+128)
 #define console_printf(...) ((void)0)
 #endif
 
