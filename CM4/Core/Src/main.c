@@ -249,7 +249,12 @@ int main(void)
             {
               ipc_cmd_t c = { .type = cmd[4], .seq = cmd[2]};
               memcpy(c.raw, &cmd[5], IPC_CMD_DATA_SIZE);
-              if (ipc_cm4_push_command(&c) != IPC_STATUS_OK) 
+              // Without a successful attach the CM7 may not be using SRAM4, or may lay it out differently
+              if (!ipc_attached)
+              {
+                printf("[RX] IPC not attached, dropped\r\n");
+              }
+              else if (ipc_cm4_push_command(&c) != IPC_STATUS_OK) 
               { 
                 printf("[RX] ring full, dropped\r\n"); 
               }
