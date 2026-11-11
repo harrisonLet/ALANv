@@ -61,7 +61,7 @@ typedef enum {
  * The boat's single operating mode. In the control modes it says how each of
  * the sail and rudder is driven:
  *   auto   PID runs, the planner sets its target
- *   semi   PID runs, COMMAND_SAIL_PID / COMMAND_RUDDER_PID set its target (arbiter support to come)
+ *   semi   PID runs, COMMAND_SAIL_PID / COMMAND_RUDDER_PID set its target
  *   manual no PID, the servo follows COMMAND_SAIL_SERVO / COMMAND_RUDDER_SERVO directly
  * STANDBY and SAFE take both out of play. The COMMAND_MODE_* command with the
  * same suffix selects each mode, so a mode must stay below 0x10. Sent to the

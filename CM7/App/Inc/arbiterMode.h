@@ -14,8 +14,6 @@ typedef enum {
     /**
      * Follow PID requests, with the PID target set from the ground station
      * (COMMAND_SAIL_PID / COMMAND_RUDDER_PID) instead of the planner.
-     * The arbiters do not handle this yet: until they
-     * do, it falls through their MANUAL/AUTO checks and holds the safe position.
      */
     ARBITER_MODE_SEMI,
 } ArbiterMode_e;
