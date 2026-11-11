@@ -245,7 +245,15 @@ int main(void)
           uint8_t cmd[64];
           uint8_t len = LoRa_GetCmd(cmd);
           if (len > 0) {
-              printf("[RX] cmd len=%d byte0=0x%02X\r\n", len, cmd[0]);
+            if (len == 21 && cmd[0] == ADDR_STM32 && cmd[3] == 17) 
+            {
+              ipc_cmd_t c = { .type = cmd[4], .seq = cmd[2]};
+              memcpy(c.raw, &cmd[5], IPC_CMD_DATA_SIZE);
+              if (ipc_cm4_push_command(&c) != IPC_STATUS_OK) 
+              { 
+                printf("[RX] ring full, dropped\r\n"); 
+              }
+            }
           }
           #endif
       }
