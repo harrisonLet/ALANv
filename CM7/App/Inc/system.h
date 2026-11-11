@@ -34,7 +34,7 @@ _Static_assert(SYSTEM_TICK_RATE_HZ == configTICK_RATE_HZ, "SYSTEM_TICK_RATE_HZ m
 #define ANG_WRAP_180(angle) ((int16_t)(((((angle) + 180) % 360 + 360) % 360) - 180))
 #define ANG_WRAP_360(angle) ((uint16_t)((((angle) % 360) + 360) % 360))
 
-#define RTOS_MIN_STACK 128
+#define RTOS_MIN_STACK 256
 
 typedef enum {
     HARDWARE_INIT_SUCCESS,

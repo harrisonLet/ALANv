@@ -127,5 +127,5 @@
 
 
 #ifdef CM7_CONSOLE_ENABLE
-// #define CM7_CONSOLE_DEBUG
+#define CM7_CONSOLE_DEBUG
 #endif
