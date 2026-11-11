@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 
+#define ADDR_SAMD21  0xAA            // ground station radio
+#define ADDR_STM32   0xBB            // this boat
+#define LORA_HDR_LEN_BYTES (5U)      // dest, src, seq, len, flags/type
 
 
 int     LoRa_init(void);

@@ -24,6 +24,7 @@
 #include "lora.h"
 #include "loraTelemetry.h"
 #include "telemetryReceive.h"
+#include "fakeCommands.h"
 #include <stdint.h>
 #include <string.h>
 
@@ -45,9 +46,6 @@
 #define HSEM_ID_0 (0U) /* HW semaphore 0*/
 #endif
 #endif
-#define ADDR_SAMD21  0xAA
-#define ADDR_STM32   0xBB
-#define LORA_HDR_LEN_BYTES (5U) // dest, src, seq, len, flags
 
 /* USER CODE END PD */
 
@@ -64,10 +62,16 @@ SPI_HandleTypeDef hspi1;
 TIM_HandleTypeDef htim6;
 volatile uint8_t  tx_flag  = 0;  /* set by TIM6 ISR every 1 s */
 volatile uint8_t  dio0_flag = 0; /* set by EXTI ISR when DIO0 (PG9) fires */
+#if defined(CM4_FAKE_COMMANDS)
+volatile uint8_t  fake_rx_flag = 0; /* set by TIM6 ISR every CM4_FAKE_CMD_PERIOD_S */
+#endif
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN PFP */
+#if defined(CM4_LORA_COMMANDS_ENABLE) || defined(CM4_FAKE_COMMANDS)
+static void handle_rx_packet(const uint8_t *cmd, uint8_t len, bool ipc_attached);
+#endif
 static void MX_SPI1_Init(void);
 static void MX_TIM6_Init(void);
 static void MX_StatusLED_Init(void);
@@ -244,27 +248,20 @@ int main(void)
           #if defined(CM4_LORA_COMMANDS_ENABLE)
           uint8_t cmd[64];
           uint8_t len = LoRa_GetCmd(cmd);
-          if (len > 0) {
-            if (len == 21 && cmd[0] == ADDR_STM32 && cmd[3] == 17) 
-            {
-              ipc_cmd_t c = { .type = cmd[4], .seq = cmd[2]};
-              memcpy(c.raw, &cmd[5], IPC_CMD_DATA_SIZE);
-              // Without a successful attach the CM7 may not be using SRAM4, or may lay it out differently
-              if (!ipc_attached)
-              {
-                printf("[RX] IPC not attached, dropped\r\n");
-              }
-              else if (ipc_cm4_push_command(&c) != IPC_STATUS_OK) 
-              { 
-                printf("[RX] ring full, dropped\r\n"); 
-              }
-            }
-            else {
-                printf("[RX] ignored len=%u dest=0x%02X\r\n", len, cmd[0]);
-            }
-          }
+          handle_rx_packet(cmd, len, ipc_attached);
           #endif
       }
+
+      #if defined(CM4_FAKE_COMMANDS)
+      // Test: a scripted packet takes the same parse path as a received one.
+      // Kept off dio0_flag so it can never be mistaken for TxDone mid-transmit.
+      if (fake_rx_flag) {
+          fake_rx_flag = 0;
+          uint8_t cmd[64];
+          uint8_t len = fakeCmd_next(cmd);
+          handle_rx_packet(cmd, len, ipc_attached);
+      }
+      #endif
   }
 #endif
 
@@ -272,6 +269,36 @@ int main(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+#if defined(CM4_LORA_COMMANDS_ENABLE) || defined(CM4_FAKE_COMMANDS)
+/*
+   Check one ground station packet and queue its command for the CM7.
+   Wire format: dest, src, seq, len (17), type, 16 raw payload bytes = 21 bytes.
+   len == 0 means nothing arrived.
+*/
+static void handle_rx_packet(const uint8_t *cmd, uint8_t len, bool ipc_attached)
+{
+    if (len == 0) { return; }
+
+    if (len == LORA_HDR_LEN_BYTES + IPC_CMD_DATA_SIZE && cmd[0] == ADDR_STM32 && cmd[3] == 1U + IPC_CMD_DATA_SIZE)
+    {
+        ipc_cmd_t c = { .type = cmd[4], .seq = cmd[2] };
+        memcpy(c.raw, &cmd[LORA_HDR_LEN_BYTES], IPC_CMD_DATA_SIZE);
+        // Without a successful attach the CM7 may not be using SRAM4, or may lay it out differently
+        if (!ipc_attached)
+        {
+            printf("[RX] IPC not attached, dropped\r\n");
+        }
+        else if (ipc_cm4_push_command(&c) != IPC_STATUS_OK)
+        {
+            printf("[RX] ring full, dropped\r\n");
+        }
+    }
+    else {
+        printf("[RX] ignored len=%u dest=0x%02X\r\n", len, cmd[0]);
+    }
+}
+#endif
 
 static void MX_SPI1_Init(void)
 {

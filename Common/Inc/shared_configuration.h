@@ -11,8 +11,13 @@
 // CM4 Configuration
 /////////////////////////////////////////////////////////////////////////////////////////
 #define CM4_ENABLE
-#define CM4_LORA_COMMANDS_ENABLE // Ground -> boat commands. Off: radio only transmits telemetry, never listens
+// #define CM4_LORA_COMMANDS_ENABLE // Ground -> boat commands. Off: radio only transmits telemetry, never listens
 // #define CM4_LORA_DUMMY_TELEMETRY // Test: send a fixed telemetry packet every tick instead of reading SRAM4
+#define CM4_FAKE_COMMANDS // Test: feed a scripted command list (fakeCommands.c) into the command parse path. Radio only sends telemetry. Turn CM4_LORA_COMMANDS_ENABLE off
+
+#if defined(CM4_FAKE_COMMANDS) && defined(CM4_LORA_COMMANDS_ENABLE)
+#error "Pick one command source: CM4_FAKE_COMMANDS or CM4_LORA_COMMANDS_ENABLE"
+#endif
 
 
 

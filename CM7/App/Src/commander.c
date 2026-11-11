@@ -87,6 +87,9 @@ void commander_handler(void *argument) {
             }
 
             cmd_result_t result = execute_cmd(&state.current_cmd);
+            commander_printf("seq %u type 0x%02X -> result %u, mode %u",
+                (unsigned)state.current_cmd.seq, (unsigned)state.current_cmd.type,
+                (unsigned)result, (unsigned)state.mode);
             state.prev_cmd_seq = state.current_cmd.seq;
 
             // A heartbeat has no result, and must not replace the one the ground station is waiting for
