@@ -32,9 +32,11 @@ static bool arbiter_modes_for(system_mode_t mode, ArbiterMode_e *rudder, Arbiter
 // Returns false if the mode is not valid.
 static bool apply_arbiter_modes(system_mode_t mode);
 
+#ifdef COMMANDER_LINK_TIMEOUT_ENABLE
 // True if the sail or the rudder follows the ground station (manual or semi-auto), so the mode needs lora.
 // No default case, so the compiler flags a new system mode missing here.
 static bool mode_needs_lora(system_mode_t mode);
+#endif
 
 // Decodes and range checks a sail or rudder servo angle or PID target. Returns CMD_RESULT_OK if deg can be used.
 static cmd_result_t decode_setpoint(const ipc_cmd_t *cmd, int16_t *deg);
@@ -62,6 +64,10 @@ void commander_handler(void *argument) {
 
     // Agree with the arbiters from the first cycle, whatever order they initialized in
     apply_arbiter_modes(COMMANDER_BOOT_MODE);
+
+    #ifndef COMMANDER_LINK_TIMEOUT_ENABLE
+    commander_printf("WARN: link timeout disabled, manual/semi modes will not drop to SAFE if the link is lost");
+    #endif
 
     #ifdef COMMANDER_SELFTEST
     commander_selftest();
@@ -100,6 +106,7 @@ void commander_handler(void *argument) {
             }
         }
 
+        #ifdef COMMANDER_LINK_TIMEOUT_ENABLE
         // AUTO keeps sailing its route without the radio, so only modes driven from the ground station time out
         if (mode_needs_lora(state.mode) &&
             (xTaskGetTickCount() - state.last_cmd_tick) > pdMS_TO_TICKS(COMMANDER_LINK_TIMEOUT_MS)) {
@@ -107,6 +114,7 @@ void commander_handler(void *argument) {
                 (unsigned)COMMANDER_LINK_TIMEOUT_MS, (unsigned)state.mode);
             switch_mode(SYSTEM_MODE_SAFE);
         }
+        #endif
     }
 }
 
@@ -311,6 +319,7 @@ cmd_result_t execute_pid(ipc_cmd_t *cmd) {
     }
 }
 
+#ifdef COMMANDER_LINK_TIMEOUT_ENABLE
 static bool mode_needs_lora(system_mode_t mode) {
     switch (mode) {
         case SYSTEM_MODE_FULL_MAN:
@@ -333,6 +342,7 @@ static bool mode_needs_lora(system_mode_t mode) {
     }
     return false;
 }
+#endif
 
 uint8_t commander_getMode(void) {
     return (uint8_t)state.mode;

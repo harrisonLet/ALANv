@@ -25,7 +25,8 @@
 #endif
 #endif
 
-// Modes with a manual or semi-auto part fall back to SAFE after this long with no command, including COMMAND_NONE heartbeats
+// Modes with a manual or semi-auto part fall back to SAFE after this long with no command, including COMMAND_NONE heartbeats.
+// Only used with COMMANDER_LINK_TIMEOUT_ENABLE (shared_configuration.h)
 #define COMMANDER_LINK_TIMEOUT_MS 5000U
 
 #define COMMANDER_FREQ 100U // Hz, NEEDS TESTING
