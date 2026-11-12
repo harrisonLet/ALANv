@@ -54,6 +54,11 @@ _Static_assert(sizeof(LoRaTelemetry_t) == 73, "LoRaTelemetry_t must be 73 bytes"
    so anything written meanwhile is glued to the next packet and the CM4 rejects the result.
    Keep every packet at least this far apart. */
 #define MIN_GAP_S      0.15
+/* The boat's radio is deaf while it sends telemetry (~246 ms for 78 B at SF8), and a command sent
+   then is lost along with that telemetry packet. Measured: anything written 87..347 ms before the
+   packet reaches us is lost. So hold a command that falls in that window until the packet is due. */
+#define TELEM_PERIOD_S 0.997  /* boat TIM6 period as seen on this clock */
+#define TELEM_DEAD_S   0.40   /* hold window before the predicted arrival, with margin */
 #define JOG_PERIOD_S   0.25   /* jog sends the latest angle at most this often, so a held arrow cannot flood the link */
 #define JOG_STEP_DEF   5
 #define JOG_STEP_MAX   30
@@ -249,6 +254,13 @@ static int send_packet(uint8_t type, int16_t value, uint8_t plen)
        which the CM4 rejects for its length */
     double gap = now_s() - s_last_send;
     if (s_last_send > 0 && gap < MIN_GAP_S) usleep((useconds_t)((MIN_GAP_S - gap) * 1e6));
+
+    /* Predict the next telemetry arrival from the last one; only while the link is live */
+    double since = now_s() - s_last_rx;
+    if (s_have_telem && since < NO_SIGNAL_MS / 1000.0) {
+        double until = TELEM_PERIOD_S - fmod(since, TELEM_PERIOD_S);
+        if (until < TELEM_DEAD_S) usleep((useconds_t)(until * 1e6));
+    }
 
     uint8_t pkt[CMD_PKT_MAX] = {0};
     pkt[0] = ADDR_BOAT;
