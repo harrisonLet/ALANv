@@ -171,6 +171,17 @@ standard names. */
 /* Section where parameter definitions can be added (for instance, to override default ones in FreeRTOS.h) */
 #define configCHECK_FOR_STACK_OVERFLOW           2
 #define configUSE_MALLOC_FAILED_HOOK             1
+
+/* Per-task CPU time, timed by the core cycle counter (32-bit, wraps every ~10 s at 400 MHz, so only use deltas) */
+#include "stm32h7xx.h"
+#define configGENERATE_RUN_TIME_STATS            1
+#define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS() do { \
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;   \
+    DWT->LAR = 0xC5ACCE55;                            \
+    DWT->CYCCNT = 0;                                  \
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;              \
+} while (0)
+#define portGET_RUN_TIME_COUNTER_VALUE()         (DWT->CYCCNT)
 /* USER CODE END Defines */
 
 #endif /* FREERTOS_CONFIG_H */

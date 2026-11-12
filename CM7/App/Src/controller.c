@@ -27,6 +27,7 @@
 #include "semphr.h"
 
 #define MAX_TASKS 100
+#define CPU_MAX_TASKS 24 // app tasks + IDLE + timer service
 
 TaskHandle_t task_live;
 
@@ -256,13 +257,58 @@ RtosInit_e live_rtosInit()
 void live_handler(void *argument)
 {
     live_printf("live_handler start");
+    #ifdef CM7_LIVE_DEBUG_CPU
+    static TaskStatus_t status[CPU_MAX_TASKS];
+    static TaskHandle_t prevHandle[CPU_MAX_TASKS];
+    static uint32_t prevRun[CPU_MAX_TASKS];
+    static uint32_t prevTotal;
+    UBaseType_t prevCount = 0;
+    #endif
     for(;;)
     {
+        #ifdef CM7_LIVE_DEBUG_CPU
+        {
+            uint32_t total;
+            UBaseType_t n = uxTaskGetSystemState(status, CPU_MAX_TASKS, &total);
+            uint32_t dTotal = total - prevTotal; // unsigned, so counter wrap is handled
+            if (n > 0 && dTotal > 0 && prevCount > 0) {
+                for (UBaseType_t i = 0; i < n; i++) {
+                    uint32_t dRun = status[i].ulRunTimeCounter;
+                    for (UBaseType_t j = 0; j < prevCount; j++) {
+                        if (prevHandle[j] == status[i].xHandle) { dRun -= prevRun[j]; break; }
+                    }
+                    // hundredths of a percent, 64-bit so the multiply can't overflow
+                    unsigned pm = (unsigned)(((uint64_t)dRun * 10000u) / dTotal);
+                    if (strcmp(status[i].pcTaskName, "IDLE") == 0) {
+                        liveCpu_printf("idle %u.%02u%% (busy %u.%02u%%)", pm / 100, pm % 100,
+                                       (10000u - pm) / 100, (10000u - pm) % 100);
+                    } else {
+                        liveCpu_printf("%s: %u.%02u%%", status[i].pcTaskName, pm / 100, pm % 100);
+                    }
+                }
+            }
+            prevCount = (n < CPU_MAX_TASKS) ? n : CPU_MAX_TASKS;
+            for (UBaseType_t i = 0; i < prevCount; i++) {
+                prevHandle[i] = status[i].xHandle;
+                prevRun[i] = status[i].ulRunTimeCounter;
+            }
+            prevTotal = total;
+        }
+        #endif
+
         #ifdef CM7_LIVE_DEBUG_STACK
         for (int i = 0; i < task_count; i++) {
             stackHWM[i] = (uint16_t)uxTaskGetStackHighWaterMark(all_tasks[i]);
-            liveStack_printf("%s: %u / %u words", pcTaskGetName(all_tasks[i]),
-                        (unsigned)(all_stack[i] - stackHWM[i]), (unsigned)all_stack[i]);
+            // Current depth: stack end minus the saved stack pointer. pxTopOfStack is the first member of the TCB,
+            // and is only updated at a context switch, so for other tasks it is their depth when last switched out.
+            TaskStatus_t info;
+            vTaskGetInfo(all_tasks[i], &info, pdFALSE, eRunning);
+            StackType_t *end = info.pxStackBase + all_stack[i];
+            StackType_t *top = (all_tasks[i] == xTaskGetCurrentTaskHandle())
+                             ? (StackType_t *)__get_PSP()
+                             : *(StackType_t **)all_tasks[i];
+            liveStack_printf("%s: now %u, peak %u / %u words", pcTaskGetName(all_tasks[i]),
+                        (unsigned)(end - top), (unsigned)(all_stack[i] - stackHWM[i]), (unsigned)all_stack[i]);
         }
         liveStack_printf("total Free: %u B", (unsigned)xPortGetMinimumEverFreeHeapSize());
         #endif
