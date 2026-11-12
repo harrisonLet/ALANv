@@ -107,7 +107,6 @@ void telemetry_handler(void *argument)
         else { telemetry_printf("IPC write failed for a weird reason. %02X", ipc_status); }
 
         #ifdef CM7_TELEMETRY_DEBUG
-        telemetry_printf("\x1b[2J\x1b[H");
         #ifdef CM7_SENSOR_BATTERY_ENABLE
         {
             char telemetryStr[TELEMETRY_BATTERY_STR_SIZE];

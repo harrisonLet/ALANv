@@ -16,8 +16,8 @@
 #define sensorBattery_printf(...) ((void)0)
 #endif
 
-#define SENSOR_BATTERY_FREQUENCY 1u // Hz
-#define SENSOR_BATTERY_WINDOW 2u // num readings
+#define SENSOR_BATTERY_FREQUENCY 2u // Hz
+#define SENSOR_BATTERY_WINDOW 10u // num readings
 #define SENSOR_BATTERY_STALE 5000u // ms before data is considered stale
 _Static_assert(SENSOR_BATTERY_FREQUENCY > 0u && SENSOR_BATTERY_FREQUENCY <= 500u, "SENSOR_BATTERY_FREQUENCY must be 1-500Hz");
 #if (SYSTEM_TICK_RATE_HZ % SENSOR_BATTERY_FREQUENCY) != 0u

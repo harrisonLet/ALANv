@@ -259,13 +259,12 @@ void live_handler(void *argument)
     for(;;)
     {
         #ifdef CM7_LIVE_DEBUG_STACK
-        live_printf("\x1b[2J\x1b[H");
         for (int i = 0; i < task_count; i++) {
             stackHWM[i] = (uint16_t)uxTaskGetStackHighWaterMark(all_tasks[i]);
-            live_printf("%s stack used (peak): %u / %u words", pcTaskGetName(all_tasks[i]),
+            liveStack_printf("%s: %u / %u words", pcTaskGetName(all_tasks[i]),
                         (unsigned)(all_stack[i] - stackHWM[i]), (unsigned)all_stack[i]);
         }
-        live_printf("min free heap: %u B", (unsigned)xPortGetMinimumEverFreeHeapSize());
+        liveStack_printf("total Free: %u B", (unsigned)xPortGetMinimumEverFreeHeapSize());
         #endif
 
         HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0);
