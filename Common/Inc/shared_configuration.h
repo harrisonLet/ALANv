@@ -11,9 +11,9 @@
 // CM4 Configuration
 /////////////////////////////////////////////////////////////////////////////////////////
 #define CM4_ENABLE
-// #define CM4_LORA_COMMANDS_ENABLE // Ground -> boat commands. Off: radio only transmits telemetry, never listens
+#define CM4_LORA_COMMANDS_ENABLE // Ground -> boat commands. Off: radio only transmits telemetry, never listens
 // #define CM4_LORA_DUMMY_TELEMETRY // Test: send a fixed telemetry packet every tick instead of reading SRAM4
-#define CM4_FAKE_COMMANDS // Test: feed a scripted command list (fakeCommands.c) into the command parse path. Radio only sends telemetry. Turn CM4_LORA_COMMANDS_ENABLE off
+// #define CM4_FAKE_COMMANDS // Test: feed a scripted command list (fakeCommands.c) into the command parse path. Radio only sends telemetry. Turn CM4_LORA_COMMANDS_ENABLE off
 
 #if defined(CM4_FAKE_COMMANDS) && defined(CM4_LORA_COMMANDS_ENABLE)
 #error "Pick one command source: CM4_FAKE_COMMANDS or CM4_LORA_COMMANDS_ENABLE"
@@ -60,7 +60,7 @@
 
 #ifdef CM7_COMMANDER_ENABLE
 #define CM7_COMMANDER_DEBUG
-#define COMMANDER_LINK_TIMEOUT_ENABLE // Manual/semi modes drop to SAFE after COMMANDER_LINK_TIMEOUT_MS with no command (heartbeats count). Off: the boat keeps its last command forever if the link is lost. Bench use only
+// #define COMMANDER_LINK_TIMEOUT_ENABLE // Manual/semi modes drop to SAFE after COMMANDER_LINK_TIMEOUT_MS with no command (heartbeats count). Off: the boat keeps its last command forever if the link is lost. Bench use only
 // #define COMMANDER_SELFTEST // Bench test: runs a scripted command list at boot. Needs CM7_COMMANDER_DEBUG to print. Leave CM7_CONSOLE_ENABLE off
 #endif
 
