@@ -18,6 +18,7 @@
 #include "ipc.h"
 #include "loraTelemetry.h"
 #include "commander.h"
+#include "pidHeading.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -222,20 +223,25 @@ static bool telemetry_pack(
         telemetry->imu_valid |= LORA_TELEMETRY_TELEMETRY_VALID;
         telemetry->orientation_valid |= LORA_TELEMETRY_TELEMETRY_VALID;
     }
+    // Servo angles have no validity field: 0 until the arbiter first moves the servo
     if (telemetry_getRudder(telemetry_rudder) == TELEMETRY_OK) {
         telemetry->rudder_servo_angle = telemetry_rudder->ang_forward;
-        telemetry->rudder_servo_angle |= LORA_TELEMETRY_ALL_VALID;
     }
     if (telemetry_getTailSail(telemetry_tailSail) == TELEMETRY_OK) {
         telemetry->sail_servo_angle = telemetry_tailSail->ang_forward; // The sail servo drives the tail sail
-        telemetry->sail_servo_angle |= LORA_TELEMETRY_ALL_VALID;
     }
 
-    // TODO: The following values don't have fillers yet
-    telemetry->rudder_servo_angle = 0;
-    telemetry->sail_servo_angle = 0;
     telemetry->mode = commander_getMode();
-    telemetry->desired_heading = 0;
+
+    // Heading the PID is holding until LTP exists. 0xFFFF = no target yet (0 is a real heading, north)
+    #ifdef CM7_PID_HEADING_ENABLE
+    int16_t target_heading = pidHeading_getTarget();
+    telemetry->desired_heading = (target_heading < 0) ? 0xFFFFu : (uint16_t)target_heading;
+    #else
+    telemetry->desired_heading = 0xFFFFu;
+    #endif
+
+    // TODO: The following values don't have fillers yet
     telemetry->route_segment = 0;
     telemetry->drift_distance = 0;
     telemetry->last_cmd_seq = commander_getLastSeq();

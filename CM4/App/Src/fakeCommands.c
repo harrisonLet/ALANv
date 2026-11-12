@@ -17,18 +17,76 @@ typedef struct {
     uint8_t expect; // cmd_result_t the CM7 should report, for reading the results by eye
 } fake_cmd_t;
 
+// Every system mode, with each actuator command tried where it is allowed and where it is not.
+// Arbiter modes per system mode come from arbiter_modes_for() in CM7/App/Src/commander.c:
+// a servo command needs its actuator on MANUAL, a PID command needs it on SEMI.
+// Ranges: servo +-90 (ARBITER_*_LIMIT), sail PID -180..180, rudder PID 0..359.
 // The CM7 boots in AUTO (COMMANDER_BOOT_MODE). Step 0 puts it back there on every lap.
+// Steps run every CM4_FAKE_CMD_PERIOD_S (3 s), under the 5 s link timeout of the manual and semi modes.
 static const fake_cmd_t script[] = {
-    { COMMAND_MODE_AUTO,                 0,   CMD_RESULT_OK          },
-    { COMMAND_SAIL_SERVO,                20,  CMD_RESULT_WRONG_MODE  }, // sail is not manual in AUTO
-    { COMMAND_MODE_AUTO_RUDDER_MAN_SAIL, 0,   CMD_RESULT_OK          },
-    { COMMAND_SAIL_SERVO,                20,  CMD_RESULT_OK          },
-    { COMMAND_SAIL_SERVO,                200, CMD_RESULT_BAD_VALUE   }, // past ARBITER_TAIL_LIMIT
-    { COMMAND_NONE,                      0,   CMD_RESULT_NONE        }, // heartbeat: telemetry keeps the previous seq and result
-    { COMMAND_MODE_FULL_SEMI,            0,   CMD_RESULT_OK          },
-    { COMMAND_SAIL_PID,                  30,  CMD_RESULT_OK          },
-    { 0x4F,                              0,   CMD_RESULT_UNSUPPORTED }, // no 0x4X commands exist
-    { COMMAND_MODE_SAFE,                 0,   CMD_RESULT_OK          },
+    // AUTO: rudder AUTO, tail AUTO. Heading PID holds the boot heading on the first lap, then
+    // whatever the semi steps below last set (0). LSP picks the sail target from the wind.
+    { COMMAND_MODE_AUTO,                  0,   CMD_RESULT_OK          },
+    { COMMAND_RUDDER_SERVO,               20,  CMD_RESULT_WRONG_MODE  },
+    { COMMAND_SAIL_SERVO,                 20,  CMD_RESULT_WRONG_MODE  },
+    { COMMAND_RUDDER_PID,                 0,   CMD_RESULT_WRONG_MODE  },
+    { COMMAND_SAIL_PID,                   30,  CMD_RESULT_WRONG_MODE  },
+
+    // FULL_MAN: rudder MANUAL, tail MANUAL
+    { COMMAND_MODE_FULL_MAN,              0,   CMD_RESULT_OK          },
+    { COMMAND_RUDDER_SERVO,               30,  CMD_RESULT_OK          },
+    { COMMAND_SAIL_SERVO,                 -30, CMD_RESULT_OK          },
+    { COMMAND_RUDDER_SERVO,               91,  CMD_RESULT_BAD_VALUE   }, // one past the limit
+    { COMMAND_SAIL_PID,                   30,  CMD_RESULT_WRONG_MODE  },
+
+    // AUTO_SAIL_MAN_RUDDER: rudder MANUAL, tail AUTO
+    { COMMAND_MODE_AUTO_SAIL_MAN_RUDDER,  0,   CMD_RESULT_OK          },
+    { COMMAND_RUDDER_SERVO,               -20, CMD_RESULT_OK          },
+    { COMMAND_SAIL_SERVO,                 20,  CMD_RESULT_WRONG_MODE  },
+
+    // AUTO_RUDDER_MAN_SAIL: rudder AUTO, tail MANUAL
+    { COMMAND_MODE_AUTO_RUDDER_MAN_SAIL,  0,   CMD_RESULT_OK          },
+    { COMMAND_SAIL_SERVO,                 45,  CMD_RESULT_OK          },
+    { COMMAND_RUDDER_SERVO,               10,  CMD_RESULT_WRONG_MODE  },
+
+    // FULL_SEMI: rudder SEMI, tail SEMI. Heading 0 = the default heading the AUTO steps then hold.
+    { COMMAND_MODE_FULL_SEMI,             0,   CMD_RESULT_OK          },
+    { COMMAND_RUDDER_PID,                 0,   CMD_RESULT_OK          },
+    { COMMAND_SAIL_PID,                   30,  CMD_RESULT_OK          },
+    { COMMAND_RUDDER_PID,                 400, CMD_RESULT_BAD_VALUE   }, // past 359
+    { COMMAND_SAIL_SERVO,                 10,  CMD_RESULT_WRONG_MODE  },
+
+    // SEMI_RUDDER_MAN_SAIL: rudder SEMI, tail MANUAL
+    { COMMAND_MODE_SEMI_RUDDER_MAN_SAIL,  0,   CMD_RESULT_OK          },
+    { COMMAND_RUDDER_PID,                 90,  CMD_RESULT_OK          },
+    { COMMAND_SAIL_SERVO,                 -45, CMD_RESULT_OK          },
+
+    // SEMI_RUDDER_AUTO_SAIL: rudder SEMI, tail AUTO
+    { COMMAND_MODE_SEMI_RUDDER_AUTO_SAIL, 0,   CMD_RESULT_OK          },
+    { COMMAND_RUDDER_PID,                 0,   CMD_RESULT_OK          }, // back to the default heading
+    { COMMAND_SAIL_PID,                   30,  CMD_RESULT_WRONG_MODE  },
+
+    // SEMI_SAIL_MAN_RUDDER: rudder MANUAL, tail SEMI
+    { COMMAND_MODE_SEMI_SAIL_MAN_RUDDER,  0,   CMD_RESULT_OK          },
+    { COMMAND_SAIL_PID,                   -30, CMD_RESULT_OK          },
+    { COMMAND_RUDDER_SERVO,               15,  CMD_RESULT_OK          },
+
+    // SEMI_SAIL_AUTO_RUDDER: rudder AUTO, tail SEMI
+    { COMMAND_MODE_SEMI_SAIL_AUTO_RUDDER, 0,   CMD_RESULT_OK          },
+    { COMMAND_SAIL_PID,                   0,   CMD_RESULT_OK          },
+    { COMMAND_RUDDER_PID,                 90,  CMD_RESULT_WRONG_MODE  }, // target stays 0
+
+    // Full AUTO again, holding heading 0 from the semi steps
+    { COMMAND_MODE_AUTO,                  0,   CMD_RESULT_OK          },
+    { COMMAND_NONE,                       0,   CMD_RESULT_NONE        }, // heartbeat: telemetry keeps the previous seq and result
+
+    // STANDBY and SAFE: both actuators SAFE, every actuator command refused
+    { COMMAND_MODE_STANDBY,               0,   CMD_RESULT_OK          },
+    { COMMAND_RUDDER_SERVO,               10,  CMD_RESULT_WRONG_MODE  },
+    { COMMAND_MODE_SAFE,                  0,   CMD_RESULT_OK          },
+    { COMMAND_MODE_SAFE,                  0,   CMD_RESULT_OK          }, // already there: still OK
+    { COMMAND_SAIL_PID,                   30,  CMD_RESULT_WRONG_MODE  },
+    { 0x4F,                               0,   CMD_RESULT_UNSUPPORTED }, // no 0x4X commands exist
 };
 #define SCRIPT_LEN (sizeof(script) / sizeof(script[0]))
 
