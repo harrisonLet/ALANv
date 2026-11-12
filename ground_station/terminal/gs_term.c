@@ -48,7 +48,13 @@ _Static_assert(sizeof(LoRaTelemetry_t) == 73, "LoRaTelemetry_t must be 73 bytes"
 #define HISTORY_LEN    20
 #define LINE_MAX_LEN   72
 #define HB_PERIOD_S    1.0    /* boat drops to SAFE after 5 s without a command in manual/semi */
-#define MIN_GAP_S      0.05   /* bridge flushes after 10 ms idle; keep packets from merging */
+/* The bridge reads no serial while it transmits (~100 ms for a 21-byte packet at SF8/125 kHz),
+   so anything written meanwhile is glued to the next packet and the CM4 rejects the result.
+   Keep every packet at least this far apart. */
+#define MIN_GAP_S      0.15
+#define JOG_PERIOD_S   0.25   /* jog sends the latest angle at most this often, so a held arrow cannot flood the link */
+#define JOG_STEP_DEF   5
+#define JOG_STEP_MAX   30
 
 /* ─── State ─────────────────────────────────────────────────────── */
 
@@ -90,6 +96,13 @@ static int      s_history_pos = -1;  /* -1 = editing a new line */
 static int      s_esc;               /* escape sequence state: 0 none, 1 got ESC, 2 got ESC [ */
 static int      s_show_help;
 
+/* Jog mode: arrows move the servos, q leaves */
+static int      s_jog;
+static int      s_jog_step = JOG_STEP_DEF;
+static int      s_jog_rudder, s_jog_sail;      /* angles last asked for */
+static int      s_jog_pend_rudder, s_jog_pend_sail;   /* changed but not sent yet */
+static double   s_jog_last_send;
+
 /* ─── Helpers ───────────────────────────────────────────────────── */
 
 static double now_s(void)
@@ -101,11 +114,18 @@ static double now_s(void)
 
 static void on_signal(int sig) { (void)sig; s_quit = 1; }
 
+static void write_all(const char *p, size_t n);
+
+/* Safe to call twice: main calls it before printing an exit message, then atexit does */
 static void restore_terminal(void)
 {
+    static int done;
+    if (done) return;
+    done = 1;
     if (s_stdin_raw) tcsetattr(STDIN_FILENO, TCSANOW, &s_stdin_orig);
-    printf("\033[?25h\n");   /* show cursor again */
-    fflush(stdout);
+    /* Leave the alternate screen, so the shell comes back exactly as it was (like vim) */
+    static const char leave[] = "\033[?25h\033[?1049l";
+    write_all(leave, sizeof(leave) - 1);
 }
 
 static int open_serial(const char *path)
@@ -354,6 +374,73 @@ static void cmd_angle(int argc, char **argv, uint8_t type, long min, long max, c
     send_logged(type, (int16_t)v, text);
 }
 
+/* ─── Jog mode ──────────────────────────────────────────────────── */
+
+/* jog [step]: start from the servo angles the boat last reported */
+static void jog_start(int argc, char **argv)
+{
+    long step = JOG_STEP_DEF;
+    if (argc > 2 || (argc == 2 && (!parse_int(argv[1], &step) || step < 1 || step > JOG_STEP_MAX))) {
+        set_status(1, "usage: jog [step 1..%d]   default %d deg", JOG_STEP_MAX, JOG_STEP_DEF);
+        return;
+    }
+    if (!s_have_telem) { set_status(1, "jog needs telemetry first, to start from the current servo angles"); return; }
+
+    s_jog = 1;
+    s_jog_step = (int)step;
+    s_jog_rudder = s_telem.rudder_servo_angle;
+    s_jog_sail   = s_telem.sail_servo_angle;
+    s_jog_pend_rudder = s_jog_pend_sail = 0;
+
+    /* The boat refuses servo commands unless that side is manual, so say so up front */
+    int r, s;
+    current_acts(&r, &s);
+    if (r != ACT_MAN || s != ACT_MAN)
+        set_status(1, "jog: rudder is %s, sail is %s; a side not in MAN will answer WRONG_MODE (mode man)",
+                   r < 0 ? "?" : ACT_NAME[r], s < 0 ? "?" : ACT_NAME[s]);
+    else
+        set_status(0, "jog started at rudder %+d, sail %+d", s_jog_rudder, s_jog_sail);
+}
+
+/* Arrow press: move the target and mark it to send. dir is +1 or -1 */
+static void jog_move(int *target, int *pending, int dir)
+{
+    int next = *target + dir * s_jog_step;
+    if (next >  LIMIT_SERVO_DEG) next =  LIMIT_SERVO_DEG;
+    if (next < -LIMIT_SERVO_DEG) next = -LIMIT_SERVO_DEG;
+    if (next == *target) { set_status(1, "at the %+d deg limit", next); return; }
+    *target = next;
+    *pending = 1;
+}
+
+/* Called every loop: send what changed, at most every JOG_PERIOD_S */
+static void jog_tick(void)
+{
+    if (!s_jog || !(s_jog_pend_rudder || s_jog_pend_sail)) return;
+    if (now_s() - s_jog_last_send < JOG_PERIOD_S) return;
+
+    char text[40];
+    if (s_jog_pend_rudder) {
+        snprintf(text, sizeof(text), "rsang %d", s_jog_rudder);
+        send_logged(COMMAND_RUDDER_SERVO, (int16_t)s_jog_rudder, text);
+        s_jog_pend_rudder = 0;
+    }
+    if (s_jog_pend_sail) {
+        snprintf(text, sizeof(text), "ssang %d", s_jog_sail);
+        send_logged(COMMAND_SAIL_SERVO, (int16_t)s_jog_sail, text);
+        s_jog_pend_sail = 0;
+    }
+    s_jog_last_send = now_s();
+}
+
+static void jog_stop(void)
+{
+    s_jog_last_send = 0;   /* send the last press now rather than drop it */
+    jog_tick();
+    s_jog = 0;
+    set_status(0, "jog stopped at rudder %+d, sail %+d", s_jog_rudder, s_jog_sail);
+}
+
 static void run_line(char *line)
 {
     char *argv[8];
@@ -383,6 +470,7 @@ static void run_line(char *line)
         else if (argc == 2 && !strcmp(argv[1], "off")) { s_hb_on = 0; set_status(0, "heartbeat off: the boat drops to SAFE 5 s after the last command in man/semi"); }
         else set_status(1, "usage: hb on|off");
     }
+    else if (!strcmp(c, "jog"))   jog_start(argc, argv);
     else if (!strcmp(c, "raw")) {
         long type, v = 0;
         if (argc < 2 || argc > 3 || !parse_int(argv[1], &type) || type < 0 || type > 0xFF ||
@@ -425,16 +513,30 @@ static void on_key(char ch)
 {
     unsigned char c = (unsigned char)ch;
 
-    /* Arrow keys arrive as ESC [ A/B/C/D */
-    if (s_esc == 1) { s_esc = (c == '[') ? 2 : 0; return; }
+    /* Arrow keys arrive as ESC [ A/B/C/D (or ESC O A/B/C/D in some terminal modes) */
+    if (s_esc == 1) { s_esc = (c == '[' || c == 'O') ? 2 : 0; return; }
     if (s_esc == 2) {
         s_esc = 0;
+        if (s_jog) {
+            /* up/down = sail, right/left = rudder; + is starboard for both */
+            if (c == 'A') jog_move(&s_jog_sail, &s_jog_pend_sail, +1);
+            else if (c == 'B') jog_move(&s_jog_sail, &s_jog_pend_sail, -1);
+            else if (c == 'C') jog_move(&s_jog_rudder, &s_jog_pend_rudder, +1);
+            else if (c == 'D') jog_move(&s_jog_rudder, &s_jog_pend_rudder, -1);
+            return;
+        }
         if (c == 'A' && s_history_pos + 1 < s_history_n) history_load(s_history_pos + 1);   /* up: older */
         else if (c == 'B' && s_history_pos >= 0)          history_load(s_history_pos - 1);   /* down: newer */
         return;
     }
 
     if (c == 0x1B) { s_esc = 1; return; }
+
+    /* In jog mode only the arrows and q do anything; the command line is paused */
+    if (s_jog) {
+        if (c == 'q' || c == 'Q') jog_stop();
+        return;
+    }
     if (c == '\r' || c == '\n') {
         if (s_line_len == 0) return;
         memmove(s_history[1], s_history[0], sizeof(s_history[0]) * (HISTORY_LEN - 1));
@@ -554,18 +656,72 @@ static void dial_build(int wind, int sail)
     dial_put(1.0, wind, 'W', C_WIND);
 }
 
+/* ─── Frame output ──────────────────────────────────────────────── */
+
+/* Each frame is built in memory and sent to the terminal in one write, drawn over the
+   previous frame instead of clearing the screen first. That is what stops the flicker. */
+static FILE  *s_out;
+static char  *s_frame;
+static size_t s_frame_len;
+
+static void write_all(const char *p, size_t n)
+{
+    while (n > 0) {
+        ssize_t w = write(STDOUT_FILENO, p, n);
+        if (w < 0) { if (errno == EINTR) continue; return; }
+        p += w;
+        n -= (size_t)w;
+    }
+}
+
+static void frame_begin(void)
+{
+    s_out = open_memstream(&s_frame, &s_frame_len);
+}
+
+/* Send the frame: start from the top left, erase the rest of every line as it is drawn
+   over (so a shorter line leaves nothing behind), then erase everything below the last line.
+   The ?2026 pair asks terminals that support it to show the frame all at once. */
+static void frame_end(void)
+{
+    if (!s_out) return;
+    fclose(s_out);
+    s_out = NULL;
+
+    size_t lines = 1;
+    for (size_t i = 0; i < s_frame_len; i++) lines += s_frame[i] == '\n';
+
+    static const char head[] = "\033[?2026h\033[?25l\033[H";
+    static const char tail[] = "\033[K\033[J\033[?25h\033[?2026l";   /* cursor stays at the prompt */
+    size_t cap = sizeof(head) + s_frame_len + lines * 3 + sizeof(tail);
+    char *buf = malloc(cap);
+    if (buf) {
+        size_t n = 0;
+        memcpy(buf + n, head, sizeof(head) - 1); n += sizeof(head) - 1;
+        for (size_t i = 0; i < s_frame_len; i++) {
+            if (s_frame[i] == '\n') { memcpy(buf + n, "\033[K", 3); n += 3; }
+            buf[n++] = s_frame[i];
+        }
+        memcpy(buf + n, tail, sizeof(tail) - 1); n += sizeof(tail) - 1;
+        write_all(buf, n);
+        free(buf);
+    }
+    free(s_frame);
+    s_frame = NULL;
+}
+
 static void dial_print_row(int y)
 {
     uint8_t cur = C_NONE;
     for (int x = 0; x < DIAL_W; x++) {
         if (s_dial_col[y][x] != cur) {
             cur = s_dial_col[y][x];
-            fputs("\033[0m", stdout);
-            fputs(DIAL_COLOR[cur], stdout);
+            fputs("\033[0m", s_out);
+            fputs(DIAL_COLOR[cur], s_out);
         }
-        putchar(s_dial_ch[y][x]);
+        fputc(s_dial_ch[y][x], s_out);
     }
-    fputs("\033[0m", stdout);
+    fputs("\033[0m", s_out);
 }
 
 /* ─── Display ───────────────────────────────────────────────────── */
@@ -580,120 +736,126 @@ static void draw(const char *port)
     char bar[64], junk[16];
     snprintf(junk, sizeof(junk), "%uB", s_junk);
 
-    printf("\033[H\033[2J\033[?25l");   /* home, clear, hide cursor */
+    frame_begin();
+    if (!s_out) return;
 
-    printf("ALANv GROUND STATION   %s\n", port);
-    printf("pkts %-6u lost %-5u junk %-6s ", s_pkts, s_lost, junk);
-    if (!s_have_telem)                  printf("WAITING FOR BOAT...\n");
-    else if (age * 1000 > NO_SIGNAL_MS) printf("NO SIGNAL  last %.1fs ago\n", age);
-    else                                printf("LINK OK  last %.1fs ago  seq %u\n", age, s_last_seq);
-    printf("%s\n", HR);
+    fprintf(s_out, "ALANv GROUND STATION   %s\n", port);
+    fprintf(s_out, "pkts %-6u lost %-5u junk %-6s ", s_pkts, s_lost, junk);
+    if (!s_have_telem)                  fprintf(s_out, "WAITING FOR BOAT...\n");
+    else if (age * 1000 > NO_SIGNAL_MS) fprintf(s_out, "NO SIGNAL  last %.1fs ago\n", age);
+    else                                fprintf(s_out, "LINK OK  last %.1fs ago  seq %u\n", age, s_last_seq);
+    fprintf(s_out, "%s\n", HR);
 
     if (!s_have_telem) {
-        printf("\n  no telemetry yet\n\n");
+        fprintf(s_out, "\n  no telemetry yet\n\n");
     } else {
-        printf("%-12s %-6s %-18s %s\n", "SUBSYSTEM", "", "VALIDITY", "DATA");
+        fprintf(s_out, "%-12s %-6s %-18s %s\n", "SUBSYSTEM", "", "VALIDITY", "DATA");
 
-        printf("%-12s %s %-18s %.2f V   cells %.2f %.2f %.2f %.2f\n", "battery",
+        fprintf(s_out, "%-12s %s %-18s %.2f V   cells %.2f %.2f %.2f %.2f\n", "battery",
                validity_tag(t->battery_valid), validity_name(t->battery_valid),
                t->battery_voltage / 1000.0,
                t->cell_voltage[0] / 1000.0, t->cell_voltage[1] / 1000.0,
                t->cell_voltage[2] / 1000.0, t->cell_voltage[3] / 1000.0);
 
-        printf("%-12s %s %-18s sail %+4d deg   mag %-5u %s %s %s\n", "encoder",
+        fprintf(s_out, "%-12s %s %-18s sail %+4d deg   mag %-5u %s %s %s\n", "encoder",
                validity_tag(t->encoder_valid), validity_name(t->encoder_valid),
                t->sail_ang_forward, t->sail_encoder_magnitude,
                (t->sail_encoder_status & 0x20) ? "MD" : "md",
                (t->sail_encoder_status & 0x10) ? "ML" : "ml",
                (t->sail_encoder_status & 0x08) ? "MH" : "mh");
 
-        printf("%-12s %s %-18s apparent %+4d deg (%s)\n", "wind",
+        fprintf(s_out, "%-12s %s %-18s apparent %+4d deg (%s)\n", "wind",
                validity_tag(t->wind_valid), validity_name(t->wind_valid),
                t->ang_wind, t->ang_wind > 0 ? "starboard" : t->ang_wind < 0 ? "port" : "ahead");
 
-        printf("%-12s %s %-18s %.6f %.6f  alt %.1fm  sats %u fix %u  %02u:%02u:%02uZ\n", "gps",
+        fprintf(s_out, "%-12s %s %-18s %.6f %.6f  alt %.1fm  sats %u fix %u  %02u:%02u:%02uZ\n", "gps",
                validity_tag(t->gps_valid), validity_name(t->gps_valid),
                t->latitude, t->longitude, t->altitude, t->satellites, t->fix_valid,
                t->utc_hours, t->utc_minutes, t->utc_seconds);
 
-        printf("%-12s %s %-18s cal S%u G%u A%u M%u   temp %dC\n", "imu",
+        fprintf(s_out, "%-12s %s %-18s cal S%u G%u A%u M%u   temp %dC\n", "imu",
                validity_tag(t->imu_valid), validity_name(t->imu_valid),
                (t->imu_cal >> 6) & 3, (t->imu_cal >> 4) & 3,
                (t->imu_cal >> 2) & 3, t->imu_cal & 3, t->imu_temp);
 
-        printf("%-12s %s %-18s hdg %3u  roll %+4d  pitch %+4d\n", "orientation",
+        fprintf(s_out, "%-12s %s %-18s hdg %3u  roll %+4d  pitch %+4d\n", "orientation",
                validity_tag(t->orientation_valid), validity_name(t->orientation_valid),
                t->heading, t->roll, t->pitch);
 
-        printf("%s\n", HR);
+        fprintf(s_out, "%s\n", HR);
         servo_bar(bar, t->rudder_servo_angle);
-        printf("rudder servo %+5d  %s\n", t->rudder_servo_angle, bar);
+        fprintf(s_out, "rudder servo %+5d  %s\n", t->rudder_servo_angle, bar);
         servo_bar(bar, t->sail_servo_angle);
-        printf("sail servo   %+5d  %s\n", t->sail_servo_angle, bar);
-        printf("%-19s-135%18s0%18s+135\n", "", "", "");
+        fprintf(s_out, "sail servo   %+5d  %s\n", t->sail_servo_angle, bar);
+        fprintf(s_out, "%-19s-135%18s0%18s+135\n", "", "", "");
 
         dial_build(t->ang_wind, t->sail_ang_forward);
         for (int y = 0; y < DIAL_H; y++) {
-            printf("      ");
+            fprintf(s_out, "      ");
             dial_print_row(y);
             switch (y) {
-            case 1: printf("     \033[1;36mW\033[0m  wind  %+4d deg  from %-9s %s", t->ang_wind,
+            case 1: fprintf(s_out, "     \033[1;36mW\033[0m  wind  %+4d deg  from %-9s %s", t->ang_wind,
                            t->ang_wind > 0 ? "starboard" : t->ang_wind < 0 ? "port" : "ahead",
                            validity_tag(t->wind_valid)); break;
-            case 3: printf("     \033[1;32m%c\033[0m  sail  %+4d deg  to   %-9s %s", line_char(t->sail_ang_forward),
+            case 3: fprintf(s_out, "     \033[1;32m%c\033[0m  sail  %+4d deg  to   %-9s %s", line_char(t->sail_ang_forward),
                            t->sail_ang_forward,
                            t->sail_ang_forward > 0 ? "starboard" : t->sail_ang_forward < 0 ? "port" : "centre",
                            validity_tag(t->encoder_valid)); break;
-            case 5: printf("     \033[1;33m^\033[0m  bow   hdg %3u", t->heading); break;
-            case 7: printf("     \033[90mbow up, starboard right\033[0m"); break;
+            case 5: fprintf(s_out, "     \033[1;33m^\033[0m  bow   hdg %3u", t->heading); break;
+            case 7: fprintf(s_out, "     \033[90mbow up, starboard right\033[0m"); break;
             }
-            putchar('\n');
+            fputc('\n', s_out);
         }
 
-        printf("%s\n", HR);
+        fprintf(s_out, "%s\n", HR);
         uint32_t up = t->uptime_ms / 1000;
         char hdg[8];
         if (t->desired_heading == 0xFFFF) snprintf(hdg, sizeof(hdg), "none");
         else snprintf(hdg, sizeof(hdg), "%3u", t->desired_heading);
-        printf("desired hdg %s   segment %u   drift %+d m   uptime %02u:%02u:%02u\n",
+        fprintf(s_out, "desired hdg %s   segment %u   drift %+d m   uptime %02u:%02u:%02u\n",
                hdg, t->route_segment, t->drift_distance, up / 3600, (up / 60) % 60, up % 60);
 
         if (t->mode < SYSTEM_MODE_COUNT && MODES[t->mode].name)
-            printf("\033[1mMODE  rudder %-4s  sail %-4s\033[0m  (%s, %u)\n",
+            fprintf(s_out, "\033[1mMODE  rudder %-4s  sail %-4s\033[0m  (%s, %u)\n",
                    ACT_NAME[MODES[t->mode].rudder], ACT_NAME[MODES[t->mode].sail], MODES[t->mode].name, t->mode);
         else
-            printf("\033[1mMODE  unknown (%u)\033[0m\n", t->mode);
+            fprintf(s_out, "\033[1mMODE  unknown (%u)\033[0m\n", t->mode);
     }
 
-    printf("%s\n", HR);
-    printf("COMMANDS  sent %u   heartbeat %s (%u sent)   next seq %u",
+    fprintf(s_out, "%s\n", HR);
+    fprintf(s_out, "COMMANDS  sent %u   heartbeat %s (%u sent)   next seq %u",
            s_cmds_sent, s_hb_on ? "on" : "\033[1;31mOFF\033[0m", s_hbs_sent, s_tx_seq);
-    if (s_have_telem) printf("   boat last ran seq %u -> %s", (uint8_t)t->last_cmd_seq, result_name(t->last_cmd_result));
-    printf("\n");
+    if (s_have_telem) fprintf(s_out, "   boat last ran seq %u -> %s", (uint8_t)t->last_cmd_seq, result_name(t->last_cmd_result));
+    fprintf(s_out, "\n");
     for (int i = 0; i < CMD_LOG_LEN; i++) {
-        if (i >= s_cmd_log_n) { printf("\n"); continue; }
+        if (i >= s_cmd_log_n) { fprintf(s_out, "\n"); continue; }
         const cmd_entry_t *e = &s_cmd_log[i];
         const char *col = e->result == CMD_RESULT_OK ? "\033[32m" : e->result == RES_PENDING ? "\033[90m" : "\033[31m";
-        printf("  %s  #%-3u %-28s %s%s\033[0m\n", e->when, e->seq, e->text, col, result_name(e->result));
+        fprintf(s_out, "  %s  #%-3u %-28s %s%s\033[0m\n", e->when, e->seq, e->text, col, result_name(e->result));
     }
 
     if (s_show_help) {
-        printf("%s\n", HR);
-        printf("  mode <m>                 both actuators          m = auto | semi | man\n");
-        printf("  mode -r <m> -s <m>       rudder and/or sail; one left out keeps its current mode\n");
-        printf("  safe | standby           both actuators out of play (safe = emergency stop)\n");
-        printf("  rsang <deg>  ssang <deg> rudder / tail servo, -%d..%d       needs that side in man\n", LIMIT_SERVO_DEG, LIMIT_SERVO_DEG);
-        printf("  head <deg>               heading for the rudder PID, 0..%d  needs rudder in semi\n", LIMIT_HEADING_MAX);
-        printf("  sang <deg>               sail angle for the sail PID, -%d..%d  needs sail in semi\n", LIMIT_SAIL_PID_DEG, LIMIT_SAIL_PID_DEG);
-        printf("  hb on|off                heartbeat every %.0f s (keeps man/semi from timing out)\n", HB_PERIOD_S);
-        printf("  raw <type> [value]       any command type, e.g. raw 0x4F\n");
-        printf("  up/down history   Ctrl-U clear line   Ctrl-C quit\n");
+        fprintf(s_out, "%s\n", HR);
+        fprintf(s_out, "  mode <m>                 both actuators          m = auto | semi | man\n");
+        fprintf(s_out, "  mode -r <m> -s <m>       rudder and/or sail; one left out keeps its current mode\n");
+        fprintf(s_out, "  safe | standby           both actuators out of play (safe = emergency stop)\n");
+        fprintf(s_out, "  rsang <deg>  ssang <deg> rudder / tail servo, -%d..%d       needs that side in man\n", LIMIT_SERVO_DEG, LIMIT_SERVO_DEG);
+        fprintf(s_out, "  head <deg>               heading for the rudder PID, 0..%d  needs rudder in semi\n", LIMIT_HEADING_MAX);
+        fprintf(s_out, "  sang <deg>               sail angle for the sail PID, -%d..%d  needs sail in semi\n", LIMIT_SAIL_PID_DEG, LIMIT_SAIL_PID_DEG);
+        fprintf(s_out, "  hb on|off                heartbeat every %.0f s (keeps man/semi from timing out)\n", HB_PERIOD_S);
+        fprintf(s_out, "  jog [step]               arrows move the servos from their current angles, q stops\n");
+        fprintf(s_out, "  raw <type> [value]       any command type, e.g. raw 0x4F\n");
+        fprintf(s_out, "  up/down history   Ctrl-U clear line   Ctrl-C quit\n");
     }
 
-    printf("%s\n", HR);
-    printf("%s%s\033[0m\n", s_status_err ? "\033[31m" : "\033[90m", s_status[0] ? s_status : "type help for commands");
-    printf("> %s\033[?25h", s_line);   /* leave the cursor at the end of the typed line */
-    fflush(stdout);
+    fprintf(s_out, "%s\n", HR);
+    fprintf(s_out, "%s%s\033[0m\n", s_status_err ? "\033[31m" : "\033[90m", s_status[0] ? s_status : "type help for commands");
+    if (s_jog)
+        fprintf(s_out, "\033[1;7m JOG \033[0m  rudder <-/-> \033[1m%+4d\033[0m   sail up/dn \033[1m%+4d\033[0m   step %d   q to stop",
+                s_jog_rudder, s_jog_sail, s_jog_step);
+    else
+        fprintf(s_out, "> %s", s_line);   /* the cursor is left at the end of the typed line */
+    frame_end();
 }
 
 /* ─── Main ──────────────────────────────────────────────────────── */
@@ -714,13 +876,19 @@ int main(int argc, char **argv)
     stdin_raw();
     atexit(restore_terminal);
 
+    /* Draw on the alternate screen, which leaves the shell's scrollback untouched */
+    static const char enter[] = "\033[?1049h\033[H\033[2J";
+    write_all(enter, sizeof(enter) - 1);
+
+    int port_closed = 0;
     draw(port);
     while (!s_quit) {
         fd_set rfds;
         FD_ZERO(&rfds);
         FD_SET(fd, &rfds);
         if (s_stdin_raw) FD_SET(STDIN_FILENO, &rfds);
-        struct timeval tv = { 0, 250000 };   /* redraw at least 4x/s so link age ticks and heartbeats go out */
+        /* redraw at least 4x/s so link age ticks and heartbeats go out; wake sooner while a jog angle waits to go out */
+        struct timeval tv = { 0, (s_jog_pend_rudder || s_jog_pend_sail) ? 50000 : 250000 };
 
         int n = select(fd + 1, &rfds, NULL, NULL, &tv);
         if (n < 0) {
@@ -734,7 +902,7 @@ int main(int argc, char **argv)
                 s_buf_len += r;
                 parse();
             } else if (r == 0 || (errno != EAGAIN && errno != EINTR)) {
-                fprintf(stderr, "\nserial port closed\n");
+                port_closed = 1;
                 break;
             }
         }
@@ -745,11 +913,14 @@ int main(int argc, char **argv)
         }
 
         /* Any command resets the boat's link timer, so a heartbeat only goes out after a quiet second */
+        jog_tick();
         if (s_hb_on && (s_last_send == 0 || now_s() - s_last_send >= HB_PERIOD_S)) send_heartbeat();
 
         draw(port);
     }
 
     close(fd);
+    restore_terminal();   /* back on the normal screen, so the message stays visible */
+    if (port_closed) fprintf(stderr, "serial port closed\n");
     return 0;
 }
