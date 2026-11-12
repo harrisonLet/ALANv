@@ -34,7 +34,7 @@ INDEX  = os.path.join(HERE, 'index.html')
 
 ADDR_GROUND = 0xAA
 ADDR_BOAT   = 0xBB
-HDR_LEN     = 4
+HDR_LEN     = 5        # dest, src, seq, len, flags
 HISTORY_LEN = 600        # samples kept for charts and track (~10 min at 1 Hz)
 
 COMMANDS = {
@@ -44,16 +44,10 @@ COMMANDS = {
     'f': 'sail -10',   'x': 'sail +5',    'v': 'sail -5',
 }
 
-# Validity_e codes from Common/Inc/sharedSensor.h on sensor_polling
+# LoRaTelemetryValidity_e from Common/Inc/loraTelemetry.h on master:
+# bit 0 = sensor metadata healthy, bit 1 = fresh telemetry reading
 VALIDITY = {
-    0x00: 'UNKNOWN', 0x01: 'VALID', 0x02: 'CALIBRATING', 0x03: 'WARMING',
-    0x04: 'WINDOW_FILLING', 0x05: 'DISABLED', 0x06: 'PARTIAL_DATA',
-    0x10: 'UNTRUSTED', 0x11: 'OUT_OF_RANGE', 0x12: 'DEGRADED', 0x13: 'IMPLAUSIBLE',
-    0x14: 'STATIC', 0x15: 'OVER_SATURATION', 0x16: 'UNDER_SATURATION',
-    0x20: 'ERROR', 0x21: 'UNREACHABLE', 0x22: 'PARSE_FAIL', 0x23: 'ERROR_UNKNOWN',
-    0x80: 'INVALID_BATTERY', 0x90: 'INVALID_ENCODER', 0xA0: 'INVALID_GPS',
-    0xA1: 'GPS_STALE', 0xA2: 'GPS_NO_FIX', 0xA3: 'GPS_CHECKSUM',
-    0xB0: 'INVALID_IMU', 0xC0: 'INVALID_WIND',
+    0x0: '(00) FAILED', 0x1: '(01) NO DATA', 0x2: '(10) SENSOR FAULT', 0x3: '(11) ALL GOOD',
 }
 
 # ─── Packet layout from the C header ─────────────────────────────────────────
@@ -213,7 +207,7 @@ def reader(fd):
         buf += data
         i = 0
         while len(buf) - i >= PKT_LEN:
-            if buf[i] == ADDR_GROUND and buf[i + 1] == ADDR_BOAT and buf[i + 3] == TELEM_LEN:
+            if buf[i] == ADDR_GROUND and buf[i + 1] == ADDR_BOAT and buf[i + 3] == 1 + TELEM_LEN:
                 handle_packet(bytes(buf[i:i + PKT_LEN]))
                 i += PKT_LEN
             else:

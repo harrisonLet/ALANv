@@ -146,9 +146,6 @@ body.stale main .live { opacity: .45; filter: grayscale(.6); }
         <g id="sail" transform="translate(0,-14)">
           <path d="M0,-16 C7,-11 6,12 0,52 C-6,12 -7,-11 0,-16Z" fill="var(--sail)" opacity=".9"/>
         </g>
-        <g id="dsail" transform="translate(0,-14)">
-          <line x1="0" y1="-22" x2="0" y2="58" stroke="var(--desired)" stroke-width="2.5" stroke-dasharray="6 4" stroke-linecap="round"/>
-        </g>
         <circle cx="0" cy="-14" r="3.5" fill="var(--text)"/>
         <g id="dhdg">
           <polygon points="0,-105 -7,-121 7,-121" fill="var(--desired)"/>
@@ -162,7 +159,6 @@ body.stale main .live { opacity: .45; filter: grayscale(.6); }
     <div class="legend">
       <span><i style="background:var(--wind)"></i>wind <b class="val" id="d-wind">–</b></span>
       <span><i style="background:var(--sail)"></i>sail <b class="val" id="d-sail">–</b></span>
-      <span><i style="background:var(--desired)"></i>desired sail <b class="val" id="d-dsail">–</b></span>
       <span><i style="background:var(--desired)"></i>desired hdg (rim) <b class="val" id="d-dhdg">–</b></span>
       <span><i style="background:var(--fail);opacity:.5"></i>no-go zone</span>
       <span>bow up, starboard right</span>
@@ -211,7 +207,6 @@ body.stale main .live { opacity: .45; filter: grayscale(.6); }
     <div class="kv">
       <span>mode</span><span id="c-mode">–</span>
       <span>desired heading</span><span id="c-dhdg">–</span>
-      <span>desired sail</span><span id="c-dsail">–</span>
       <span>route segment</span><span id="c-seg">–</span>
       <span>drift</span><span id="c-drift">–</span>
       <span>last cmd seq</span><span id="c-cmdseq">–</span>
@@ -337,7 +332,7 @@ let VALIDITY = {}, telem = null, link = null, history = [], cmdLog = [];
 // ── helpers ────────────────────────────────────────────────────────────────
 const sgn = v => (v > 0 ? '+' : '') + v;
 const deg = v => sgn(v) + '°';
-const vclass = v => (v >= 0x01 && v < 0x10) ? 'ok' : (v >= 0x10 && v < 0x20) ? 'warn' : 'fail';
+const vclass = v => v === 0x3 ? 'ok' : (v === 0x1 || v === 0x2) ? 'warn' : 'fail';
 const vname = v => VALIDITY[v] || ('0x' + v.toString(16).padStart(2, '0'));
 const side = (v, pos, neg, zero) => v > 0 ? pos : v < 0 ? neg : zero;
 const pointOfSail = w => POINTS_OF_SAIL.find(([lim]) => Math.abs(w) < lim)[1];
@@ -506,8 +501,6 @@ function render() {
   $('d-sail').textContent = deg(t.sail_ang_forward);
   const dhdgRel = wrap180(t.desired_heading - t.heading);
   $('dhdg').setAttribute('transform', `rotate(${dhdgRel})`);
-  $('dsail').setAttribute('transform', `translate(0,-14) rotate(${t.desired_sail_angle})`);
-  $('d-dsail').textContent = deg(t.desired_sail_angle);
   $('d-dhdg').textContent = `${t.desired_heading}° (${deg(dhdgRel)})`;
   const pos = pointOfSail(t.ang_wind);
   $('pos-name').textContent = pos;
@@ -526,7 +519,6 @@ function render() {
   // control
   $('c-mode').textContent = t.mode;
   $('c-dhdg').textContent = t.desired_heading + '°';
-  $('c-dsail').textContent = deg(t.desired_sail_angle);
   $('c-seg').textContent = t.route_segment;
   $('c-drift').textContent = sgn(t.drift_distance) + ' m';
   $('c-drift2').textContent = sgn(t.drift_distance) + ' m ' + side(t.drift_distance, 'stbd', 'port', '');

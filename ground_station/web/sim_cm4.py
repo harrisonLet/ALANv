@@ -42,19 +42,19 @@ while True:
     hdg = (hdg - rudder * 0.05) % 360
     lat += 2e-5 * math.cos(math.radians(hdg)); lon += 2e-5 * math.sin(math.radians(hdg))
     g = time.gmtime()
-    v = dict(battery_voltage=int(16400 - t), cell_voltage=[4100, 4095, 4102, 4098], battery_valid=1,
-             sail_ang_forward=sail, sail_encoder_magnitude=2048, sail_encoder_status=0x20, encoder_valid=1,
-             ang_wind=int(45 + 15 * math.sin(t / 10)), wind_valid=1,
+    v = dict(battery_voltage=int(16400 - t), cell_voltage=[4100, 4095, 4102, 4098], battery_valid=3,
+             sail_ang_forward=sail, sail_encoder_magnitude=2048, sail_encoder_status=0x20, encoder_valid=3,
+             ang_wind=int(45 + 15 * math.sin(t / 10)), wind_valid=3,
              latitude=lat, longitude=lon, altitude=70.0, satellites=9, fix_valid=1,
-             utc_hours=g.tm_hour, utc_minutes=g.tm_min, utc_seconds=g.tm_sec, gps_valid=1,
-             imu_cal=0xFF, imu_temp=24, imu_valid=1,
+             utc_hours=g.tm_hour, utc_minutes=g.tm_min, utc_seconds=g.tm_sec, gps_valid=3,
+             imu_cal=0xFF, imu_temp=24, imu_valid=3,
              heading=int(hdg) % 360, roll=int(10 * math.sin(t / 3)), pitch=int(3 * math.sin(t / 2)),
-             orientation_valid=1, rudder_servo_angle=rudder, sail_servo_angle=sail,
-             mode=1, desired_heading=90, desired_sail_angle=30, route_segment=0,
+             orientation_valid=3, rudder_servo_angle=rudder, sail_servo_angle=sail,
+             mode=1, desired_heading=90, route_segment=0,
              drift_distance=int(5 * math.sin(t / 20)), last_cmd_seq=cmd_seq, uptime_ms=int(t * 1000))
     vals = []
     for name, n in gs_web.FIELDS:
         vals += v[name] if n > 1 else [v[name]]
     payload = struct.pack(gs_web.FMT, *vals)
-    os.write(master, bytes([gs_web.ADDR_GROUND, gs_web.ADDR_BOAT, seq, len(payload)]) + payload)
+    os.write(master, bytes([gs_web.ADDR_GROUND, gs_web.ADDR_BOAT, seq, 1 + len(payload), 0]) + payload)
     seq = (seq + 1) & 0xFF

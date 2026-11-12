@@ -7,7 +7,7 @@
  * expects.
  *
  * Wire format from the boat (raw LoRa payload, forwarded byte for byte):
- *   [0] dest 0xAA  [1] src 0xBB  [2] seq  [3] len (= 74)  [4..77] LoRaTelemetry_t
+ *   [0] dest 0xAA  [1] src 0xBB  [2] seq  [3] len (= 73)  [4] status flags  [5..76] LoRaTelemetry_t
  *
  * Build:  make
  * Run:    ./gs_term [/dev/ttyACM0]
@@ -30,11 +30,11 @@
 
 #include "telemetry.h"
 
-_Static_assert(sizeof(LoRaTelemetry_t) == 74, "LoRaTelemetry_t must be 74 bytes");
+_Static_assert(sizeof(LoRaTelemetry_t) == 72, "LoRaTelemetry_t must be 72 bytes");
 
 #define ADDR_GROUND    0xAA
 #define ADDR_BOAT      0xBB
-#define HDR_LEN        4
+#define HDR_LEN        5   /* dest, src, seq, len, flags */
 #define PKT_LEN        (HDR_LEN + sizeof(LoRaTelemetry_t))
 #define NO_SIGNAL_MS   3000
 #define SERVO_RANGE    135
@@ -103,45 +103,24 @@ static void stdin_raw(void)
     s_stdin_raw = 1;
 }
 
-/* Validity_e codes from Common/Inc/sharedSensor.h on sensor_polling */
+/* LoRaTelemetryValidity_e from Common/Inc/loraTelemetry.h on master:
+   bit 0 = sensor metadata healthy, bit 1 = fresh telemetry reading */
 static const char *validity_name(uint8_t v)
 {
     switch (v) {
-    case 0x00: return "UNKNOWN";
-    case 0x01: return "VALID";
-    case 0x02: return "CALIBRATING";
-    case 0x03: return "WARMING";
-    case 0x04: return "WINDOW_FILLING";
-    case 0x05: return "DISABLED";
-    case 0x06: return "PARTIAL_DATA";
-    case 0x10: return "UNTRUSTED";
-    case 0x11: return "OUT_OF_RANGE";
-    case 0x12: return "DEGRADED";
-    case 0x13: return "IMPLAUSIBLE";
-    case 0x14: return "STATIC";
-    case 0x15: return "OVER_SATURATION";
-    case 0x16: return "UNDER_SATURATION";
-    case 0x20: return "ERROR";
-    case 0x21: return "UNREACHABLE";
-    case 0x22: return "PARSE_FAIL";
-    case 0x23: return "ERROR_UNKNOWN";
-    case 0x80: return "INVALID_BATTERY";
-    case 0x90: return "INVALID_ENCODER";
-    case 0xA0: return "INVALID_GPS";
-    case 0xA1: return "GPS_STALE";
-    case 0xA2: return "GPS_NO_FIX";
-    case 0xA3: return "GPS_CHECKSUM";
-    case 0xB0: return "INVALID_IMU";
-    case 0xC0: return "INVALID_WIND";
-    default:   return "?";
+    case 0x0: return "(00) FAILED";
+    case 0x1: return "(01) NO DATA";
+    case 0x2: return "(10) SENSOR FAULT";
+    case 0x3: return "(11) ALL GOOD";
+    default:  return "?";
     }
 }
 
-/* 0x01-0x0F usable, 0x10-0x1F untrusted, everything else failed */
+/* 11 good, 01/10 partial, 00 failed */
 static const char *validity_tag(uint8_t v)
 {
-    if (v >= 0x01 && v < 0x10) return "[ OK ]";
-    if (v >= 0x10 && v < 0x20) return "[WARN]";
+    if (v == 0x3) return "[ OK ]";
+    if (v == 0x1 || v == 0x2) return "[WARN]";
     return "[FAIL]";
 }
 
@@ -215,13 +194,13 @@ static void handle_packet(const uint8_t *p)
     s_last_rx = now_s();
 }
 
-/* Scan the buffer for [AA BB seq 72] + payload, skipping anything else */
+/* Scan the buffer for [AA BB seq 73 flags] + payload, skipping anything else */
 static void parse(void)
 {
     size_t i = 0;
     while (s_buf_len - i >= PKT_LEN) {
         const uint8_t *p = s_buf + i;
-        if (p[0] == ADDR_GROUND && p[1] == ADDR_BOAT && p[3] == sizeof(LoRaTelemetry_t)) {
+        if (p[0] == ADDR_GROUND && p[1] == ADDR_BOAT && p[3] == 1 + sizeof(LoRaTelemetry_t)) {
             handle_packet(p);
             i += PKT_LEN;
         } else {
@@ -338,36 +317,36 @@ static void draw(const char *port)
     if (!s_have_telem) {
         printf("\n  no telemetry yet\n\n");
     } else {
-        printf("%-12s %-6s %-16s %s\n", "SUBSYSTEM", "", "VALIDITY", "DATA");
+        printf("%-12s %-6s %-18s %s\n", "SUBSYSTEM", "", "VALIDITY", "DATA");
 
-        printf("%-12s %s %-16s %.2f V   cells %.2f %.2f %.2f %.2f\n", "battery",
+        printf("%-12s %s %-18s %.2f V   cells %.2f %.2f %.2f %.2f\n", "battery",
                validity_tag(t->battery_valid), validity_name(t->battery_valid),
                t->battery_voltage / 1000.0,
                t->cell_voltage[0] / 1000.0, t->cell_voltage[1] / 1000.0,
                t->cell_voltage[2] / 1000.0, t->cell_voltage[3] / 1000.0);
 
-        printf("%-12s %s %-16s sail %+4d deg   mag %-5u %s %s %s\n", "encoder",
+        printf("%-12s %s %-18s sail %+4d deg   mag %-5u %s %s %s\n", "encoder",
                validity_tag(t->encoder_valid), validity_name(t->encoder_valid),
                t->sail_ang_forward, t->sail_encoder_magnitude,
                (t->sail_encoder_status & 0x20) ? "MD" : "md",
                (t->sail_encoder_status & 0x10) ? "ML" : "ml",
                (t->sail_encoder_status & 0x08) ? "MH" : "mh");
 
-        printf("%-12s %s %-16s apparent %+4d deg (%s)\n", "wind",
+        printf("%-12s %s %-18s apparent %+4d deg (%s)\n", "wind",
                validity_tag(t->wind_valid), validity_name(t->wind_valid),
                t->ang_wind, t->ang_wind > 0 ? "starboard" : t->ang_wind < 0 ? "port" : "ahead");
 
-        printf("%-12s %s %-16s %.6f %.6f  alt %.1fm  sats %u fix %u  %02u:%02u:%02uZ\n", "gps",
+        printf("%-12s %s %-18s %.6f %.6f  alt %.1fm  sats %u fix %u  %02u:%02u:%02uZ\n", "gps",
                validity_tag(t->gps_valid), validity_name(t->gps_valid),
                t->latitude, t->longitude, t->altitude, t->satellites, t->fix_valid,
                t->utc_hours, t->utc_minutes, t->utc_seconds);
 
-        printf("%-12s %s %-16s cal S%u G%u A%u M%u   temp %dC\n", "imu",
+        printf("%-12s %s %-18s cal S%u G%u A%u M%u   temp %dC\n", "imu",
                validity_tag(t->imu_valid), validity_name(t->imu_valid),
                (t->imu_cal >> 6) & 3, (t->imu_cal >> 4) & 3,
                (t->imu_cal >> 2) & 3, t->imu_cal & 3, t->imu_temp);
 
-        printf("%-12s %s %-16s hdg %3u  roll %+4d  pitch %+4d\n", "orientation",
+        printf("%-12s %s %-18s hdg %3u  roll %+4d  pitch %+4d\n", "orientation",
                validity_tag(t->orientation_valid), validity_name(t->orientation_valid),
                t->heading, t->roll, t->pitch);
 
@@ -398,8 +377,8 @@ static void draw(const char *port)
 
         printf("%s\n", HR);
         uint32_t up = t->uptime_ms / 1000;
-        printf("mode %u   desired hdg %3u   desired sail %+4d   segment %u   drift %+d m   uptime %02u:%02u:%02u\n",
-               t->mode, t->desired_heading, t->desired_sail_angle, t->route_segment, t->drift_distance,
+        printf("mode %u   desired hdg %3u   segment %u   drift %+d m   uptime %02u:%02u:%02u\n",
+               t->mode, t->desired_heading, t->route_segment, t->drift_distance,
                up / 3600, (up / 60) % 60, up % 60);
     }
 
