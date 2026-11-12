@@ -219,6 +219,7 @@ static bool telemetry_pack(
         telemetry->pitch     = telemetry_boatGlobal->angP_pitch;
         telemetry->imu_valid |= LORA_TELEMETRY_TELEMETRY_VALID;
         telemetry->orientation_valid |= LORA_TELEMETRY_TELEMETRY_VALID;
+        telemetry->gps_valid |= LORA_TELEMETRY_TELEMETRY_VALID;
     }
     if (telemetry_getRudder(telemetry_rudder) == TELEMETRY_OK) {
         telemetry->rudder_servo_angle = telemetry_rudder->ang_forward;
