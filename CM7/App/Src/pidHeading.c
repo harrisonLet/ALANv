@@ -12,6 +12,7 @@ TaskHandle_t pidHeading_task;
 static PIDController pid;
 static volatile int16_t target_heading;  // 0-359 degrees, or PID_HEADING_NO_TARGET until one is set
 static volatile bool pid_restart;        // set when the PID's history is no longer valid
+static volatile bool pid_enabled;        // set by the Commander
 
 HardwareInit_e pidHeading_hardwareInit(void)
 {
@@ -28,6 +29,7 @@ RtosInit_e pidHeading_rtosInit(void)
         -PID_HEADING_RUDDER_LIMIT, PID_HEADING_RUDDER_LIMIT);
     target_heading = PID_HEADING_NO_TARGET;
     pid_restart = true;
+    pid_enabled = true; // runs on its own when the Commander is not built in, which then sets it from its boot mode
     pidHeading_printf("pidHeading_rtosInit complete");
     return RTOS_INIT_SUCCESS;
 }
@@ -49,6 +51,17 @@ void pidHeading_handler(void *argument)
     // loop that runs at 20 hz, reading the heading and updating the rudder
     for (;;)
     {
+        // Turned off by the Commander: suspended until pidHeading_setEnabled(true) wakes it
+        // Pausing at the top of the loop means it never stops partway
+        if (!pid_enabled) {
+            pidHeading_printf("suspended");
+            ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+            pid_restart = true;                 // history from before it was off is stale
+            lastWakeup = xTaskGetTickCount();   // do not try to catch up on the missed cycles
+            last_change_tick = lastWakeup;      // a steady heading while off is not a frozen IMU
+            continue;                           // check again, it may have been turned off again already
+        }
+
         if (!xTaskDelayUntil(&lastWakeup, configTICK_RATE_HZ / PID_HEADING_FREQUENCY)) {
             continue;
         }
@@ -117,4 +130,14 @@ void pidHeading_setTarget(uint16_t heading)
 int16_t pidHeading_getTarget(void)
 {
     return target_heading;
+}
+
+void pidHeading_setEnabled(bool enabled)
+{
+    pid_enabled = enabled;
+    // The notification is latched, so it is not lost if the task has not reached its wait yet
+    // NULL when the PID is not built in
+    if (enabled && pidHeading_task != NULL) {
+        xTaskNotifyGive(pidHeading_task);
+    }
 }

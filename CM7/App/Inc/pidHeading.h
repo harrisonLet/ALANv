@@ -30,4 +30,8 @@ void pidHeading_handler(void *argument);
 void pidHeading_setTarget(uint16_t heading);
 int16_t pidHeading_getTarget(void); // 0 to 359, or -1 before a target is set or held
 
+// Commander turns the PID off when the rudder arbiter MANUAL or SAFE mode
+// restarts the PID when turned back on
+void pidHeading_setEnabled(bool enabled);
+
 #endif // PID_HEADING_H

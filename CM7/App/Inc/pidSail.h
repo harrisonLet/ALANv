@@ -29,4 +29,8 @@ void pidSail_handler(void *argument);
 void pidSail_setTarget(int16_t angle);
 int16_t pidSail_getTarget(void); // -180 to 179, or INT16_MIN before a target is set
 
+// Commander turns the PID off when the tail arbiter is not listening to it MANUAL or SAFE
+// restarts the PID when turned back on
+void pidSail_setEnabled(bool enabled);
+
 #endif // PID_SAIL_H

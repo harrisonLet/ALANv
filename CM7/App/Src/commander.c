@@ -26,8 +26,9 @@ static commander_state_t state;
 // Converts a system mode into the mode each arbiter runs in. No default case, so the compiler flags a new system mode missing here.
 static bool arbiter_modes_for(system_mode_t mode, ArbiterMode_e *rudder, ArbiterMode_e *tail);
 
-// Puts both arbiters in the modes for this system mode. The planners pause themselves from the arbiter
-// mode: LSP skips any cycle where the tail is not in AUTO, and LTP will need the same check on the rudder.
+// Puts both arbiters in the modes for this system mode, and suspends each PID whose arbiter is in MANUAL or SAFE.
+// The planners pause themselves from the arbiter mode: LSP skips any cycle where the tail is not in AUTO,
+// and LTP will need the same check on the rudder.
 // Returns false if the mode is not valid.
 static bool apply_arbiter_modes(system_mode_t mode);
 
@@ -155,8 +156,14 @@ static bool apply_arbiter_modes(system_mode_t mode) {
         return false;
     }
 
+    // Arbiters first, so the servos stop listening to a PID before the values stop arriving if we are suspending
     arbiterRudder_setMode(rudder);
     arbiterTail_setMode(tail);
+
+    // A PID only runs while its arbiter uses its value in SEMI or AUTO
+    // In MANUAL and SAFE it is suspended -- avoids integral windup on pids
+    pidHeading_setEnabled(rudder == ARBITER_MODE_SEMI || rudder == ARBITER_MODE_AUTO);
+    pidSail_setEnabled(tail == ARBITER_MODE_SEMI || tail == ARBITER_MODE_AUTO);
     return true;
 }
 
