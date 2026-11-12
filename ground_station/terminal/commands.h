@@ -25,7 +25,7 @@ enum {
     COMMAND_MODE_SEMI_SAIL_MAN_RUDDER  = 0x19,
     COMMAND_MODE_SEMI_SAIL_AUTO_RUDDER = 0x1A,
 
-    /* raw[0..1] = int16 degrees, little-endian */
+    /* payload = int16 degrees, little-endian (2 bytes) */
     COMMAND_SAIL_SERVO                 = 0x21, /* tail servo angle, sail must be manual */
     COMMAND_RUDDER_SERVO               = 0x22, /* rudder servo angle, rudder must be manual */
     COMMAND_SAIL_PID                   = 0x23, /* main sail angle for the sail PID, sail must be semi */
@@ -69,6 +69,6 @@ enum {
 #define LIMIT_SAIL_PID_DEG   180
 #define LIMIT_HEADING_MAX    359
 
-#define CMD_PAYLOAD_LEN      16   /* IPC_CMD_DATA_SIZE */
+#define CMD_PAYLOAD_MAX      16   /* IPC_CMD_DATA_SIZE: payloads are 0 to 16 bytes, len = 1 + payload */
 
 #endif

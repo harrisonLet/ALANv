@@ -9,7 +9,8 @@
  *   [0] dest 0xAA  [1] src 0xBB  [2] seq  [3] len (= 74)  [4] status flags  [5..77] LoRaTelemetry_t
  *
  * Wire format to the boat (the bridge sends each write as one LoRa packet):
- *   [0] dest 0xBB  [1] src 0xAA  [2] seq  [3] len (= 17)  [4] command type  [5..20] payload
+ *   [0] dest 0xBB  [1] src 0xAA  [2] seq  [3] len = 1 + payload bytes  [4] command type  [5..] payload
+ *   Heartbeat and mode commands have no payload (5 bytes), angles are a little-endian int16 (7 bytes).
  *
  * Build:  make
  * Run:    ./gs_term [/dev/ttyACM0]
@@ -41,14 +42,15 @@ _Static_assert(sizeof(LoRaTelemetry_t) == 73, "LoRaTelemetry_t must be 73 bytes"
 #define ADDR_BOAT      0xBB
 #define HDR_LEN        5   /* dest, src, seq, len, flags */
 #define PKT_LEN        (HDR_LEN + sizeof(LoRaTelemetry_t))
-#define CMD_PKT_LEN    (HDR_LEN + CMD_PAYLOAD_LEN)   /* 21, the length the CM4 accepts */
+#define CMD_PKT_MAX    (HDR_LEN + CMD_PAYLOAD_MAX)   /* largest packet the CM4 accepts */
+#define ANGLE_LEN      2                             /* int16 degrees */
 #define NO_SIGNAL_MS   3000
 #define SERVO_RANGE    135
 #define CMD_LOG_LEN    6
 #define HISTORY_LEN    20
 #define LINE_MAX_LEN   72
 #define HB_PERIOD_S    1.0    /* boat drops to SAFE after 5 s without a command in manual/semi */
-/* The bridge reads no serial while it transmits (~100 ms for a 21-byte packet at SF8/125 kHz),
+/* The bridge reads no serial while it transmits (~70 ms for a 7-byte angle command at SF8/125 kHz),
    so anything written meanwhile is glued to the next packet and the CM4 rejects the result.
    Keep every packet at least this far apart. */
 #define MIN_GAP_S      0.15
@@ -239,32 +241,36 @@ static void set_status(int err, const char *fmt, ...)
     s_status_err = err;
 }
 
-/* Build and write one 21-byte command packet. Returns the seq used, or -1 on a write error. */
-static int send_packet(uint8_t type, int16_t value)
+/* Build and write one command packet with plen payload bytes (0, or ANGLE_LEN for value).
+   Returns the seq used, or -1 on a write error. */
+static int send_packet(uint8_t type, int16_t value, uint8_t plen)
 {
     /* Two writes closer than the bridge's 10 ms flush gap would go out as one packet,
        which the CM4 rejects for its length */
     double gap = now_s() - s_last_send;
     if (s_last_send > 0 && gap < MIN_GAP_S) usleep((useconds_t)((MIN_GAP_S - gap) * 1e6));
 
-    uint8_t pkt[CMD_PKT_LEN] = {0};
+    uint8_t pkt[CMD_PKT_MAX] = {0};
     pkt[0] = ADDR_BOAT;
     pkt[1] = ADDR_GROUND;
     pkt[2] = s_tx_seq;
-    pkt[3] = 1 + CMD_PAYLOAD_LEN;
+    pkt[3] = (uint8_t)(1 + plen);                 /* type byte + payload */
     pkt[4] = type;
-    pkt[5] = (uint8_t)((uint16_t)value & 0xFF);   /* little-endian int16 */
-    pkt[6] = (uint8_t)((uint16_t)value >> 8);
+    if (plen == ANGLE_LEN) {
+        pkt[5] = (uint8_t)((uint16_t)value & 0xFF);   /* little-endian int16 */
+        pkt[6] = (uint8_t)((uint16_t)value >> 8);
+    }
 
-    if (write(s_serial_fd, pkt, sizeof(pkt)) != (ssize_t)sizeof(pkt)) return -1;
+    size_t n = HDR_LEN + plen;
+    if (write(s_serial_fd, pkt, n) != (ssize_t)n) return -1;
     s_last_send = now_s();
     return s_tx_seq++;   /* wraps 255 -> 0 like the boat expects */
 }
 
 /* Send a command and add it to the log. Heartbeats are not logged: the boat reports no result for them. */
-static void send_logged(uint8_t type, int16_t value, const char *text)
+static void send_logged(uint8_t type, int16_t value, uint8_t plen, const char *text)
 {
-    int seq = send_packet(type, value);
+    int seq = send_packet(type, value, plen);
     if (seq < 0) {
         set_status(1, "serial write failed: %s", strerror(errno));
         return;
@@ -288,7 +294,7 @@ static void send_logged(uint8_t type, int16_t value, const char *text)
 
 static void send_heartbeat(void)
 {
-    if (send_packet(COMMAND_NONE, 0) >= 0) s_hbs_sent++;
+    if (send_packet(COMMAND_NONE, 0, 0) >= 0) s_hbs_sent++;
 }
 
 /* auto/semi/man, plus a few spellings */
@@ -356,7 +362,7 @@ static void cmd_mode(int argc, char **argv)
         if (MODES[m].name && MODES[m].rudder == rudder && MODES[m].sail == sail) {
             char text[40];
             snprintf(text, sizeof(text), "mode %s", MODES[m].name);
-            send_logged((uint8_t)(0x10 | m), 0, text);
+            send_logged((uint8_t)(0x10 | m), 0, 0, text);
             return;
         }
     }
@@ -371,7 +377,7 @@ static void cmd_angle(int argc, char **argv, uint8_t type, long min, long max, c
     if (v < min || v > max) { set_status(1, "%s: %ld out of range %ld..%ld", argv[0], v, min, max); return; }
     char text[40];
     snprintf(text, sizeof(text), "%s %ld", argv[0], v);
-    send_logged(type, (int16_t)v, text);
+    send_logged(type, (int16_t)v, ANGLE_LEN, text);
 }
 
 /* ─── Jog mode ──────────────────────────────────────────────────── */
@@ -422,12 +428,12 @@ static void jog_tick(void)
     char text[40];
     if (s_jog_pend_rudder) {
         snprintf(text, sizeof(text), "rsang %d", s_jog_rudder);
-        send_logged(COMMAND_RUDDER_SERVO, (int16_t)s_jog_rudder, text);
+        send_logged(COMMAND_RUDDER_SERVO, (int16_t)s_jog_rudder, ANGLE_LEN, text);
         s_jog_pend_rudder = 0;
     }
     if (s_jog_pend_sail) {
         snprintf(text, sizeof(text), "ssang %d", s_jog_sail);
-        send_logged(COMMAND_SAIL_SERVO, (int16_t)s_jog_sail, text);
+        send_logged(COMMAND_SAIL_SERVO, (int16_t)s_jog_sail, ANGLE_LEN, text);
         s_jog_pend_sail = 0;
     }
     s_jog_last_send = now_s();
@@ -458,9 +464,9 @@ static void run_line(char *line)
     }
     else if (!strcmp(c, "mode"))  cmd_mode(argc, argv);
     else if (!strcmp(c, "safe") || !strcmp(c, "kill") || !strcmp(c, "stop")) {
-        send_logged(COMMAND_MODE_SAFE, 0, "mode SAFE");
+        send_logged(COMMAND_MODE_SAFE, 0, 0, "mode SAFE");
     }
-    else if (!strcmp(c, "standby")) send_logged(COMMAND_MODE_STANDBY, 0, "mode STANDBY");
+    else if (!strcmp(c, "standby")) send_logged(COMMAND_MODE_STANDBY, 0, 0, "mode STANDBY");
     else if (!strcmp(c, "rsang")) cmd_angle(argc, argv, COMMAND_RUDDER_SERVO, -LIMIT_SERVO_DEG, LIMIT_SERVO_DEG, "rudder servo, rudder in man");
     else if (!strcmp(c, "ssang")) cmd_angle(argc, argv, COMMAND_SAIL_SERVO, -LIMIT_SERVO_DEG, LIMIT_SERVO_DEG, "tail servo, sail in man");
     else if (!strcmp(c, "head"))  cmd_angle(argc, argv, COMMAND_RUDDER_PID, 0, LIMIT_HEADING_MAX, "heading to hold, rudder in semi");
@@ -479,8 +485,10 @@ static void run_line(char *line)
             return;
         }
         char text[40];
-        snprintf(text, sizeof(text), "raw 0x%02lX %ld", type, v);
-        send_logged((uint8_t)type, (int16_t)v, text);
+        /* With a value it goes out as an int16 payload, without one as no payload */
+        if (argc == 3) snprintf(text, sizeof(text), "raw 0x%02lX %ld", type, v);
+        else           snprintf(text, sizeof(text), "raw 0x%02lX", type);
+        send_logged((uint8_t)type, (int16_t)v, argc == 3 ? ANGLE_LEN : 0, text);
     }
     else set_status(1, "unknown command '%s', type help", c);
 }
