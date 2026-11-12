@@ -273,17 +273,22 @@ int main(void)
 #if defined(CM4_LORA_COMMANDS_ENABLE) || defined(CM4_FAKE_COMMANDS)
 /*
    Check one ground station packet and queue its command for the CM7.
-   Wire format: dest, src, seq, len (17), type, 16 raw payload bytes = 21 bytes.
+   Wire format: dest, src, seq, len, type, payload. len counts the type byte plus the payload,
+   which is 0 to IPC_CMD_DATA_SIZE bytes: none for heartbeat and mode commands, an int16 for angles,
+   up to 16 for route waypoints. So a packet is 5 to 21 bytes.
    len == 0 means nothing arrived.
 */
 static void handle_rx_packet(const uint8_t *cmd, uint8_t len, bool ipc_attached)
 {
     if (len == 0) { return; }
 
-    if (len == LORA_HDR_LEN_BYTES + IPC_CMD_DATA_SIZE && cmd[0] == ADDR_STM32 && cmd[3] == 1U + IPC_CMD_DATA_SIZE)
+    // Header byte 3 says how many bytes follow it, and that must be exactly what arrived
+    uint8_t body = (len >= LORA_HDR_LEN_BYTES) ? cmd[3] : 0U;
+    if (len >= LORA_HDR_LEN_BYTES && cmd[0] == ADDR_STM32 &&
+        body >= 1U && body <= 1U + IPC_CMD_DATA_SIZE && len == (LORA_HDR_LEN_BYTES - 1U) + body)
     {
-        ipc_cmd_t c = { .type = cmd[4], .seq = cmd[2] };
-        memcpy(c.raw, &cmd[LORA_HDR_LEN_BYTES], IPC_CMD_DATA_SIZE);
+        ipc_cmd_t c = { .type = cmd[4], .seq = cmd[2] };   // raw starts zeroed, so a short payload reads as 0
+        memcpy(c.raw, &cmd[LORA_HDR_LEN_BYTES], body - 1U);
         // Without a successful attach the CM7 may not be using SRAM4, or may lay it out differently
         if (!ipc_attached)
         {

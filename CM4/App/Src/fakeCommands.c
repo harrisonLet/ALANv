@@ -9,7 +9,7 @@
 #include <string.h>
 
 _Static_assert(FAKE_CMD_PACKET_LEN == LORA_HDR_LEN_BYTES + IPC_CMD_DATA_SIZE,
-               "a fake packet must match the length main.c accepts");
+               "the buffer must hold the longest packet main.c accepts");
 
 typedef struct {
     uint8_t type;   // CommandId_e
@@ -101,13 +101,18 @@ uint8_t fakeCmd_next(uint8_t *buf)
     buf[0] = ADDR_STM32;                 // dest
     buf[1] = ADDR_SAMD21;                // src
     buf[2] = seq++;                      // seq, wraps 255 -> 0 like the commander expects
-    buf[3] = 1U + IPC_CMD_DATA_SIZE;     // len: type byte + raw payload (17)
     buf[4] = cmd->type;
-    buf[5] = (uint8_t)((uint16_t)cmd->value & 0xFFU);
-    buf[6] = (uint8_t)((uint16_t)cmd->value >> 8);
+
+    // Same sizes as the ground station: angle commands (0x2X) carry an int16, the rest no payload
+    uint8_t plen = ((cmd->type >> 4) == 2U) ? 2U : 0U;
+    if (plen) {
+        buf[5] = (uint8_t)((uint16_t)cmd->value & 0xFFU);
+        buf[6] = (uint8_t)((uint16_t)cmd->value >> 8);
+    }
+    buf[3] = 1U + plen;                  // len: type byte + payload
 
     step = (uint8_t)((step + 1U) % SCRIPT_LEN);
-    return FAKE_CMD_PACKET_LEN;
+    return (uint8_t)(LORA_HDR_LEN_BYTES + plen);
 }
 
 #endif // CM4_FAKE_COMMANDS
