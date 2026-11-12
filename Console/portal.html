@@ -1,0 +1,182 @@
+<!doctype html>
+<meta charset=utf-8>
+<title>ALANv console</title>
+<style>
+    body {
+        margin: 0;
+        font: 13px system-ui;
+        background: #111;
+        color: #ddd;
+        display: grid;
+        grid-template-columns: 42% 1fr;
+        height: 100vh
+    }
+
+    section {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        padding: 8px
+    }
+
+    h3 {
+        margin: 0 0 6px
+    }
+
+    #log {
+        flex: 1;
+        overflow: auto;
+        background: #000;
+        padding: 6px;
+        margin: 0;
+        font: 12px monospace;
+        white-space: pre-wrap
+    }
+
+    #cmd {
+        margin-top: 6px;
+        display: flex;
+        gap: 6px
+    }
+
+    #cmd input {
+        flex: 1;
+        background: #000;
+        color: #ddd;
+        border: 1px solid #444;
+        padding: 6px;
+        font: 12px monospace
+    }
+
+    button {
+        background: #333;
+        color: #ddd;
+        border: 1px solid #555;
+        padding: 4px 10px;
+        cursor: pointer
+    }
+
+    #right {
+        overflow: auto
+    }
+
+    #cards {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 8px
+    }
+
+    .card {
+        background: #1c1c1c;
+        border: 1px solid #333;
+        padding: 6px 10px;
+        min-width: 150px
+    }
+
+    .card b {
+        display: block;
+        font: 20px monospace;
+        color: #7fdc7f
+    }
+
+    #charts {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 8px
+    }
+
+    canvas {
+        width: 100%;
+        height: 160px;
+        background: #000;
+        border: 1px solid #333
+    }
+
+    textarea {
+        width: 100%;
+        height: 140px;
+        background: #000;
+        color: #ddd;
+        font: 12px monospace
+    }
+
+    #err {
+        color: #f66
+    }
+</style>
+<section>
+    <h3>Raw log</h3>
+    <pre id=log></pre>
+    <form id=cmd><input id=in placeholder="command (Enter to send)" autocomplete=off><button>Send</button>
+        <button type=button id=clr>Clear</button>
+    </form>
+</section>
+<section id=right>
+    <h3>Extracted</h3>
+    <div id=cards></div>
+    <div id=charts></div>
+    <details open>
+        <summary>Extractors</summary>
+        <div id=exts></div>
+        <button id=reload>Reload</button>
+    </details>
+</section>
+<script>
+    const $ = id => document.getElementById(id);
+    let logN = 0, seq = 0, series = {}, stick = true;
+    const log = $('log');
+    log.onscroll = () => stick = log.scrollTop + log.clientHeight >= log.scrollHeight - 4;
+    $('cmd').onsubmit = async e => {
+        e.preventDefault(); const c = $('in').value; $('in').value = '';
+        await fetch('/api/send', { method: 'POST', body: JSON.stringify({ cmd: c }) });
+    };
+    $('clr').onclick = () => { log.textContent = ''; };
+    async function loadExts() {
+        const list = await (await fetch('/api/extractors')).json();
+        $('exts').replaceChildren(...list.map(e => {
+            const l = document.createElement('label'); l.style.display = 'block';
+            const c = document.createElement('input'); c.type = 'checkbox'; c.checked = e.enabled; c.dataset.id = e.id;
+            c.onchange = async () => {
+                const ids = [...document.querySelectorAll('#exts input:checked')].map(i => i.dataset.id);
+                await fetch('/api/extractors', { method: 'POST', body: JSON.stringify({ enabled: ids }) });
+            };
+            l.append(c, ' ', e.name, ' ');
+            const d = document.createElement('small'); d.textContent = e.description; l.append(d);
+            if (e.error) { const x = document.createElement('div'); x.id = 'err'; x.textContent = e.error; l.append(x); }
+            return l;
+        }));
+    }
+    $('reload').onclick = async () => { await fetch('/api/extractors/reload', { method: 'POST', body: '{}' }); loadExts(); };
+    loadExts(); setInterval(loadExts, 5000);
+    function draw(name) {
+        const s = series[name]; if (!s.canvas) {
+            const card = document.createElement('div'); card.className = 'card'; card.innerHTML = '<span></span><b></b>';
+            $('cards').appendChild(card); s.card = card;
+            s.canvas = document.createElement('canvas'); $('charts').appendChild(s.canvas);
+        }
+        s.card.firstChild.textContent = name; s.card.lastChild.textContent = s.v[s.v.length - 1];
+        const c = s.canvas, w = c.width = c.clientWidth * 2, h = c.height = c.clientHeight * 2, x = c.getContext('2d');
+        let lo = Math.min(...s.v), hi = Math.max(...s.v); if (s.total != null) hi = Math.max(hi, s.total);
+        if (lo == hi) { lo -= 1; hi += 1 }
+        const t0 = s.t[0], t1 = s.t[s.t.length - 1] || t0 + 1, px = t => 40 + (w - 50) * (t - t0) / Math.max(t1 - t0, 1e-6), py = v => h - 24 - (h - 44) * (v - lo) / (hi - lo);
+        x.font = '20px monospace'; x.fillStyle = '#aaa'; x.fillText(name, 44, 18); x.fillText(hi.toFixed(0), 0, 36); x.fillText(lo.toFixed(0), 0, h - 24);
+        x.fillText(t1.toFixed(0) + 's', w - 70, h - 4);
+        if (s.total != null) { x.strokeStyle = '#c44'; x.setLineDash([8, 6]); x.beginPath(); x.moveTo(40, py(s.total)); x.lineTo(w - 10, py(s.total)); x.stroke(); x.setLineDash([]) }
+        x.strokeStyle = '#4af'; x.lineWidth = 2; x.beginPath(); s.t.forEach((t, i) => i ? x.lineTo(px(t), py(s.v[i])) : x.moveTo(px(t), py(s.v[i]))); x.stroke();
+    }
+    async function poll() {
+        try {
+            const d = await (await fetch(`/api/poll?log=${logN}&seq=${seq}`)).json();
+            if (d.log.length) { log.textContent += d.log.join('\n') + '\n'; logN += d.log.length; if (stick) log.scrollTop = log.scrollHeight }
+            const dirty = new Set();
+            for (const s of d.samples) {
+                const e = series[s.name] ??= { t: [], v: [], total: null }; e.t.push(s.t); e.v.push(s.value);
+                if (s.total != null) e.total = s.total; seq = s.seq + 1; dirty.add(s.name)
+            }
+            dirty.forEach(draw);
+        } catch (e) { }
+        setTimeout(poll, 300);
+    }
+    poll();
+</script>
