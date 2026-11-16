@@ -94,7 +94,7 @@ static uint8_t metadata_hours;
 static uint8_t metadata_minutes;
 static uint8_t metadata_seconds;
 static uint8_t metadata_sequence;
-static Validity_e metadata_gga_valid; // last GGA result, reused for RMC sentences so they don't overwrite it
+static Validity_e metadata_gga_valid; // last GGA result. Every other sentence takes its validity from it
 static float metadata_sog_mps;
 static uint16_t metadata_cog_deg;
 static uint8_t metadata_vel_valid;
@@ -269,6 +269,7 @@ void sensorGPS_handler(void *argument)
         {
             MetadataGPS_t metadata = {0};
             metadata.valid = VALIDITY_INVALID_GPS_STALE;
+            metadata_gga_valid = VALIDITY_INVALID_GPS_STALE; // the position is old until the next good GGA
             metadata.sequence = metadata_sequence++;
             metadata.timestamp = HAL_GetTick();
             #ifdef CM7_SENSOR_GPS_DEBUG
@@ -309,7 +310,8 @@ void sensorGPS_handler(void *argument)
                     if (strncmp(&metadata.raw[3], "GGA", 3) == 0) { metadata.valid = metadata_gga_valid = parseGGA(metadata_raw); }
                     // RMC only sets the vel_* fields, so it keeps GGA's validity
                     else if (strncmp(&metadata.raw[3], "RMC", 3) == 0) { parseRMC(metadata_raw); metadata.valid = metadata_gga_valid; }
-                    else { metadata.valid = VALIDITY_VALID_PARTIAL_DATA; }
+                    // Other sentences carry no position: partial data while the last GGA was good, otherwise its failure
+                    else { metadata.valid = (metadata_gga_valid == VALIDITY_VALID) ? VALIDITY_VALID_PARTIAL_DATA : metadata_gga_valid; }
 
                     metadata.latitude = metadata_latitude;
                     metadata.longitude = metadata_longitude;
