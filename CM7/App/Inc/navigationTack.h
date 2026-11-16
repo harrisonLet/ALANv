@@ -11,16 +11,22 @@
 #include "navigationRoute.h"
 #include "sharedNavigation.h"
 
-#define NAV_TACK_TASK_FREQUENCY     2u      // Hz, vTaskDelayUntil
-#define NAV_NO_GO_DEG               45.0    // closest the boat sails to the true wind; tune
+#define NAV_TACK_TASK_FREQUENCY     2u      // Hz
+#define NAV_NO_GO_DEG               45.0    // closest the boat sails to the (estimated) wind; tune on the water
+#define NAV_NO_GO_HYST_DEG          5.0     // go back to DIRECT only at NO_GO + this, so it can't flip-flop
+#define NAV_TACK_XTE_FRACTION       0.8     // tack at this fraction of the leg's margin_m, leaving room for the turn
 #define NAV_TACK_MIN_INTERVAL_MS    15000u  // minimum time between tacks
-#define NAV_TACK_DONE_DEG           20.0    // tack finished when within this of the new heading
-#define NAV_TACK_SLOW_MS            20000u  // sets NAV_FLAG_TACK_SLOW; report only, no fault
-#define NAV_WIND_WINDOW             20u     // samples, a 10 s circular mean at 2 Hz
+#define NAV_TACK_DONE_DEG           20.0    // tack finished within this of the new heading
+#define NAV_TACK_SLOW_MS            20000u  // sets NAV_FLAG_TACK_SLOW; report only
+#define NAV_WIND_WINDOW             20u     // samples, 10 s circular mean at 2 Hz
+#define NAV_WIND_MIN_SAMPLES        4u      // 2 s of wind before planning
 #define NAV_WIND_STALE_MS           1000u
 #define NAV_IMU_STALE_MS            1000u
-#define NAV_GPS_STALE_MS            5000u   // same as SENSOR_GPS_STALE, but sensorGPS.h pulls in system.h
-#define NAV_RETURN_ANGLE_DEG        45.0    // angle back toward the line on a DIRECT leg; tune
+#define NAV_GPS_STALE_MS            5000u
+#define NAV_RETURN_ANGLE_DEG        45.0    // DIRECT legs: steer this far back toward the line at the margin
+#define NAV_HEADING_DEADBAND_DEG    3u      // task only: re-send the PID target past this change
+#define NAV_SOG_MIN_MPS             0.3     // below this, GPS course is noise
+#define NAV_TRUE_WIND_ASSUMED_MPS   0.0     // 0 = apparent wind (default); > 0 turns on the estimate
 
 /**
  * Everything LTP reads in one cycle, gathered by the task wrapper.
