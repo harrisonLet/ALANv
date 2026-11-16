@@ -41,6 +41,39 @@ static void gather_inputs(NavTackInput_t *in);
 static void update_route(void);
 static bool recent(uint32_t now_ms, uint32_t timestamp, uint32_t stale_ms);
 
+#ifdef NAV_TEST_ROUTE
+#warning "NAV_TEST_ROUTE is on: the boat loads its own route at the first GPS fix. Bench and sim only, turn it off for the lake"
+
+// north, east metres from the first good fix; margin in metres. An 80 m x 60 m box that ends where it
+// started: one leg in each direction, so whatever the wind does, one leg is upwind.
+static const struct { int16_t n, e; uint16_t margin; } test_wp[] = {
+    { 80, 0, 15 }, { 80, 60, 15 }, { 0, 60, 15 }, { 0, 0, 15 },
+};
+#define TEST_WP_N (sizeof test_wp / sizeof test_wp[0])
+_Static_assert(TEST_WP_N <= NAV_ROUTE_MAX_WAYPOINTS, "the test route has too many waypoints");
+
+// Goes through the Route Manager like an upload from the ground station, so it gets the same checks.
+// Normally only the Commander's task calls the Route Manager: this runs once, before any route exists.
+static bool load_test_route(double lat0, double lon0)
+{
+    ipc_cmd_waypoint_t wp[TEST_WP_N];
+    double m_per_deg_lon = NAV_M_PER_DEG_LAT * cos(lat0 * NAV_DEG2RAD);
+    for (uint16_t i = 0; i < TEST_WP_N; i++) {
+        wp[i] = (ipc_cmd_waypoint_t){ .index = i, .margin_m = test_wp[i].margin,
+            .lat_e7 = (int32_t)lround((lat0 + test_wp[i].n / NAV_M_PER_DEG_LAT) * 1e7),
+            .lon_e7 = (int32_t)lround((lon0 + test_wp[i].e / m_per_deg_lon) * 1e7) };
+        navigationRoute_addWaypoint(&wp[i]);
+    }
+    ipc_cmd_route_commit_t c = { .count = TEST_WP_N, .crc16 = crc16_ccitt((const uint8_t *)wp, sizeof wp),
+                                 .arrive_m = 8, .margin_warning_m = 10 };
+
+    // Outside the printf: with the debug off its arguments are never evaluated
+    cmd_result_t result = navigationRoute_commit(&c);
+    navigationTask_printf("test route: commit result %d", (int)result);
+    return result == CMD_RESULT_OK;
+}
+#endif
+
 RtosInit_e navigationTask_rtosInit(void)
 {
     navigationTask_printf("navigationTask_rtosInit start");
@@ -63,6 +96,9 @@ void navigationTask_handler(void *argument)
     #ifdef CM7_NAVIGATION_DEBUG
     uint32_t loop_count = 0;
     #endif
+    #ifdef NAV_TEST_ROUTE
+    bool test_route_loaded = false;
+    #endif
 
     // loop that runs at 2 Hz: read the sensors and the route, plan, send the heading
     for (;;)
@@ -74,6 +110,18 @@ void navigationTask_handler(void *argument)
 
         NavTackInput_t in;
         gather_inputs(&in);
+
+        #ifdef NAV_TEST_ROUTE
+        // Once, around the first good fix, and only if nothing has loaded a route. Fusion reports 0, 0
+        // until it has taken its first position, which must not become the corner of the box
+        bool gps_ok = (in.gps_valid == VALIDITY_VALID || in.gps_valid == VALIDITY_VALID_PARTIAL_DATA) &&
+                      recent(in.now_ms, in.gps_timestamp, NAV_GPS_STALE_MS) && (in.lat != 0.0 || in.lon != 0.0);
+        if (!test_route_loaded && navigationRoute_version() == 0 && gps_ok)
+        {
+            test_route_loaded = load_test_route(in.lat, in.lon); // a failed commit is tried again next cycle
+        }
+        #endif
+
         update_route();
         in.route_version = route_version;
         in.route = &route;

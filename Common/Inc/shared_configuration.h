@@ -117,4 +117,5 @@
 
 #ifdef CM7_NAVIGATION_ENABLE
 // #define CM7_NAVIGATION_DEBUG
+// #define NAV_TEST_ROUTE // Sim and parking lot only: loads an 80 m x 60 m box route around the first GPS fix. Keep off in lake builds
 #endif
