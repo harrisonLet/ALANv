@@ -35,5 +35,6 @@ void arbiterRudder_handler(void *argument);
 
 void arbiterRudder_request(ArbiterRudderSource_e source, int16_t turn);
 void arbiterRudder_setMode(ArbiterMode_e mode);
+ArbiterMode_e arbiterRudder_getMode(void);
 
 #endif // ARBITER_RUDDER_H

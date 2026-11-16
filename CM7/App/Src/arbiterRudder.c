@@ -87,6 +87,11 @@ void arbiterRudder_setMode(ArbiterMode_e mode)
     current_mode = mode;
 }
 
+ArbiterMode_e arbiterRudder_getMode(void)
+{
+    return current_mode;
+}
+
 static int16_t clamped_turn(int16_t requested_turn, int16_t low, int16_t high)
 {
     if (requested_turn < low)  { return low; }

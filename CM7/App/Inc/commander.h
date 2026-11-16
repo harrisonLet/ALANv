@@ -49,6 +49,10 @@ cmd_result_t execute_servo(ipc_cmd_t *cmd);
 cmd_result_t execute_pid(ipc_cmd_t *cmd);
 cmd_result_t navigation_cmd(ipc_cmd_t *cmd);
 
+// Asks the Commander to switch to SAFE on its next cycle. Safe to call from any task: only the
+// Commander's own task ever changes the mode.
+void commander_requestSafe(void);
+
 // Single bytes, safe to read from another task
 uint8_t commander_getMode(void);
 uint8_t commander_getLastSeq(void);
