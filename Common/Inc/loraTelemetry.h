@@ -60,8 +60,8 @@ typedef struct __attribute__((packed)) {
 
     /* Control */
     uint8_t  mode;                   /* current mode from the control task */
-    uint16_t desired_heading;        /* 0..359 deg, heading PID target (LTP later), 0xFFFF = no target */
-    uint8_t  route_segment;          /* index of the active nautical vector */
+    uint16_t desired_heading;        /* 0..359 deg, heading PID target (set by LTP in AUTO), 0xFFFF = no target */
+    uint8_t  route_segment;          /* leg LTP is sailing, 0 = to the first waypoint, 0xFF = none */
     int16_t  drift_distance;         /* cross-track distance from the segment, m, + = starboard of path */
     uint16_t last_cmd_seq;           /* sequence number of the last command received */
     uint32_t uptime_ms;              /* board uptime */
