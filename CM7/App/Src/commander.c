@@ -17,6 +17,8 @@ typedef struct {
     volatile uint8_t prev_cmd_seq;
     volatile uint8_t reported_cmd_seq; // seq that prev_cmd_result belongs to, sent in telemetry
     TickType_t last_cmd_tick;
+    TickType_t result_tick;            // when a real command last set prev_cmd_result
+    bool result_held;                  // prev_cmd_result is a real command's, heartbeats leave it alone for COMMANDER_RESULT_HOLD_MS
 } commander_state_t;
 
 TaskHandle_t commander_task = NULL;
@@ -53,8 +55,10 @@ RtosInit_e commander_rtos_init(void) {
     memset(&state, 0 , sizeof(commander_state_t));
     state.mode = COMMANDER_BOOT_MODE;
     state.prev_cmd_result = CMD_RESULT_NONE;
-    // Start at 255 so the first command (seq 0) is not flagged as dropped
+    // Start at 255 so the first command (seq 0) is not flagged as dropped, and so the boot report
+    // (NONE) is not matched to the ground station's first command
     state.prev_cmd_seq = 255U;
+    state.reported_cmd_seq = 255U;
 
     return RTOS_INIT_SUCCESS;
 }
@@ -74,17 +78,14 @@ void commander_handler(void *argument) {
     #endif
 
     state.last_cmd_tick = xTaskGetTickCount();
-    TickType_t lastWake = xTaskGetTickCount();
     for(;;) {
-        // Read Frequency
-        if (!xTaskDelayUntil(&lastWake, configTICK_RATE_HZ / COMMANDER_FREQ)) {
-            continue;
-        }
-        lastWake = xTaskGetTickCount();
+        // Sleep until cm4 notifies with new command or every couple ms in case of missed cmd
+        ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(COMMANDER_POLL_MS));
 
         // Drain every queued command, pop returns EMPTY once the ring is drained
         while (ipc_cm7_pop_command(&state.current_cmd) == IPC_STATUS_OK) {
-            state.last_cmd_tick = xTaskGetTickCount();
+            TickType_t now = xTaskGetTickCount();
+            state.last_cmd_tick = now;
 
             // check for dropped commands (seq is uint8_t and wraps 255 -> 0)
             uint8_t expected_seq = (uint8_t)(state.prev_cmd_seq + 1U);
@@ -99,10 +100,17 @@ void commander_handler(void *argument) {
                 (unsigned)result, (unsigned)state.mode);
             state.prev_cmd_seq = state.current_cmd.seq;
 
-            // A heartbeat has no result, and must not replace the one the ground station is waiting for
             if (state.current_cmd.type != COMMAND_NONE) {
                 state.prev_cmd_result = result;
                 state.reported_cmd_seq = state.current_cmd.seq;
+                state.result_tick = now;
+                state.result_held = true;
+            }
+            // After COMMANDER_RESULT_HOLD_MS of no cmd results, assume no heartbeat from lora link
+            else if (!state.result_held || (now - state.result_tick) > pdMS_TO_TICKS(COMMANDER_RESULT_HOLD_MS)) {
+                state.prev_cmd_result = CMD_RESULT_NONE;
+                state.reported_cmd_seq = state.current_cmd.seq;
+                state.result_held = false;
             }
         }
 
@@ -121,9 +129,9 @@ void commander_handler(void *argument) {
 cmd_result_t execute_cmd(ipc_cmd_t *cmd) {
 
     switch (cmd->type >> 4) {
-        // CMD 0x0 is a no-op
+        // 0x00 is the heartbeat, a no-op with no result. The rest of 0x0X is unassigned
         case (0U):
-            return CMD_RESULT_NONE;
+            return (cmd->type == COMMAND_NONE) ? CMD_RESULT_NONE : CMD_RESULT_UNSUPPORTED;
 
         // 0x1 is a switch mode command
         case (1U): 
@@ -283,8 +291,9 @@ cmd_result_t execute_servo(ipc_cmd_t *cmd) {
             arbiterTail_request(ARBITER_TAIL_SOURCE_MANUAL, deg);
             return CMD_RESULT_OK;
 
+        // The command is a servo angle (+ = starboard) but the arbiter takes a turn, which is the negated servo angle.
         case COMMAND_RUDDER_SERVO:
-            arbiterRudder_request(ARBITER_RUDDER_SOURCE_MANUAL, deg);
+            arbiterRudder_request(ARBITER_RUDDER_SOURCE_MANUAL, (int16_t)-deg);
             return CMD_RESULT_OK;
 
         default:

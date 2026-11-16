@@ -207,6 +207,22 @@ int main(void)
   {
       __WFI();   /* sleep until any interrupt fires */
 
+      // Radio first: a command whose RxDone landed in the same wake as the TX tick is read out
+      // before LoRa_Send puts the radio into TX (LoRa_Send also checks, for one that lands later)
+      if (dio0_flag) {
+          dio0_flag = 0;
+          LoRa_ProcessDIO0();
+      }
+
+      #if defined(CM4_LORA_COMMANDS_ENABLE)
+      {
+          // Every wake, not only on DIO0: LoRa_Send can be the one that read the packet out
+          uint8_t cmd[64];
+          uint8_t len = LoRa_GetCmd(cmd);
+          handle_rx_packet(cmd, len, ipc_attached);
+      }
+      #endif
+
       // Every 1 s (TIM6): read the latest telemetry from SRAM4 and send it over LoRa.
       // If the CM7 is mid-write, tx_flag stays set and the read retries on the next wake (~1 ms)
       if (tx_flag) {
@@ -239,17 +255,6 @@ int main(void)
         
         // LoRa_Send("Hello from CM4!\n", 20);
         // tx_flag = 0;
-      }
-
-      if (dio0_flag) {
-          dio0_flag = 0;
-          LoRa_ProcessDIO0();
-
-          #if defined(CM4_LORA_COMMANDS_ENABLE)
-          uint8_t cmd[64];
-          uint8_t len = LoRa_GetCmd(cmd);
-          handle_rx_packet(cmd, len, ipc_attached);
-          #endif
       }
 
       #if defined(CM4_FAKE_COMMANDS)

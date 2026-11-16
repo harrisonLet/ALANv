@@ -98,6 +98,10 @@
 // #define CM7_ARBITER_RUDDER_DEBUG
 #endif
 
+#ifdef CM7_SERVO_RUDDER_ENABLE
+// #define CM7_SERVO_RUDDER_DEBUG // prints every servo step
+#endif
+
 #ifdef CM7_PID_HEADING_ENABLE
 #define CM7_PID_HEADING_DEBUG
 #endif
