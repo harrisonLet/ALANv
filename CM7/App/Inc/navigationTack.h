@@ -67,7 +67,7 @@ typedef struct {
     int8_t   tack_side;              // -1 = wind from port, +1 = wind from starboard, 0 = not upwind
     uint32_t tack_ms;                // time of the last tack, ms
     bool     corridor_fault;         // beyond margin + warning; holds until a new route
-    double   wind[NAV_WIND_WINDOW];  // true wind direction samples, deg
+    double   wind[NAV_WIND_WINDOW];  // wind direction samples from wind_from(), deg true, "from"
     uint8_t  wind_count;             // samples in wind[], up to NAV_WIND_WINDOW
     uint8_t  wind_next;              // slot for the next sample
 } NavTackState_t;
@@ -80,5 +80,36 @@ typedef struct {
   * @retval None
   */
 void navTack_step(const NavTackInput_t *in, NavTackState_t *state, TelemetryNavigation_t *out);
+
+/**
+ * The current leg seen from its start, in meters and degrees true. Filled by leg_geometry().
+ */
+typedef struct {
+    double xte;      // cross-track error, m, + = starboard of the path
+    double along;    // distance made along the leg, m
+    double leg_len;  // m
+    double leg_brg;  // bearing of the leg, start to waypoint
+    double brg_wp;   // bearing from the boat to the waypoint
+    double rel_wp;   // brg_wp relative to the wind, -180..180
+    double dist_wp;  // distance from the boat to the waypoint, m
+    double margin;   // corridor half-width of this leg, m
+} NavTackLeg_t;
+
+// The helpers behind navTack_step. Static in the firmware, visible to CM7/Test/navigation so each
+// one can be tested on its own.
+#ifdef NAV_HOST_TEST
+#define NAV_TACK_HELPER
+bool         inputs_ok(const NavTackInput_t *in);
+double       wind_estimate(const NavTackInput_t *in, double true_wind_mps);
+double       wind_from(const NavTackInput_t *in);
+double       wind_update(const NavTackInput_t *in, NavTackState_t *state, bool ok);
+NavTackLeg_t leg_geometry(const NavTackInput_t *in, const NavTackState_t *state, double twd);
+double       direct_heading(const NavTackLeg_t *leg, double twd);
+double       direct_step(const NavTackInput_t *in, NavTackState_t *state, const NavTackLeg_t *leg, double twd);
+double       upwind_step(const NavTackInput_t *in, NavTackState_t *state, const NavTackLeg_t *leg, double twd);
+double       tacking_step(const NavTackInput_t *in, NavTackState_t *state, double twd, uint8_t *flags);
+#else
+#define NAV_TACK_HELPER static
+#endif
 
 #endif // NAVIGATION_TACK_H
