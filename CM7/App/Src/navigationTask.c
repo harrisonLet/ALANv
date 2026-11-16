@@ -15,6 +15,10 @@
 
 #include <math.h>
 
+#if defined(CM7_NAVIGATION_ENABLE) && !defined(CM7_COMMANDER_ENABLE)
+#error "LTP needs CM7_COMMANDER_ENABLE: without it ARRIVED and corridor faults can't stop the boat"
+#endif
+
 #if (SYSTEM_TICK_RATE_HZ % NAV_TACK_TASK_FREQUENCY) != 0u
 #warning "NAV_TACK_TASK_FREQUENCY does not divide the tick rate, the period will be rounded down"
 #endif
