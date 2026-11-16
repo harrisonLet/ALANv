@@ -37,6 +37,24 @@ typedef enum {
 } GGAField_e;
 
 typedef enum {
+    RMC_ID,
+    RMC_TIME,
+    RMC_STATUS,
+    RMC_LATITUDE,
+    RMC_LATITUDE_DIR,
+    RMC_LONGITUDE,
+    RMC_LONGITUDE_DIR,
+    RMC_SPEED_KNOTS,
+    RMC_COURSE,
+    RMC_DATE,
+    RMC_MAG_VAR,
+    RMC_MAG_VAR_DIR,
+    RMC_MODE
+} RMCField_e;
+
+#define GPS_KNOTS_TO_MPS 0.514444f
+
+typedef enum {
     PARSE_UNKNOWN,
     PARSE_SKIP,
     PARSE_SUCCESS,
@@ -76,10 +94,16 @@ static uint8_t metadata_hours;
 static uint8_t metadata_minutes;
 static uint8_t metadata_seconds;
 static uint8_t metadata_sequence;
+static Validity_e metadata_gga_valid; // last GGA result, reused for RMC sentences so they don't overwrite it
+static float metadata_sog_mps;
+static uint16_t metadata_cog_deg;
+static uint8_t metadata_vel_valid;
+static uint32_t metadata_vel_timestamp;
 
 static HAL_StatusTypeDef uartDMAHandler_start(void);
 
 static Validity_e    parseGGA(const char *gga);
+static void          parseRMC(const char *rmc);
 static ParseResult_e parseGGA_TIME(const char *str, uint8_t *hours, uint8_t *minutes, uint8_t *seconds);
 static ParseResult_e parseGGA_LATITUDE(const char *str, double *latitude);
 static ParseResult_e parseGGA_LATITUDE_DIR(const char *str, double *latitude);
@@ -196,6 +220,11 @@ RtosInit_e sensorGPS_rtosInit(void)
     metadata_minutes = 0;
     metadata_seconds = 0;
     metadata_sequence = 0;
+    metadata_gga_valid = VALIDITY_UNKNOWN;
+    metadata_sog_mps = 0;
+    metadata_cog_deg = METADATA_GPS_COG_NONE;
+    metadata_vel_valid = 0;
+    metadata_vel_timestamp = 0;
 
 
     sensorGPS_printf("sensorGPS_rtosInit complete");
@@ -277,7 +306,9 @@ void sensorGPS_handler(void *argument)
                     metadata.timestamp = HAL_GetTick();
                     strncpy(metadata.raw, metadata_raw, sizeof(metadata.raw) - 1);
 
-                    if (strncmp(&metadata.raw[3], "GGA", 3) == 0) { metadata.valid = parseGGA(metadata_raw); }
+                    if (strncmp(&metadata.raw[3], "GGA", 3) == 0) { metadata.valid = metadata_gga_valid = parseGGA(metadata_raw); }
+                    // RMC only sets the vel_* fields, so it keeps GGA's validity
+                    else if (strncmp(&metadata.raw[3], "RMC", 3) == 0) { parseRMC(metadata_raw); metadata.valid = metadata_gga_valid; }
                     else { metadata.valid = VALIDITY_VALID_PARTIAL_DATA; }
 
                     metadata.latitude = metadata_latitude;
@@ -288,6 +319,10 @@ void sensorGPS_handler(void *argument)
                     metadata.hours = metadata_hours;
                     metadata.minutes = metadata_minutes;
                     metadata.seconds = metadata_seconds;
+                    metadata.sog_mps = metadata_sog_mps;
+                    metadata.cog_deg = metadata_cog_deg;
+                    metadata.vel_valid = metadata_vel_valid;
+                    metadata.vel_timestamp = metadata_vel_timestamp;
                     #ifdef CM7_SENSOR_GPS_DEBUG
                     char metadata_str[METADATA_GPS_STR_SIZE];
                     sensorGPS_printf("%s", MetadataGPS_toString(&metadata, metadata_str));
@@ -411,6 +446,74 @@ static Validity_e parseGGA(const char *gga)
     metadata_seconds = second;
     
     return VALIDITY_VALID;
+}
+
+// Velocity from RMC. Only sets the vel_* cache: GGA owns validity, position and time. A sentence that
+// fails its checksum or parse changes nothing, so vel_timestamp stops advancing and the data goes stale.
+static void parseRMC(const char *rmc)
+{
+    char token[16] = {0};
+    uint8_t token_index = 0;
+    uint8_t crc = 0;
+    bool calculate = false;
+
+    char status = '\0';
+    float knots = 0;
+    bool have_speed = false;
+    float course = 0;
+    bool have_course = false; // empty when the boat is stopped
+
+    RMCField_e field = RMC_ID;
+    while (*rmc != '\0')
+    {
+        if      (*rmc == '$') { crc = 0; calculate = true; }
+        else if (*rmc == '*') {          calculate = false; }
+        else if (calculate)   { crc ^= *rmc; }
+
+        if (*rmc == ',' || *rmc == '*')
+        {
+            token[token_index] = '\0';
+            if (*token != '\0')
+            {
+                switch (field)
+                {
+                    case RMC_STATUS:      status = token[0]; break;
+                    case RMC_SPEED_KNOTS: if (parseFloat(token, &knots) != PARSE_SUCCESS) { return; } have_speed = true; break;
+                    case RMC_COURSE:      if (parseFloat(token, &course) != PARSE_SUCCESS) { return; } have_course = true; break;
+                    default: break;
+                }
+            }
+            token_index = 0;
+            field++;
+        }
+        else
+        {
+            if (token_index >= sizeof(token) - 1) { return; }
+            token[token_index++] = *rmc;
+        }
+        rmc++;
+    }
+
+    if (calculate) { return; } // no '*', the sentence is incomplete
+
+    token[token_index] = '\0';
+    uint8_t rx_crc;
+    if (strnlen(token, sizeof(token)) != 2) { return; }
+    if (parseUint8Hex(token, &rx_crc) != PARSE_SUCCESS) { return; }
+    if (rx_crc != crc) { return; }
+
+    metadata_vel_timestamp = HAL_GetTick();
+    if (status != 'A' || !have_speed || knots < 0) // V = receiver warning, no usable velocity
+    {
+        metadata_vel_valid = 0;
+        return;
+    }
+
+    metadata_sog_mps = knots * GPS_KNOTS_TO_MPS;
+    metadata_cog_deg = (have_course && course >= 0 && course < 360)
+        ? (uint16_t)((uint32_t)(course + 0.5f) % 360u)
+        : METADATA_GPS_COG_NONE;
+    metadata_vel_valid = 1;
 }
 
 static ParseResult_e parseGGA_TIME(const char *str, uint8_t *hour, uint8_t *minute, uint8_t *second)
