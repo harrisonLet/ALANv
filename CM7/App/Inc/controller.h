@@ -12,7 +12,7 @@
 #define LIVE_TASK_PRIORITY osPriorityLow
 
 #ifdef CM7_LIVE_DEBUG
-#define LIVE_TASK_HEAP (RTOS_MIN_STACK+512)
+#define LIVE_TASK_HEAP (RTOS_MIN_STACK+256)
 #define live_printf(fmt, ...) DEBUG_PRINTF(LIVE_TASK, fmt, ##__VA_ARGS__)
 #define liveStack_printf(fmt, ...) DEBUG_PRINTF("[LIVE-ST-]", fmt, ##__VA_ARGS__)
 #define liveCpu_printf(fmt, ...) DEBUG_PRINTF("[LIVE-CPU]", fmt, ##__VA_ARGS__)

@@ -10,7 +10,7 @@
 #define PROCESS_LSP_TASK_HEAP (RTOS_MIN_STACK+128)
 #define processLSP_printf(fmt, ...) DEBUG_PRINTF(PROCESS_LSP_TASK, fmt, ##__VA_ARGS__)
 #else
-#define PROCESS_LSP_TASK_HEAP (RTOS_MIN_STACK+128)
+#define PROCESS_LSP_TASK_HEAP (RTOS_MIN_STACK+0)
 #define processLSP_printf(...) ((void)0)
 #endif
 
