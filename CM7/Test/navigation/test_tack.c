@@ -125,6 +125,18 @@ static void tack_windFrom(void)
     CHECK(wind_estimate(&in, 0.0) == 63.0);
     CHECK(angleApprox(wind_estimate(&in, 4.0), 90.0, 1.0));
 
+    // The worked case: 3 m/s from the east looks like 71.6 deg from a boat doing 1 m/s north. The vane
+    // reports whole degrees, so 71 and 72 land either side of 90
+    in.sog_mps = 1.0f;
+    in.ang_wind = 72;
+    CHECK(angleApprox(wind_estimate(&in, 3.0), 90.0, 0.5));
+    CHECK(wind_estimate(&in, 3.0) > 90.0);
+    in.ang_wind = 71;
+    CHECK(wind_estimate(&in, 3.0) < 90.0);
+    CHECK(angleApprox(wind_estimate(&in, 3.0), 90.0, 1.0));
+    in.ang_wind = 63;
+    in.sog_mps = 2.0f;
+
     // The velocity is unusable: fall back to apparent
     in.vel_valid = false;                           CHECK(wind_estimate(&in, 4.0) == 63.0);
     in.vel_valid = true; in.sog_mps = 0.2f;         CHECK(wind_estimate(&in, 4.0) == 63.0);
@@ -323,6 +335,23 @@ static void tack_direct(void)
     CHECK(out.drift_distance == 20);
     CHECK(out.route_segment == 0);
 
+    // 10 m to starboard with a 20 m margin: half the return angle, 337.5
+    in = input(NOW, 50, 10, 0, 90, &r);
+    navTack_step(&in, &s, &out);
+    CHECK(out.nav_state == NAV_STATE_DIRECT);
+    CHECK(out.desired_heading == 337 || out.desired_heading == 338);
+    CHECK(out.drift_distance == 10);
+
+    // Wind from 55 with the boat at the port margin. The waypoint is 47 deg off the wind, so it is
+    // sailable, but steering 45 back to the line would be in the no-go zone: held at its edge on the
+    // waypoint's side
+    s = sailing(NAV_STATE_DIRECT, 0, LONG_AGO, 55);
+    in = input(NOW, 50, -20, 0, 55, &r);
+    navTack_step(&in, &s, &out);
+    CHECK(out.nav_state == NAV_STATE_DIRECT);
+    CHECK(out.desired_heading == 10);
+    s = sailing(NAV_STATE_DIRECT, 0, LONG_AGO, 90);
+
     // 359.6 rounds to 360, which must go out as 0
     in = input(NOW, 50, 0.1778, 0, 180, &r);
     navTack_step(&in, &s, &out);
@@ -382,7 +411,12 @@ static void tack_corridor(void)
     CHECK(out.nav_state == NAV_STATE_UPWIND_PORT);
     CHECK(out.desired_heading == 45);
 
-    // Past it: tack
+    // 0.7 x margin: no tack
+    in = input(NOW, 50, 14, 45, 0, &r);
+    navTack_step(&in, &s, &out);
+    CHECK(out.nav_state == NAV_STATE_UPWIND_PORT);
+
+    // Past 0.8 x margin: tack
     in = input(NOW, 51, 16.5, 45, 0, &r);
     navTack_step(&in, &s, &out);
     CHECK(out.nav_state == NAV_STATE_TACKING);
@@ -396,6 +430,11 @@ static void tack_corridor(void)
     navTack_step(&in, &s, &out);
     CHECK(out.nav_state == NAV_STATE_UPWIND_STBD);
     CHECK(out.desired_heading == 315);
+
+    // Same at the margin itself
+    in = input(NOW, 50, 20, 315, 0, &r);
+    navTack_step(&in, &s, &out);
+    CHECK(out.nav_state == NAV_STATE_UPWIND_STBD);
 
     // At the port edge heading out, but the last tack was 5 s ago
     s = sailing(NAV_STATE_UPWIND_STBD, 1, NOW - 5000u, 0);
@@ -478,6 +517,13 @@ static void tack_layline(void)
     navTack_step(&in, &s, &out);
     CHECK(out.nav_state == NAV_STATE_UPWIND_PORT);
     CHECK(out.desired_heading == 45);
+
+    // 51 deg off: past the band, leaves upwind
+    s = sailing(NAV_STATE_UPWIND_PORT, -1, LONG_AGO, 0);
+    in = input(NOW, 100, -123.5, 45, 0, &r);
+    navTack_step(&in, &s, &out);
+    CHECK(out.nav_state == NAV_STATE_DIRECT);
+    s = sailing(NAV_STATE_UPWIND_PORT, -1, LONG_AGO, 0);
 
     // 56 deg off, on this tack's side: bear away, no turn through the wind
     in = input(NOW, 100, -150, 45, 0, &r);
@@ -579,6 +625,28 @@ static void tack_arrival(void)
     CHECK(out.nav_state == NAV_STATE_DIRECT);
     CHECK(out.desired_heading == 315);
 
+    // A new route while on leg 1 of the old one: back to leg 0, starting from the boat
+    r.count = 2;
+    r.wp[1].lat = lat_of(200);
+    r.wp[1].lon = lon_of(200);
+    r.wp[1].margin_m = 20;
+    s = sailing(NAV_STATE_UPWIND_STBD, 1, NOW - 1000u, 180);
+    s.leg = 1;
+    s.leg_start_lat = r.wp[0].lat;
+    s.leg_start_lon = r.wp[0].lon;
+    in = input(NOW, 120, 60, 0, 180, &r);
+    in.route_version = ROUTE_VERSION + 1u;
+    navTack_step(&in, &s, &out);
+    CHECK(s.route_version == ROUTE_VERSION + 1u);
+    CHECK(s.leg == 0);
+    CHECK(s.leg_start_lat == in.lat && s.leg_start_lon == in.lon);
+    CHECK(s.tack_ms == NOW - NAV_TACK_MIN_INTERVAL_MS);
+    CHECK(out.nav_state == NAV_STATE_DIRECT);
+    CHECK(out.route_segment == 0);
+    CHECK(out.drift_distance == 0);
+    CHECK(out.desired_heading == 323);              // atan2(-60, 80) = -36.9 deg
+    r = route_north(200, 20);
+
     // Both waypoints inside the arrival radius at once
     r.count = 2;
     r.wp[1].lat = lat_of(203);
@@ -624,6 +692,19 @@ static void tack_faults(void)
     CHECK(out.nav_state == NAV_STATE_DIRECT);
     CHECK(!s.corridor_fault);
     CHECK(s.leg_start_lat == in.lat);
+
+    // Stale GPS: FAULT, and planning resumes when it is fresh again
+    s = sailing(NAV_STATE_DIRECT, 0, LONG_AGO, 90);
+    in = input(NOW, 50, 0, 0, 90, &r);
+    in.gps_timestamp = NOW - NAV_GPS_STALE_MS - 1u;
+    navTack_step(&in, &s, &out);
+    CHECK(out.nav_state == NAV_STATE_FAULT);
+    CHECK(out.desired_heading == NAV_HEADING_NONE);
+    in = input(NOW + 500u, 50, 0, 0, 90, &r);
+    navTack_step(&in, &s, &out);
+    CHECK(out.nav_state == NAV_STATE_DIRECT);
+    CHECK(out.desired_heading == 0);
+    CHECK(!s.corridor_fault);
 
     // A stale vane for one cycle does not latch: the same tack is picked up again
     s = sailing(NAV_STATE_UPWIND_PORT, -1, LONG_AGO, 0);
