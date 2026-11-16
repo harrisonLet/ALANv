@@ -23,6 +23,7 @@
 #include "fusionOrientation.h"
 #include "ipcCM7.h"
 #include "navigationRoute.h"
+#include "navigationTask.h"
 #include "console.h"
 #ifdef CM7_COMMANDER_ENABLE
 #include "commander.h"
@@ -213,6 +214,13 @@ void rtos_init()
     if (xTaskCreate(processLSP_handler, PROCESS_LSP_TASK, PROCESS_LSP_TASK_HEAP, NULL,
     PROCESS_LSP_TASK_PRIORITY, &processLSP_task) != pdPASS) { Error_Handler(); }
     totalStack += PROCESS_LSP_TASK_HEAP;
+    #endif
+
+    #if defined(CM7_NAVIGATION_ENABLE) && defined(CM7_PID_HEADING_ENABLE)
+    if (navigationTask_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(navigationTask_handler, NAVIGATION_TASK, NAVIGATION_TASK_HEAP, NULL,
+    NAVIGATION_TASK_PRIORITY, &navigationTask_task) != pdPASS) { Error_Handler(); }
+    totalStack += NAVIGATION_TASK_HEAP;
     #endif
 
     #if defined(CM7_COMMANDER_ENABLE) && defined(IPC_ENABLE)

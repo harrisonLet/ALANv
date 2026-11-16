@@ -46,6 +46,7 @@
 #define CM7_ARBITER_TAIL_ENABLE
 #define CM7_PID_SAIL_ENABLE
 #define CM7_PROCESS_LSP_ENABLE
+#define CM7_NAVIGATION_ENABLE // Live Tack Planning. Needs CM7_PID_HEADING_ENABLE, it will not run without it
 // #define CM7_CONSOLE_ENABLE
 
 
@@ -112,4 +113,8 @@
 
 #ifdef CM7_PROCESS_LSP_ENABLE
 // #define CM7_PROCESS_LSP_DEBUG
+#endif
+
+#ifdef CM7_NAVIGATION_ENABLE
+// #define CM7_NAVIGATION_DEBUG
 #endif
