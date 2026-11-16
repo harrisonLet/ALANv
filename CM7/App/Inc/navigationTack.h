@@ -12,7 +12,7 @@
 #include "sharedNavigation.h"
 
 #define NAV_TACK_TASK_FREQUENCY     2u      // Hz
-#define NAV_NO_GO_DEG               45.0    // closest the boat sails to the (estimated) wind; tune on the water
+#define NAV_NO_GO_DEG               45.0    // closest the boat sails to the wind, measured against the estimated wind, which is apparent unless the estimate is on; tune on the water
 #define NAV_NO_GO_HYST_DEG          5.0     // go back to DIRECT only at NO_GO + this, so it can't flip-flop
 #define NAV_TACK_XTE_FRACTION       0.8     // tack at this fraction of the leg's margin_m, leaving room for the turn
 #define NAV_TACK_MIN_INTERVAL_MS    15000u  // minimum time between tacks
@@ -33,12 +33,15 @@
  */
 typedef struct {
     uint32_t now_ms;            // HAL_GetTick() at the start of the cycle
-    bool     enabled;           // set by Commander (a flag until Commander exists)
+    bool     enabled;           // rudder arbiter is in AUTO
 
     double   lat;               // degrees, + = north, from fusion
     double   lon;               // degrees, + = east, from fusion
     uint16_t heading;           // 0..359 deg true, from fusion
     int16_t  ang_wind;          // apparent wind, -180..180 deg vs the bow, + = from starboard
+    float    sog_mps;           // speed over ground, m/s, from GPS RMC
+    uint16_t cog_deg;           // course over ground, 0..359 true
+    bool     vel_valid;         // RMC status 'A' and fresh
 
     uint8_t  gps_valid;         // Validity_e, from sensorGPS_getMetadata()
     uint32_t gps_timestamp;     // ms
