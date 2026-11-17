@@ -291,9 +291,10 @@ cmd_result_t execute_servo(ipc_cmd_t *cmd) {
             arbiterTail_request(ARBITER_TAIL_SOURCE_MANUAL, deg);
             return CMD_RESULT_OK;
 
-        // The command is a servo angle (+ = starboard) but the arbiter takes a turn, which is the negated servo angle.
+        // The command is a turn (+= starboard) passed straight to the arbiter. 
+        // The rudder servo is mounted upside down, so the arbiter's negation corrects that
         case COMMAND_RUDDER_SERVO:
-            arbiterRudder_request(ARBITER_RUDDER_SOURCE_MANUAL, (int16_t)-deg);
+            arbiterRudder_request(ARBITER_RUDDER_SOURCE_MANUAL, deg);
             return CMD_RESULT_OK;
 
         default:
