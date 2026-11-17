@@ -286,6 +286,8 @@ static uint8_t          s_rx_buf[64];
 static uint8_t          s_rx_len;
 static volatile uint8_t s_rx_ready;
 
+static void read_rx_packet(void);
+
 /* DIO0: PG9, EXTI line 9 → EXTI9_5_IRQn */
 #define DIO0_PIN   GPIO_PIN_9
 #define DIO0_PORT  GPIOG
@@ -413,6 +415,15 @@ int LoRa_init(void){
 void LoRa_Send(uint8_t *data, uint8_t len){
     if (s_state == LORA_STATE_TX) return;   /* previous TX still in flight */
 
+    /* Packet might have arrived during send handling finish reading packet before 
+        wiping receive buffer on transmit*/
+    if (s_state == LORA_STATE_RX) {
+        uint8_t irq = SPI_rx_byte(REG_IRQ_FLAGS);
+        if ((irq & IRQ_RX_DONE) && !(irq & IRQ_PAYLOAD_CRC_ERROR)) {
+            read_rx_packet();
+        }
+    }
+
     SPI_tx_byte(REG_OP_MODE, 0x81);         /* standby (exits RX if active) */
     HAL_Delay(1);
 
@@ -470,6 +481,11 @@ void LoRa_ProcessDIO0(void)
     SPI_tx_byte(REG_IRQ_FLAGS, 0xFF);        /* clear flags before touching FIFO */
 
     if (s_state == LORA_STATE_TX) {
+        /* DIO0 edge left over from an RxDone just before LoRa_Send (which already read that packet).
+           The transmission is still in flight, so leave the radio alone and wait for the real TxDone. */
+        if (!(irq & IRQ_TX_DONE)) {
+            return;
+        }
         #if defined(CM4_LORA_COMMANDS_ENABLE)
         LoRa_StartRX();
         #else
@@ -485,17 +501,24 @@ void LoRa_ProcessDIO0(void)
             return;
         }
         if (irq & IRQ_RX_DONE) {
-            uint8_t pkt_addr = SPI_rx_byte(REG_FIFO_RX_CURRENT_ADDR);
-            uint8_t pkt_len  = SPI_rx_byte(REG_RX_NB_BYTES);
-            if (pkt_len > sizeof(s_rx_buf)) pkt_len = sizeof(s_rx_buf);
-
-            SPI_tx_byte(REG_FIFO_ADDR_PTR, pkt_addr);
-            SPI_FIFO_rx(s_rx_buf, pkt_len);
-            s_rx_len   = pkt_len;
-            s_rx_ready = 1;
+            read_rx_packet();
         }
         LoRa_StartRX();
     }
+}
+
+/* Copy the packet the radio just received out of its FIFO into s_rx_buf.
+   The chip writes each packet at a variable offset, RegFifoRxCurrentAddr says where. */
+static void read_rx_packet(void)
+{
+    uint8_t pkt_addr = SPI_rx_byte(REG_FIFO_RX_CURRENT_ADDR);
+    uint8_t pkt_len  = SPI_rx_byte(REG_RX_NB_BYTES);
+    if (pkt_len > sizeof(s_rx_buf)) pkt_len = sizeof(s_rx_buf);
+
+    SPI_tx_byte(REG_FIFO_ADDR_PTR, pkt_addr);
+    SPI_FIFO_rx(s_rx_buf, pkt_len);
+    s_rx_len   = pkt_len;
+    s_rx_ready = 1;
 }
 
 /*

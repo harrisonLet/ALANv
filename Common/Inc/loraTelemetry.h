@@ -13,7 +13,7 @@ typedef enum {
 
 /*
  * Telemetry record sent from the boat to the ground station over LoRa.
- * Packed so the layout on the wire matches the struct exactly (72 bytes).
+ * Packed so the layout on the wire matches the struct exactly (73 bytes).
  */
 typedef struct __attribute__((packed)) {
 
@@ -60,11 +60,12 @@ typedef struct __attribute__((packed)) {
 
     /* Control */
     uint8_t  mode;                   /* current mode from the control task */
-    uint16_t desired_heading;        /* 0..359 deg, from LTP */
+    uint16_t desired_heading;        /* 0..359 deg, heading PID target (LTP later), 0xFFFF = no target */
     uint8_t  route_segment;          /* index of the active nautical vector */
     int16_t  drift_distance;         /* cross-track distance from the segment, m, + = starboard of path */
     uint16_t last_cmd_seq;           /* sequence number of the last command received */
     uint32_t uptime_ms;              /* board uptime */
+    uint8_t  last_cmd_result;        /* cmd_result_t of the command in last_cmd_seq */
 
 } LoRaTelemetry_t;
 

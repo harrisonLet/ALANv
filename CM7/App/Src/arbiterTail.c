@@ -15,7 +15,8 @@ TaskHandle_t arbiterTail_task;
 
 static QueueHandle_t request_queue[ARBITER_TAIL_SOURCE_COUNT];
 static volatile uint8_t current_mode;
-static int16_t current_angle;
+static volatile uint32_t mode_changes;   // bumped on every real mode change, see arbiterTail_getModeChanges()
+static volatile int16_t current_angle;   // also read by arbiterTail_setMode() in the commander task
 static int16_t clamped_angle(int16_t requested_angle, int16_t low, int16_t high);
 static bool get_request(ArbiterTailSource_e source, TickType_t max_wait, int16_t *angle);
 
@@ -33,7 +34,7 @@ RtosInit_e arbiterTail_rtosInit(void)
         request_queue[i] = xQueueCreate(1, sizeof(ArbiterTailRequest_t));
         if (request_queue[i] == NULL) { return RTOS_INIT_FAIL; }
     }
-    current_mode = IPC_MODE_AUTO;
+    current_mode = ARBITER_MODE_AUTO;
     current_angle = 0;
     arbiterTail_printf("arbiterTail_rtosInit complete");
     return RTOS_INIT_SUCCESS;
@@ -51,9 +52,9 @@ void arbiterTail_handler(void *argument)
 
         // go to the safe angle unless the active source has a request
         int16_t target = ARBITER_TAIL_SAFE;
-        if (current_mode == IPC_MODE_MANUAL) {
+        if (current_mode == ARBITER_MODE_MANUAL) {
             get_request(ARBITER_TAIL_SOURCE_MANUAL, 0, &target);
-        } else if (current_mode == IPC_MODE_AUTO) {
+        } else if (current_mode == ARBITER_MODE_AUTO || current_mode == ARBITER_MODE_SEMI) {
             get_request(ARBITER_TAIL_SOURCE_PID, pdMS_TO_TICKS(ARBITER_TAIL_STALE), &target);
         }
 
@@ -75,14 +76,32 @@ void arbiterTail_handler(void *argument)
 
 void arbiterTail_request(ArbiterTailSource_e source, int16_t angle)
 {
-    if (source >= ARBITER_TAIL_SOURCE_COUNT) { return; }
+    // The queue is NULL when this arbiter is disabled in shared_configuration.h
+    if (source >= ARBITER_TAIL_SOURCE_COUNT || request_queue[source] == NULL) { return; }
     ArbiterTailRequest_t request = { .source = source, .angle = angle, .timestamp = xTaskGetTickCount() };
     xQueueOverwrite(request_queue[source], &request);
 }
 
-void arbiterTail_setMode(uint8_t mode)
+void arbiterTail_setMode(ArbiterMode_e mode)
 {
+    // When switching to manual mode set target to current turn (dont use stale prev value)
+    if (mode == ARBITER_MODE_MANUAL && current_mode != ARBITER_MODE_MANUAL) {
+        arbiterTail_request(ARBITER_TAIL_SOURCE_MANUAL, current_angle);
+    }
+    if (mode != current_mode) {
+        mode_changes++;
+    }
     current_mode = mode;
+}
+
+uint32_t arbiterTail_getModeChanges(void)
+{
+    return mode_changes;
+}
+
+ArbiterMode_e arbiterTail_getMode(void)
+{
+    return current_mode;
 }
 
 static int16_t clamped_angle(int16_t requested_angle, int16_t low, int16_t high)

@@ -24,14 +24,9 @@
 #include "lora.h"
 #include "loraTelemetry.h"
 #include "telemetryReceive.h"
+#include "fakeCommands.h"
 #include <stdint.h>
 #include <string.h>
-
-#include "stm32h7xx_hal_conf.h"
-#include "stm32h7xx_hal_gpio.h"
-#include "stm32h7xx_hal_rcc.h"
-#include "stm32h7xx_hal_spi.h"
-#include "stm32h7xx_hal_tim.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -40,18 +35,6 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
-typedef struct __attribute__((packed)) {
-    float    lat;
-    float    lon;
-    int16_t  heading;
-    int16_t  roll;
-    int16_t  pitch;
-    uint8_t  battery;
-    int16_t  wind_speed;
-    int16_t  wind_dir;
-    int16_t  sail_angle;
-} TelemetryPacket_t;
 
 /* USER CODE END PTD */
 
@@ -63,8 +46,6 @@ typedef struct __attribute__((packed)) {
 #define HSEM_ID_0 (0U) /* HW semaphore 0*/
 #endif
 #endif
-#define ADDR_SAMD21  0xAA
-#define ADDR_STM32   0xBB
 
 /* USER CODE END PD */
 
@@ -81,10 +62,16 @@ SPI_HandleTypeDef hspi1;
 TIM_HandleTypeDef htim6;
 volatile uint8_t  tx_flag  = 0;  /* set by TIM6 ISR every 1 s */
 volatile uint8_t  dio0_flag = 0; /* set by EXTI ISR when DIO0 (PG9) fires */
+#if defined(CM4_FAKE_COMMANDS)
+volatile uint8_t  fake_rx_flag = 0; /* set by TIM6 ISR every CM4_FAKE_CMD_PERIOD_S */
+#endif
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN PFP */
+#if defined(CM4_LORA_COMMANDS_ENABLE) || defined(CM4_FAKE_COMMANDS)
+static void handle_rx_packet(const uint8_t *cmd, uint8_t len, bool ipc_attached);
+#endif
 static void MX_SPI1_Init(void);
 static void MX_TIM6_Init(void);
 static void MX_StatusLED_Init(void);
@@ -94,9 +81,6 @@ static void SystemClock_Config(void);
 /* Private user code --------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-
-// initialize gpio pins for di0-3 interrupt and rst
-
 /* USER CODE END 0 */
 
 /**
@@ -104,7 +88,7 @@ static void SystemClock_Config(void);
   * @retval int
   */
 int main(void)
-  {
+{
 
   /* USER CODE BEGIN 1 */
 
@@ -151,8 +135,7 @@ int main(void)
   if (BSP_COM_Init(COM1, &BspCOMInit) != BSP_ERROR_NONE) { Error_Handler(); }
   setvbuf(stdout, NULL, _IONBF, 0);
 #endif
-  
-  
+
 #if defined(CM4_ENABLE)
   MX_SPI1_Init();
   MX_TIM6_Init();
@@ -174,7 +157,7 @@ int main(void)
   LoRa_StartRX();
   #endif
 
-  static uint8_t tx_seq       = 0;
+  static uint8_t tx_seq = 0;
 
   #if defined(CM4_LORA_DUMMY_TELEMETRY)
   // Fixed, easy-to-recognise values so the ground station decode can be checked by eye
@@ -215,9 +198,6 @@ int main(void)
   #else
   LoRaTelemetry_t telemetryPacket = {0};
   #endif
-  #define LORA_HDR_LEN_BYTES (5U) // dest, src, seq, len, flags
-
-  // char message[] = "Hello from harrisons laptop!\n";
 
   /* USER CODE END 2 */
 
@@ -227,17 +207,32 @@ int main(void)
   {
       __WFI();   /* sleep until any interrupt fires */
 
+      // Radio first: a command whose RxDone landed in the same wake as the TX tick is read out
+      // before LoRa_Send puts the radio into TX (LoRa_Send also checks, for one that lands later)
+      if (dio0_flag) {
+          dio0_flag = 0;
+          LoRa_ProcessDIO0();
+      }
+
+      #if defined(CM4_LORA_COMMANDS_ENABLE)
+      {
+          // Every wake, not only on DIO0: LoRa_Send can be the one that read the packet out
+          uint8_t cmd[64];
+          uint8_t len = LoRa_GetCmd(cmd);
+          handle_rx_packet(cmd, len, ipc_attached);
+      }
+      #endif
+
       // Every 1 s (TIM6): read the latest telemetry from SRAM4 and send it over LoRa.
       // If the CM7 is mid-write, tx_flag stays set and the read retries on the next wake (~1 ms)
       if (tx_flag) {
-        printf("[CM4 TX] tx_flag set, reading telemetry from SRAM4\r\n");
         uint8_t telem_status_flags = 0;
         #if defined(CM4_LORA_DUMMY_TELEMETRY)
         // Test mode: skip SRAM4, send the fixed packet with a live uptime
         telemetryPacket.uptime_ms = HAL_GetTick();
         bool telem_ready = true;
         #else
-        // Only send LoRa for succefull read or 5 busy attempts in a row
+        // Only send LoRa for successful read or 5 busy attempts in a row
         bool telem_ready = telemetryRec_read(&telem_status_flags, &telemetryPacket);
         #endif
         if (telem_ready) {
@@ -262,18 +257,16 @@ int main(void)
         // tx_flag = 0;
       }
 
-      if (dio0_flag) {
-          dio0_flag = 0;
-          LoRa_ProcessDIO0();
-
-          #if defined(CM4_LORA_COMMANDS_ENABLE)
+      #if defined(CM4_FAKE_COMMANDS)
+      // Test: a scripted packet takes the same parse path as a received one.
+      // Kept off dio0_flag so it can never be mistaken for TxDone mid-transmit.
+      if (fake_rx_flag) {
+          fake_rx_flag = 0;
           uint8_t cmd[64];
-          uint8_t len = LoRa_GetCmd(cmd);
-          if (len > 0) {
-              printf("[RX] cmd len=%d byte0=0x%02X\r\n", len, cmd[0]);
-          }
-          #endif
+          uint8_t len = fakeCmd_next(cmd);
+          handle_rx_packet(cmd, len, ipc_attached);
       }
+      #endif
   }
 #endif
 
@@ -282,6 +275,40 @@ int main(void)
 
 /* USER CODE BEGIN 4 */
 
+#if defined(CM4_LORA_COMMANDS_ENABLE) || defined(CM4_FAKE_COMMANDS)
+/*
+   Check one ground station packet and queue its command for the CM7.
+   Wire format: dest, src, seq, len, type, payload. len counts the type byte plus the payload,
+   which is 0 to IPC_CMD_DATA_SIZE bytes: none for heartbeat and mode commands, an int16 for angles,
+   up to 16 for route waypoints. So a packet is 5 to 21 bytes.
+   len == 0 means nothing arrived.
+*/
+static void handle_rx_packet(const uint8_t *cmd, uint8_t len, bool ipc_attached)
+{
+    if (len == 0) { return; }
+
+    // Header byte 3 says how many bytes follow it, and that must be exactly what arrived
+    uint8_t body = (len >= LORA_HDR_LEN_BYTES) ? cmd[3] : 0U;
+    if (len >= LORA_HDR_LEN_BYTES && cmd[0] == ADDR_STM32 &&
+        body >= 1U && body <= 1U + IPC_CMD_DATA_SIZE && len == (LORA_HDR_LEN_BYTES - 1U) + body)
+    {
+        ipc_cmd_t c = { .type = cmd[4], .seq = cmd[2] };   // raw starts zeroed, so a short payload reads as 0
+        memcpy(c.raw, &cmd[LORA_HDR_LEN_BYTES], body - 1U);
+        // Without a successful attach the CM7 may not be using SRAM4, or may lay it out differently
+        if (!ipc_attached)
+        {
+            printf("[RX] IPC not attached, dropped\r\n");
+        }
+        else if (ipc_cm4_push_command(&c) != IPC_STATUS_OK)
+        {
+            printf("[RX] ring full, dropped\r\n");
+        }
+    }
+    else {
+        printf("[RX] ignored len=%u dest=0x%02X\r\n", len, cmd[0]);
+    }
+}
+#endif
 
 static void MX_SPI1_Init(void)
 {

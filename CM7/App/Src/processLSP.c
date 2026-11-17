@@ -1,6 +1,7 @@
 #include "processLSP.h"
 #include "pidSail.h"
 #include "telemetry.h"
+#include "arbiterTail.h"
 
 #include <stdlib.h>
 
@@ -24,19 +25,30 @@ RtosInit_e processLSP_rtosInit(void)
 }
 
 // the handler picks the main sail angle based on the wind direction and the sailing zone
-void processLSP_handler(void *argument)
-{
+void processLSP_handler(void *argument){
     processLSP_printf("processLSP_handler start");
     TickType_t lastWakeup = xTaskGetTickCount();
     bool have_target = false;
     int16_t last_target = 0;
     uint32_t loop_count = 0;
+    uint32_t seen_mode_changes = arbiterTail_getModeChanges();
 
     // loop that runs at 2 Hz, reads the wind and picks a main sail angle
-    for (;;)
-    {
+    for (;;){
         if (!xTaskDelayUntil(&lastWakeup, configTICK_RATE_HZ / PROCESS_LSP_FREQUENCY))
         {
+            continue;
+        }
+        // Another mode might have changed target before switching back, LSP needs to reset PIDs target 
+        uint32_t mode_changes = arbiterTail_getModeChanges();
+        if (mode_changes != seen_mode_changes) {
+            seen_mode_changes = mode_changes;
+            have_target = false;
+        }
+
+        // Only plan the sail in AUTO; in SEMI the ground station sets the target
+        if (arbiterTail_getMode() != ARBITER_MODE_AUTO) {
+            have_target = false;
             continue;
         }
 
@@ -49,7 +61,7 @@ void processLSP_handler(void *argument)
 
         int16_t target = sail_target(wind.ang_wind);
 
-        // Only send a new target when it moved more than the deadband
+        // Only send a new target when it moved more than the deadband, or when switching back to auto_mode
         if (!have_target || abs(ANG_WRAP_180(target - last_target)) > PROCESS_LSP_DEADBAND) {
             pidSail_setTarget(target);
             last_target = target;

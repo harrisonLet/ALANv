@@ -6,7 +6,7 @@
  *     functions if it returned OK.
  *   - Call push/read from the main loop only, never from an interrupt handler.
  *   - printf does not reach the UART while both cores run, so report
- *     failures with LEDs or the debugger.
+ *     failures through the LoRa telemetry flags or the debugger.
  */
 
 #ifndef IPC_CM4_H

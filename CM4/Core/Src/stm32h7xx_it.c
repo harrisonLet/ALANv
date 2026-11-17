@@ -21,6 +21,8 @@
 #include "main.h"
 #include "stm32h7xx_it.h"
 #include "stm32h7xx_hal_tim.h"
+#include "shared_configuration.h"
+#include "fakeCommands.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
@@ -61,6 +63,9 @@
 extern TIM_HandleTypeDef htim6;
 extern volatile uint8_t  tx_flag;
 extern volatile uint8_t  dio0_flag;
+#ifdef CM4_FAKE_COMMANDS
+extern volatile uint8_t  fake_rx_flag;
+#endif
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -215,6 +220,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     {
         tx_flag = 1;
         HAL_GPIO_TogglePin(TICK_LED_PORT, TICK_LED_PIN);
+
+        #ifdef CM4_FAKE_COMMANDS
+        // Hand the main loop the next scripted command every CM4_FAKE_CMD_PERIOD_S seconds
+        static uint32_t fake_cmd_seconds = 0;
+        if (++fake_cmd_seconds >= CM4_FAKE_CMD_PERIOD_S) {
+            fake_cmd_seconds = 0;
+            fake_rx_flag = 1;
+        }
+        #endif
     }
 }
 

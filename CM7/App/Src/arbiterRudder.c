@@ -33,7 +33,7 @@ RtosInit_e arbiterRudder_rtosInit(void)
         request_queue[i] = xQueueCreate(1, sizeof(ArbiterRudderRequest_t));
         if (request_queue[i] == NULL) { return RTOS_INIT_FAIL; }
     }
-    current_mode = IPC_MODE_AUTO;
+    current_mode = ARBITER_MODE_AUTO;
     current_turn = 0;      // leave the rudder centered until first request
     arbiterRudder_printf("arbiterRudder_rtosInit complete");
     return RTOS_INIT_SUCCESS;
@@ -51,9 +51,9 @@ for(;;){
 
         // center unless the active source has a request
         int16_t target = 0;
-        if (current_mode == IPC_MODE_MANUAL) {
+        if (current_mode == ARBITER_MODE_MANUAL) {
             get_request(ARBITER_RUDDER_SOURCE_MANUAL, 0, &target);
-        } else if (current_mode == IPC_MODE_AUTO) {
+        } else if (current_mode == ARBITER_MODE_AUTO || current_mode == ARBITER_MODE_SEMI) {
             get_request(ARBITER_RUDDER_SOURCE_PID, pdMS_TO_TICKS(ARBITER_RUDDER_STALE), &target);
         }
 
@@ -75,14 +75,19 @@ for(;;){
 
 void arbiterRudder_request(ArbiterRudderSource_e source, int16_t turn)
 {
-    if (source >= ARBITER_RUDDER_SOURCE_COUNT) { return; }
+    // The queue is NULL when this arbiter is disabled in shared_configuration.h
+    if (source >= ARBITER_RUDDER_SOURCE_COUNT || request_queue[source] == NULL) { return; }
     ArbiterRudderRequest_t request = { .source = source, .turn = turn, .timestamp =
 xTaskGetTickCount() };
     xQueueOverwrite(request_queue[source], &request);
 }
 
-void arbiterRudder_setMode(uint8_t mode)
+void arbiterRudder_setMode(ArbiterMode_e mode)
 {
+    // When switching to manual mode set target to current turn (dont use stale prev value)
+    if (mode == ARBITER_MODE_MANUAL && current_mode != ARBITER_MODE_MANUAL) {
+        arbiterRudder_request(ARBITER_RUDDER_SOURCE_MANUAL, current_turn);
+    }
     current_mode = mode;
 }
 

@@ -3,6 +3,7 @@
 
 #include "system.h"
 #include "ipc.h"
+#include "arbiterMode.h"
 
 #define ARBITER_TAIL_TASK "[ATAIL---]"
 #define ARBITER_TAIL_TASK_PRIORITY osPriorityAboveNormal
@@ -34,6 +35,10 @@ RtosInit_e arbiterTail_rtosInit(void);
 void arbiterTail_handler(void *argument);
 
 void arbiterTail_request(ArbiterTailSource_e source, int16_t angle);
-void arbiterTail_setMode(uint8_t mode);
+void arbiterTail_setMode(ArbiterMode_e mode);
+ArbiterMode_e arbiterTail_getMode(void);
+// Counts mode changes since boot. A poller compares it with the last value it saw to catch a
+// change it was too slow to see in arbiterTail_getMode(), such as AUTO -> SEMI -> AUTO between two samples.
+uint32_t arbiterTail_getModeChanges(void);
 
 #endif // ARBITER_TAIL_H

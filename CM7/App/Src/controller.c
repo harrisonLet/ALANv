@@ -22,7 +22,11 @@
 #include "sensorWind.h"
 #include "fusionOrientation.h"
 #include "ipcCM7.h"
+#include "navigationRoute.h"
 #include "console.h"
+#ifdef CM7_COMMANDER_ENABLE
+#include "commander.h"
+#endif
 
 #include "semphr.h"
 
@@ -122,7 +126,10 @@ void hardware_init(void) {
 void rtos_init()
 {
     int32_t totalStack = 0;
-    
+
+    // Route mutex, before any task that might commit or copy a route
+    if (!navigationRoute_init()) { Error_Handler(); }
+
     #ifdef CM7_LIVE_ENABLE
     cm7_printf("live_rtosInit");
     if (live_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
@@ -206,6 +213,13 @@ void rtos_init()
     if (xTaskCreate(processLSP_handler, PROCESS_LSP_TASK, PROCESS_LSP_TASK_HEAP, NULL,
     PROCESS_LSP_TASK_PRIORITY, &processLSP_task) != pdPASS) { Error_Handler(); }
     totalStack += PROCESS_LSP_TASK_HEAP;
+    #endif
+
+    #if defined(CM7_COMMANDER_ENABLE) && defined(IPC_ENABLE)
+    if (commander_rtos_init() != RTOS_INIT_SUCCESS) { Error_Handler(); }
+    if (xTaskCreate(commander_handler, COMMANDER_TASK, CM7_COMMANDER_HEAP, NULL,
+    COMMANDER_TASK_PRIORITY, &commander_task) != pdPASS) { Error_Handler(); }
+    totalStack += CM7_COMMANDER_HEAP;
     #endif
 
     #ifdef CM7_CONSOLE_ENABLE

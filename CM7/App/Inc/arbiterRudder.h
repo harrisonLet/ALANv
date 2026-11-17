@@ -3,6 +3,7 @@
 
 #include "system.h"
 #include "ipc.h"
+#include "arbiterMode.h"
 
 #define ARBITER_RUDDER_TASK "[ARUDDER-]"
 #define ARBITER_RUDDER_TASK_PRIORITY osPriorityAboveNormal
@@ -33,6 +34,6 @@ RtosInit_e arbiterRudder_rtosInit(void);
 void arbiterRudder_handler(void *argument);
 
 void arbiterRudder_request(ArbiterRudderSource_e source, int16_t turn);
-void arbiterRudder_setMode(uint8_t mode);
+void arbiterRudder_setMode(ArbiterMode_e mode);
 
 #endif // ARBITER_RUDDER_H

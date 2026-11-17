@@ -1,0 +1,19 @@
+/////////////////////////////////////////////////////////////////////////////////////////
+// Live Tack Planning step. No RTOS calls, never include system.h.
+//
+// STUB: compiles only. The body comes with the LTP step of the design plan.
+/////////////////////////////////////////////////////////////////////////////////////////
+
+#include "navigationTack.h"
+#include "navigationGeo.h"
+#include <math.h>
+#include "sharedSensor.h"
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void navTack_step(const NavTackInput_t *in, NavTackState_t *state, TelemetryNavigation_t *out)
+{
+    (void)in;
+    (void)state;
+    (void)out;
+}
