@@ -56,9 +56,9 @@
 #endif
 
 #ifdef CM7_LIVE_ENABLE
-#define CM7_LIVE_DEBUG
-#define CM7_LIVE_DEBUG_STACK // CM7_LIVE_DEBUG must be enabled
-#define CM7_LIVE_DEBUG_CPU // CM7_LIVE_DEBUG must be enabled. Prints idle % and each task's share of CPU every second
+// #define CM7_LIVE_DEBUG
+// #define CM7_LIVE_DEBUG_STACK // CM7_LIVE_DEBUG must be enabled
+// #define CM7_LIVE_DEBUG_CPU // CM7_LIVE_DEBUG must be enabled. Prints idle % and each task's share of CPU every second
 #endif
 
 #ifdef CM7_TELEMETRY_ENABLE
@@ -72,7 +72,7 @@
 #endif
 
 #ifdef CM7_SENSOR_ENCODER_ENABLE
-// #define CM7_SENSOR_ENCODER_DEBUG
+#define CM7_SENSOR_ENCODER_DEBUG
 #endif
 
 #ifdef CM7_SENSOR_GPS_ENABLE

@@ -26,7 +26,9 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 
 #include "sensorEncoder.h"
+#include "main.h"
 #include "projdefs.h"
+#include "stm32h7xx_hal_gpio.h"
 #include "telemetry.h"
 
 #include "queue.h"
@@ -118,7 +120,7 @@ HardwareInit_e sensorEncoder_hardwareInit(void)
     GPIO_InitTypeDef GPIO_InitStruct = {0};
     GPIO_InitStruct.Pin = GPIO_PIN_7 | GPIO_PIN_6;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD; // Open Drain - OD
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
@@ -192,19 +194,6 @@ RtosInit_e sensorEncoder_rtosInit(void)
     // Initialize the data vars
     sensorEncoder_printf("    - init data vars");
     metadata_angle_offset = 0;
-    uint8_t buf[3];
-    for (uint8_t i = 0; i < 10; i++)
-    {
-        if (AS5600_readRegs(AS5600_STATUS, buf, 3) != HAL_OK) 
-        { 
-            sensorEncoder_printf("WARNING: Failed to read raw angle for start offset, will use 0 instead"); 
-            break;
-        } else {
-            if (buf[0] & AS5600_STATUS_MD) { metadata_angle_offset = ((buf[1] << 8) | buf[2]) & AS5600_12BIT_MASK; break; }
-            else { sensorEncoder_printf("WARNING: Magnet was not detected, trying again."); HAL_Delay(50); }
-        }
-    }
-    sensorEncoder_printf("    - telemetry offset: %u", metadata_angle_offset);
 
     sensorEncoder_printf("sensorEncoder_rtosInit complete");
     return RTOS_INIT_SUCCESS;
@@ -215,6 +204,23 @@ RtosInit_e sensorEncoder_rtosInit(void)
 void sensorEncoder_handler(void *argument)
 {
     sensorEncoder_printf("sensorEncoder_handler start. Poll: %u ms", 1000 / SENSOR_ENCODER_FREQUENCY);
+    
+    sensorEncoder_printf("    - init telemetry offset");
+    uint8_t buf[3];
+    for (uint8_t i = 0; i < 10; i++)
+    {
+        sensorEncoder_printf("        - attempt %u", i+1);
+        if (AS5600_readRegs(AS5600_STATUS, buf, 3) != HAL_OK) 
+        { 
+            sensorEncoder_printf("WARNING: Failed to read raw angle for start offset, will use 0 instead"); 
+            break;
+        } else {
+            if (buf[0] & AS5600_STATUS_MD) { metadata_angle_offset = ((buf[1] << 8) | buf[2]) & AS5600_12BIT_MASK; break; }
+            else { sensorEncoder_printf("WARNING: Magnet was not detected, trying again."); vTaskDelay(pdMS_TO_TICKS(50)); }
+        }
+    }
+    sensorEncoder_printf("    - telemetry offset: %u", metadata_angle_offset);
+    
     TickType_t lastWake = xTaskGetTickCount();
     for(;;)
     {
