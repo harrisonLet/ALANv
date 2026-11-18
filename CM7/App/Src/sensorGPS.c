@@ -100,6 +100,13 @@ static uint16_t metadata_cog_deg;
 static uint8_t metadata_vel_valid;
 static uint32_t metadata_vel_timestamp;
 
+#ifdef RENODE_SIM
+// Simulator build only (sim/renode/run.sh). Renode's UART and DMA models have no idle-line interrupt
+// and no circular DMA, so no GPS data would arrive. The sim takes one interrupt per byte into the same
+// buffer instead; everything after the buffer is the code the board runs.
+static uint8_t sim_rx_byte;
+#endif
+
 static HAL_StatusTypeDef uartDMAHandler_start(void);
 
 static Validity_e    parseGGA(const char *gga);
@@ -366,7 +373,11 @@ static HAL_StatusTypeDef uartDMAHandler_start(void)
     __HAL_UART_CLEAR_FLAG(&uart_handler, UART_CLEAR_OREF | UART_CLEAR_FEF | UART_CLEAR_NEF | UART_CLEAR_PEF | UART_CLEAR_IDLEF);
     __HAL_UART_SEND_REQ(&uart_handler, UART_RXDATA_FLUSH_REQUEST);
 
+    #ifdef RENODE_SIM
+    return HAL_UART_Receive_IT(&uart_handler, &sim_rx_byte, 1);
+    #else
     return HAL_UARTEx_ReceiveToIdle_DMA(&uart_handler, uart_dma_buf, SENSOR_GPS_DMA_BUFFER_SIZE);
+    #endif
 }
 
 
@@ -632,6 +643,26 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
         portYIELD_FROM_ISR(woken);
     }
 }
+
+#ifdef RENODE_SIM
+// One byte arrived. Wake the task at the end of each sentence
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance != UART7) { return; }
+
+    uint8_t byte = sim_rx_byte;
+    uart_dma_buf[uart_dma_head] = byte;
+    uart_dma_head = (uint16_t)((uart_dma_head + 1u) % SENSOR_GPS_DMA_BUFFER_SIZE);
+    HAL_UART_Receive_IT(&uart_handler, &sim_rx_byte, 1);
+
+    if (byte == '\n' && sensorGPS_task != NULL)
+    {
+        BaseType_t woken = pdFALSE;
+        vTaskNotifyGiveFromISR(sensorGPS_task, &woken);
+        portYIELD_FROM_ISR(woken);
+    }
+}
+#endif
 
 // Overrun, framing, noise, or DMA errors stop the reception. The HAL has already aborted the DMA at
 // this point, so only record the error and wake the task, which restarts the reception.

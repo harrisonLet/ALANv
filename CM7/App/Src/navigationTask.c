@@ -164,11 +164,13 @@ void navigationTask_handler(void *argument)
         // print everything once a second
         if (++loop_count % NAV_TACK_TASK_FREQUENCY == 0)
         {
-            navigationTask_printf("state %u leg %u xte %d m | wind apparent %d estimated %d | heading %u target %d | %d cm/s%s",
+            // valid: Validity_e of each input. LTP needs gps 01 or 06, imu 01, wind 01
+            navigationTask_printf("state %u leg %u xte %d m | wind apparent %d estimated %d | heading %u target %d | %d cm/s | valid gps %02X imu %02X wind %02X%s",
                 (unsigned)out.nav_state, (unsigned)st.leg, (int)out.drift_distance,
                 (int)in.ang_wind, (int)lround(navGeo_circularMean(st.wind, st.wind_count)),
                 (unsigned)in.heading, (out.desired_heading == NAV_HEADING_NONE) ? -1 : (int)out.desired_heading,
-                (int)lroundf(in.sog_mps * 100.0f), in.enabled ? "" : " | not in AUTO");
+                (int)lroundf(in.sog_mps * 100.0f),
+                (unsigned)in.gps_valid, (unsigned)in.imu_valid, (unsigned)in.wind_valid, in.enabled ? "" : " | not in AUTO");
         }
         #endif
     }
