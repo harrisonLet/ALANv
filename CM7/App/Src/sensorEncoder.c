@@ -276,7 +276,7 @@ void sensorEncoder_handler(void *argument)
 static HAL_StatusTypeDef AS5600_readRegs(uint8_t reg, uint8_t *buf, uint16_t len)
 {
     HAL_StatusTypeDef status = HAL_I2C_Mem_Read(&i2c_handler, AS5600_ADDR << 1, reg,
-                                                I2C_MEMADD_SIZE_8BIT, buf, len, 3);
+                                                I2C_MEMADD_SIZE_8BIT, buf, len, 8);
     if (status != HAL_OK) {
         sensorEncoder_printf("ERROR: AS5600 read 0x%02X failed, HAL status: %d, I2C error: 0x%lX\r\n",
                reg, status, HAL_I2C_GetError(&i2c_handler));

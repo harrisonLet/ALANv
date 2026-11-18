@@ -3,6 +3,7 @@
 
 #define SERVO_RUDDER_TASK "[SERVRUDD]"
 
+// servoRudder_setAngle runs on the 20 Hz arbiter path, where a blocking UART print costs ~4 ms per step
 #ifdef CM7_SERVO_RUDDER_DEBUG
 #define servoRudder_printf(fmt, ...) DEBUG_PRINTF(SERVO_RUDDER_TASK, fmt, ##__VA_ARGS__)
 #else

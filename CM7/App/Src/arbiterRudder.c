@@ -84,6 +84,10 @@ xTaskGetTickCount() };
 
 void arbiterRudder_setMode(ArbiterMode_e mode)
 {
+    // When switching to manual mode set target to current turn (dont use stale prev value)
+    if (mode == ARBITER_MODE_MANUAL && current_mode != ARBITER_MODE_MANUAL) {
+        arbiterRudder_request(ARBITER_RUDDER_SOURCE_MANUAL, current_turn);
+    }
     current_mode = mode;
 }
 

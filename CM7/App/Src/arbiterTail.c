@@ -15,7 +15,8 @@ TaskHandle_t arbiterTail_task;
 
 static QueueHandle_t request_queue[ARBITER_TAIL_SOURCE_COUNT];
 static volatile uint8_t current_mode;
-static int16_t current_angle;
+static volatile uint32_t mode_changes;   // bumped on every real mode change, see arbiterTail_getModeChanges()
+static volatile int16_t current_angle;   // also read by arbiterTail_setMode() in the commander task
 static int16_t clamped_angle(int16_t requested_angle, int16_t low, int16_t high);
 static bool get_request(ArbiterTailSource_e source, TickType_t max_wait, int16_t *angle);
 
@@ -83,7 +84,19 @@ void arbiterTail_request(ArbiterTailSource_e source, int16_t angle)
 
 void arbiterTail_setMode(ArbiterMode_e mode)
 {
+    // When switching to manual mode set target to current turn (dont use stale prev value)
+    if (mode == ARBITER_MODE_MANUAL && current_mode != ARBITER_MODE_MANUAL) {
+        arbiterTail_request(ARBITER_TAIL_SOURCE_MANUAL, current_angle);
+    }
+    if (mode != current_mode) {
+        mode_changes++;
+    }
     current_mode = mode;
+}
+
+uint32_t arbiterTail_getModeChanges(void)
+{
+    return mode_changes;
 }
 
 ArbiterMode_e arbiterTail_getMode(void)

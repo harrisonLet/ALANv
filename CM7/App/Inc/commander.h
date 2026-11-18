@@ -29,11 +29,12 @@
 // Only used with COMMANDER_LINK_TIMEOUT_ENABLE (shared_configuration.h)
 #define COMMANDER_LINK_TIMEOUT_MS 5000U
 
-#define COMMANDER_FREQ 100U // Hz, NEEDS TESTING
-_Static_assert(COMMANDER_FREQ > 0u && COMMANDER_FREQ <= 1000u, "COMMANDER_FREQ must be 1Hz-1KHz");
-#if (SYSTEM_TICK_RATE_HZ % COMMANDER_FREQ) != 0u
-#warning "COMMANDER_FREQ does not divide the tick rate, the period will be rounded down"
-#endif
+// The commander sleeps until the CM4's HSEM doorbell wakes it. It also wakes this often without a doorbell,
+// to pick up a command whose doorbell was missed and to run the link timeout check.
+#define COMMANDER_POLL_MS 100U
+
+// How long the result of a real command stays in telemetry before heartbeats replace it. 
+#define COMMANDER_RESULT_HOLD_MS 10000U
 
 extern TaskHandle_t commander_task;
 

@@ -59,7 +59,7 @@ void servoRudder_setAngle(int16_t angle)
 {
   uint16_t pulse_length = servoRudder_angleToPulse(angle);
   __HAL_TIM_SET_COMPARE(&servo_tim, TIM_CHANNEL_2, pulse_length);
-  servoRudder_printf("%s Setting Servo Angle To: %d", SERVO_RUDDER_TASK, angle);
+  servoRudder_printf("Setting Servo Angle To: %d", angle);
 }
 
 uint16_t servoRudder_angleToPulse(int16_t angle) {
