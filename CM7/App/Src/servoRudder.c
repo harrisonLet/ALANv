@@ -43,14 +43,14 @@ void servoRudder_hardwareInit(void)
   if (HAL_TIM_PWM_Start(&servo_tim, TIM_CHANNEL_2) != HAL_OK) { Error_Handler(); }
 
   /* Sweep to extremes on startup so you can see if servo responds */
-  printf("%s Starting motion sweep\r\n", SERVO_RUDDER_TASK);
+  servoRudder_printf("%s Starting motion sweep", SERVO_RUDDER_TASK);
   int16_t test_angles[] = {-5, 5, 0};
   for (int i = 0; i < 3; i++) {
     servoRudder_setAngle(test_angles[i]);
     HAL_Delay(1000);
   }
 
-  printf("%s Initialized, centered at %d degrees\r\n", SERVO_RUDDER_TASK, servoRudder_pulseToAngle(SERVO_CENTER_PULSE));
+  servoRudder_printf("%s Initialized, centered at %d degrees", SERVO_RUDDER_TASK, servoRudder_pulseToAngle(SERVO_CENTER_PULSE));
 }
 
 
@@ -59,7 +59,7 @@ void servoRudder_setAngle(int16_t angle)
 {
   uint16_t pulse_length = servoRudder_angleToPulse(angle);
   __HAL_TIM_SET_COMPARE(&servo_tim, TIM_CHANNEL_2, pulse_length);
-  printf("%s Setting Servo Angle To: %d\r\n", SERVO_RUDDER_TASK, angle);
+  servoRudder_printf("%s Setting Servo Angle To: %d", SERVO_RUDDER_TASK, angle);
 }
 
 uint16_t servoRudder_angleToPulse(int16_t angle) {

@@ -31,7 +31,17 @@
 
 #include "semphr.h"
 
+#define MAX_TASKS 100
+#define CPU_MAX_TASKS 24 // app tasks + IDLE + timer service
+
 TaskHandle_t task_live;
+
+static TaskHandle_t all_tasks[MAX_TASKS];
+static uint16_t all_stack[MAX_TASKS]; // stack size in words, for reporting usage
+static int task_count;
+#ifdef CM7_LIVE_DEBUG_STACK
+volatile uint16_t stackHWM[MAX_TASKS];
+#endif
 
 HardwareInit_e live_hardwareInit();
 RtosInit_e live_rtosInit();
@@ -124,116 +134,111 @@ void hardware_init(void) {
   * @brief  Initialize the Real-Time Operating System and all of its components.
   * @retval None
   */
+static int32_t totalStack; // words, for the allocation report
+
+// Creates a task and records it for the stack/heap monitor; halts if creation fails.
+static void create_task(TaskFunction_t fn, const char *name, uint16_t stackWords, UBaseType_t priority, TaskHandle_t *handle)
+{
+    cm7_printf("create_task %s", name);
+    if (task_count >= MAX_TASKS) { Error_Handler(); }
+    if (xTaskCreate(fn, name, stackWords, NULL, priority, handle) != pdPASS) { Error_Handler(); }
+    totalStack += stackWords;
+    all_tasks[task_count] = *handle;
+    all_stack[task_count] = stackWords;
+    task_count++;
+}
+
 void rtos_init()
 {
-    int32_t totalStack = 0;
-
     // Route mutex, before any task that might commit or copy a route
     if (!navigationRoute_init()) { Error_Handler(); }
 
     #ifdef CM7_LIVE_ENABLE
     cm7_printf("live_rtosInit");
     if (live_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
-    if (xTaskCreate(live_handler, LIVE_TASK, LIVE_TASK_HEAP, NULL, LIVE_TASK_PRIORITY, &task_live) != pdPASS) { Error_Handler(); }
-    totalStack += LIVE_TASK_HEAP;
+    create_task(live_handler, LIVE_TASK, LIVE_TASK_HEAP, LIVE_TASK_PRIORITY, &task_live);
     #endif
     #ifdef CM7_TELEMETRY_ENABLE
     cm7_printf("telemetry_rtosInit");
     if (telemetry_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
-    if (xTaskCreate(telemetry_handler, TELEMETRY_TASK, TELEMETRY_TASK_HEAP, NULL, TELEMETRY_TASK_PRIORITY, &telemetry_task) != pdPASS) { Error_Handler(); }
-    totalStack += TELEMETRY_TASK_HEAP;
+    create_task(telemetry_handler, TELEMETRY_TASK, TELEMETRY_TASK_HEAP, TELEMETRY_TASK_PRIORITY, &telemetry_task);
     #endif
 
     #ifdef CM7_SENSOR_BATTERY_ENABLE
     cm7_printf("sensorBattery_rtosInit");
     if (sensorBattery_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
-    if (xTaskCreate(sensorBattery_handler, SENSOR_BATTERY_TASK, SENSOR_BATTERY_TASK_HEAP, NULL, SENSOR_BATTERY_TASK_PRIORITY, &sensorBattery_task) != pdPASS) { Error_Handler(); }
-    totalStack += SENSOR_BATTERY_TASK_HEAP;
+    create_task(sensorBattery_handler, SENSOR_BATTERY_TASK, SENSOR_BATTERY_TASK_HEAP, SENSOR_BATTERY_TASK_PRIORITY, &sensorBattery_task);
     #endif
     #ifdef CM7_SENSOR_ENCODER_ENABLE
     cm7_printf("sensorEncoder_rtosInit");
     if (sensorEncoder_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
-    if (xTaskCreate(sensorEncoder_handler, SENSOR_ENCODER_TASK, SENSOR_ENCODER_TASK_HEAP, NULL, SENSOR_ENCODER_TASK_PRIORITY, &sensorEncoder_task) != pdPASS) { Error_Handler(); }
-    totalStack += SENSOR_ENCODER_TASK_HEAP;
+    create_task(sensorEncoder_handler, SENSOR_ENCODER_TASK, SENSOR_ENCODER_TASK_HEAP, SENSOR_ENCODER_TASK_PRIORITY, &sensorEncoder_task);
     #endif
     #ifdef CM7_SENSOR_GPS_ENABLE
     cm7_printf("sensorGPS_rtosInit");
     if (sensorGPS_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
-    if (xTaskCreate(sensorGPS_handler, SENSOR_GPS_TASK, SENSOR_GPS_TASK_HEAP, NULL, SENSOR_GPS_TASK_PRIORITY, &sensorGPS_task) != pdPASS) { Error_Handler(); }
-    totalStack += SENSOR_GPS_TASK_HEAP;
+    create_task(sensorGPS_handler, SENSOR_GPS_TASK, SENSOR_GPS_TASK_HEAP, SENSOR_GPS_TASK_PRIORITY, &sensorGPS_task);
     #endif
     #ifdef CM7_SENSOR_IMU_ENABLE
     cm7_printf("sensorIMU_rtosInit");
     if (sensorIMU_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
-    if (xTaskCreate(sensorIMU_handler, SENSOR_IMU_TASK, SENSOR_IMU_TASK_HEAP, NULL, SENSOR_IMU_TASK_PRIORITY, &sensorIMU_task) != pdPASS) { Error_Handler(); }
-    totalStack += SENSOR_IMU_TASK_HEAP;
+    create_task(sensorIMU_handler, SENSOR_IMU_TASK, SENSOR_IMU_TASK_HEAP, SENSOR_IMU_TASK_PRIORITY, &sensorIMU_task);
     #endif
     #ifdef CM7_SENSOR_WIND_ENABLE
     cm7_printf("sensorWind_rtosInit");
     if (sensorWind_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
-    if (xTaskCreate(sensorWind_handler, SENSOR_WIND_TASK, SENSOR_WIND_TASK_HEAP, NULL, SENSOR_WIND_TASK_PRIORITY, &sensorWind_task) != pdPASS) { Error_Handler(); }
-    totalStack += SENSOR_WIND_TASK_HEAP;
+    create_task(sensorWind_handler, SENSOR_WIND_TASK, SENSOR_WIND_TASK_HEAP, SENSOR_WIND_TASK_PRIORITY, &sensorWind_task);
     #endif
     #if defined(CM7_FUSION_ORIENTATION_ENABLE) && defined(CM7_SENSOR_IMU_ENABLE) && defined(CM7_SENSOR_GPS_ENABLE)
     cm7_printf("fusionOrientation_rtosInit");
     if (fusionOrientation_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
-    if (xTaskCreate(fusionOrientation_handler, FUSION_ORIENTATION_TASK, FUSION_ORIENTATION_TASK_HEAP, NULL, FUSION_ORIENTATION_TASK_PRIORITY, &fusionOrientation_task) != pdPASS) { Error_Handler(); }
-    totalStack += FUSION_ORIENTATION_TASK_HEAP;
+    create_task(fusionOrientation_handler, FUSION_ORIENTATION_TASK, FUSION_ORIENTATION_TASK_HEAP, FUSION_ORIENTATION_TASK_PRIORITY, &fusionOrientation_task);
     #endif
 
     #if defined(CM7_ARBITER_RUDDER_ENABLE) && defined(CM7_SERVO_RUDDER_ENABLE)
+    cm7_printf("arbiterRudder_rtosInit");
     if (arbiterRudder_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
-    if (xTaskCreate(arbiterRudder_handler, ARBITER_RUDDER_TASK, ARBITER_RUDDER_TASK_HEAP,
-    NULL, ARBITER_RUDDER_TASK_PRIORITY, &arbiterRudder_task) != pdPASS) { Error_Handler(); }
-    totalStack += ARBITER_RUDDER_TASK_HEAP;
+    create_task(arbiterRudder_handler, ARBITER_RUDDER_TASK, ARBITER_RUDDER_TASK_HEAP, ARBITER_RUDDER_TASK_PRIORITY, &arbiterRudder_task);
     #endif
 
     #if defined(CM7_PID_HEADING_ENABLE) && defined(CM7_ARBITER_RUDDER_ENABLE)
+    cm7_printf("pidHeading_rtosInit");
     if (pidHeading_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
-    if (xTaskCreate(pidHeading_handler, PID_HEADING_TASK, PID_HEADING_TASK_HEAP, NULL,
-    PID_HEADING_TASK_PRIORITY, &pidHeading_task) != pdPASS) { Error_Handler(); }
-    totalStack += PID_HEADING_TASK_HEAP;
+    create_task(pidHeading_handler, PID_HEADING_TASK, PID_HEADING_TASK_HEAP, PID_HEADING_TASK_PRIORITY, &pidHeading_task);
     #endif
 
     #if defined(CM7_ARBITER_TAIL_ENABLE) && defined(CM7_SERVO_SAIL_ENABLE)
+    cm7_printf("arbiterTail_rtosInit");
     if (arbiterTail_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
-    if (xTaskCreate(arbiterTail_handler, ARBITER_TAIL_TASK, ARBITER_TAIL_TASK_HEAP, NULL,
-    ARBITER_TAIL_TASK_PRIORITY, &arbiterTail_task) != pdPASS) { Error_Handler(); }
-    totalStack += ARBITER_TAIL_TASK_HEAP;
+    create_task(arbiterTail_handler, ARBITER_TAIL_TASK, ARBITER_TAIL_TASK_HEAP, ARBITER_TAIL_TASK_PRIORITY, &arbiterTail_task);
     #endif
 
     #if defined(CM7_PID_SAIL_ENABLE) && defined(CM7_ARBITER_TAIL_ENABLE)
+    cm7_printf("pidSail_rtosInit");
     if (pidSail_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
-    if (xTaskCreate(pidSail_handler, PID_SAIL_TASK, PID_SAIL_TASK_HEAP, NULL,
-    PID_SAIL_TASK_PRIORITY, &pidSail_task) != pdPASS) { Error_Handler(); }
-    totalStack += PID_SAIL_TASK_HEAP;
+    create_task(pidSail_handler, PID_SAIL_TASK, PID_SAIL_TASK_HEAP, PID_SAIL_TASK_PRIORITY, &pidSail_task);
     #endif
 
     #if defined(CM7_PROCESS_LSP_ENABLE) && defined(CM7_PID_SAIL_ENABLE)
+    cm7_printf("processLSP_rtosInit");
     if (processLSP_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
-    if (xTaskCreate(processLSP_handler, PROCESS_LSP_TASK, PROCESS_LSP_TASK_HEAP, NULL,
-    PROCESS_LSP_TASK_PRIORITY, &processLSP_task) != pdPASS) { Error_Handler(); }
-    totalStack += PROCESS_LSP_TASK_HEAP;
+    create_task(processLSP_handler, PROCESS_LSP_TASK, PROCESS_LSP_TASK_HEAP, PROCESS_LSP_TASK_PRIORITY, &processLSP_task);
     #endif
 
     #if defined(CM7_NAVIGATION_ENABLE) && defined(CM7_PID_HEADING_ENABLE)
+    cm7_printf("navigationTask_rtosInit");
     if (navigationTask_rtosInit() != RTOS_INIT_SUCCESS) { Error_Handler(); }
-    if (xTaskCreate(navigationTask_handler, NAVIGATION_TASK, NAVIGATION_TASK_HEAP, NULL,
-    NAVIGATION_TASK_PRIORITY, &navigationTask_task) != pdPASS) { Error_Handler(); }
-    totalStack += NAVIGATION_TASK_HEAP;
+    create_task(navigationTask_handler, NAVIGATION_TASK, NAVIGATION_TASK_HEAP, NAVIGATION_TASK_PRIORITY, &navigationTask_task);
     #endif
 
     #if defined(CM7_COMMANDER_ENABLE) && defined(IPC_ENABLE)
+    cm7_printf("commander_rtos_init");
     if (commander_rtos_init() != RTOS_INIT_SUCCESS) { Error_Handler(); }
-    if (xTaskCreate(commander_handler, COMMANDER_TASK, CM7_COMMANDER_HEAP, NULL,
-    COMMANDER_TASK_PRIORITY, &commander_task) != pdPASS) { Error_Handler(); }
-    totalStack += CM7_COMMANDER_HEAP;
+    create_task(commander_handler, COMMANDER_TASK, CM7_COMMANDER_HEAP, COMMANDER_TASK_PRIORITY, &commander_task);
     #endif
 
     #ifdef CM7_CONSOLE_ENABLE
-    if (xTaskCreate(console_handler, "[CONSOLE-]", 512, NULL,
-    osPriorityLow, &task_console) != pdPASS) { Error_Handler(); }
-    totalStack += 512;
+    create_task(console_handler, CONSOLE_TASK, CONSOLE_TASK_HEAP, CONSOLE_TASK_PRIORITY, &task_console);
     #endif
 
     #ifdef CM7_DEBUG
@@ -272,34 +277,60 @@ RtosInit_e live_rtosInit()
 void live_handler(void *argument)
 {
     live_printf("live_handler start");
+    #ifdef CM7_LIVE_DEBUG_CPU
+    static TaskStatus_t status[CPU_MAX_TASKS];
+    static TaskHandle_t prevHandle[CPU_MAX_TASKS];
+    static uint32_t prevRun[CPU_MAX_TASKS];
+    static uint32_t prevTotal;
+    UBaseType_t prevCount = 0;
+    #endif
     for(;;)
     {
+        #ifdef CM7_LIVE_DEBUG_CPU
+        {
+            uint32_t total;
+            UBaseType_t n = uxTaskGetSystemState(status, CPU_MAX_TASKS, &total);
+            uint32_t dTotal = total - prevTotal; // unsigned, so counter wrap is handled
+            if (n > 0 && dTotal > 0 && prevCount > 0) {
+                for (UBaseType_t i = 0; i < n; i++) {
+                    uint32_t dRun = status[i].ulRunTimeCounter;
+                    for (UBaseType_t j = 0; j < prevCount; j++) {
+                        if (prevHandle[j] == status[i].xHandle) { dRun -= prevRun[j]; break; }
+                    }
+                    // hundredths of a percent, 64-bit so the multiply can't overflow
+                    unsigned pm = (unsigned)(((uint64_t)dRun * 10000u) / dTotal);
+                    if (strcmp(status[i].pcTaskName, "IDLE") == 0) {
+                        liveCpu_printf("idle %u.%02u%% (busy %u.%02u%%)", pm / 100, pm % 100,
+                                       (10000u - pm) / 100, (10000u - pm) % 100);
+                    } else {
+                        liveCpu_printf("%s: %u.%02u%%", status[i].pcTaskName, pm / 100, pm % 100);
+                    }
+                }
+            }
+            prevCount = (n < CPU_MAX_TASKS) ? n : CPU_MAX_TASKS;
+            for (UBaseType_t i = 0; i < prevCount; i++) {
+                prevHandle[i] = status[i].xHandle;
+                prevRun[i] = status[i].ulRunTimeCounter;
+            }
+            prevTotal = total;
+        }
+        #endif
+
         #ifdef CM7_LIVE_DEBUG_STACK
-        
-        live_printf("StackHW (Live): %u", (unsigned)uxTaskGetStackHighWaterMark(NULL));
-        #ifdef CM7_TELEMETRY_ENABLE
-        live_printf("StackHW (telemetry)=%u", (unsigned)uxTaskGetStackHighWaterMark(telemetry_task));
-        #endif
-
-        #ifdef CM7_SENSOR_BATTERY_ENABLE
-        live_printf("StackHW (sensorBattery)=%u", (unsigned)uxTaskGetStackHighWaterMark(sensorBattery_task));
-        #endif
-        #ifdef CM7_SENSOR_ENCODER_ENABLE
-        live_printf("StackHW (sensorEncoder)=%u", (unsigned)uxTaskGetStackHighWaterMark(sensorEncoder_task));
-        #endif
-        #ifdef CM7_SENSOR_GPS_ENABLE
-        live_printf("StackHW (sensorGPS)=%u", (unsigned)uxTaskGetStackHighWaterMark(sensorGPS_task));
-        #endif
-        #ifdef CM7_SENSOR_IMU_ENABLE
-        live_printf("StackHW (sensorIMU)=%u", (unsigned)uxTaskGetStackHighWaterMark(sensorIMU_task));
-        #endif
-        #ifdef CM7_SENSOR_WIND_ENABLE
-        live_printf("StackHW (sensorWind)=%u", (unsigned)uxTaskGetStackHighWaterMark(sensorWind_task));
-        #endif
-        #if defined(CM7_FUSION_ORIENTATION_ENABLE) && defined(CM7_SENSOR_IMU_ENABLE) && defined(CM7_SENSOR_GPS_ENABLE)
-        live_printf("StackHW (fusionOrientation)=%u", (unsigned)uxTaskGetStackHighWaterMark(fusionOrientation_task));
-        #endif
-
+        for (int i = 0; i < task_count; i++) {
+            stackHWM[i] = (uint16_t)uxTaskGetStackHighWaterMark(all_tasks[i]);
+            // Current depth: stack end minus the saved stack pointer. pxTopOfStack is the first member of the TCB,
+            // and is only updated at a context switch, so for other tasks it is their depth when last switched out.
+            TaskStatus_t info;
+            vTaskGetInfo(all_tasks[i], &info, pdFALSE, eRunning);
+            StackType_t *end = info.pxStackBase + all_stack[i];
+            StackType_t *top = (all_tasks[i] == xTaskGetCurrentTaskHandle())
+                             ? (StackType_t *)__get_PSP()
+                             : *(StackType_t **)all_tasks[i];
+            liveStack_printf("%s: now %u, peak %u / %u words", pcTaskGetName(all_tasks[i]),
+                        (unsigned)(end - top), (unsigned)(all_stack[i] - stackHWM[i]), (unsigned)all_stack[i]);
+        }
+        liveStack_printf("total Free: %u B", (unsigned)xPortGetMinimumEverFreeHeapSize());
         #endif
 
         HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0);

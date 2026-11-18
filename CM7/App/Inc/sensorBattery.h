@@ -9,15 +9,15 @@
 #define SENSOR_BATTERY_TASK_PRIORITY osPriorityLow
 
 #ifdef CM7_SENSOR_BATTERY_DEBUG
-#define SENSOR_BATTERY_TASK_HEAP 230 // ~64B of extra
+#define SENSOR_BATTERY_TASK_HEAP (RTOS_MIN_STACK+256)
 #define sensorBattery_printf(fmt, ...) DEBUG_PRINTF(SENSOR_BATTERY_TASK, fmt, ##__VA_ARGS__)
 #else
-#define SENSOR_BATTERY_TASK_HEAP 130 // ~64B of extra
+#define SENSOR_BATTERY_TASK_HEAP (RTOS_MIN_STACK+64)
 #define sensorBattery_printf(...) ((void)0)
 #endif
 
-#define SENSOR_BATTERY_FREQUENCY 1u // Hz
-#define SENSOR_BATTERY_WINDOW 2u // num readings
+#define SENSOR_BATTERY_FREQUENCY 2u // Hz
+#define SENSOR_BATTERY_WINDOW 20u // num readings
 #define SENSOR_BATTERY_STALE 5000u // ms before data is considered stale
 _Static_assert(SENSOR_BATTERY_FREQUENCY > 0u && SENSOR_BATTERY_FREQUENCY <= 500u, "SENSOR_BATTERY_FREQUENCY must be 1-500Hz");
 #if (SYSTEM_TICK_RATE_HZ % SENSOR_BATTERY_FREQUENCY) != 0u

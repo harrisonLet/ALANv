@@ -23,6 +23,7 @@
 #include "FreeRTOS.h"
 #include "projdefs.h"
 #include "stm32h7xx_hal_gpio.h"
+#include "task.h"
 
 /* Private includes ----------------------------------------------------------*/
 
@@ -55,7 +56,45 @@
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+typedef struct {
+  uint32_t type;      /* 0=Hard 1=MemManage 2=Bus 3=Usage */
+  uint32_t r0, r1, r2, r3, r12, lr, pc, psr;
+  uint32_t excReturn, sp;
+  uint32_t cfsr, hfsr, dfsr, afsr, mmfar, bfar;
+  char     task[configMAX_TASK_NAME_LEN];
+} FaultInfo_t;
 
+/* Read this in the debugger after a freeze. pc = faulting instruction, mmfar/bfar = bad address
+ * (valid only if the matching MMARVALID/BFARVALID bit is set in cfsr). */
+volatile FaultInfo_t g_fault;
+
+void fault_capture(uint32_t *frame, uint32_t excReturn, uint32_t type) __attribute__((used, noreturn));
+void fault_capture(uint32_t *frame, uint32_t excReturn, uint32_t type)
+{
+  __disable_irq();
+  g_fault.type = type;
+  g_fault.r0 = frame[0]; g_fault.r1 = frame[1]; g_fault.r2 = frame[2]; g_fault.r3 = frame[3];
+  g_fault.r12 = frame[4]; g_fault.lr = frame[5]; g_fault.pc = frame[6]; g_fault.psr = frame[7];
+  g_fault.excReturn = excReturn;
+  g_fault.sp = (uint32_t)frame;
+  g_fault.cfsr = SCB->CFSR; g_fault.hfsr = SCB->HFSR; g_fault.dfsr = SCB->DFSR;
+  g_fault.afsr = SCB->AFSR; g_fault.mmfar = SCB->MMFAR; g_fault.bfar = SCB->BFAR;
+  TaskHandle_t t = xTaskGetCurrentTaskHandle();
+  const char *n = (t != NULL) ? pcTaskGetName(t) : "(no task)";
+  for (int i = 0; i < configMAX_TASK_NAME_LEN - 1 && n[i]; i++) { g_fault.task[i] = n[i]; }
+  if (CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk) { __BKPT(0); }
+  for (;;) { }
+}
+
+/* Naked so the stack pointer is untouched when we pick the stacked exception frame. */
+#define FAULT_TRAMPOLINE(id) __asm volatile( \
+  "tst lr, #4      \n" \
+  "ite eq          \n" \
+  "mrseq r0, msp   \n" \
+  "mrsne r0, psp   \n" \
+  "mov r1, lr      \n" \
+  "movs r2, %0     \n" \
+  "b fault_capture \n" :: "i"(id))
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -82,9 +121,10 @@ void NMI_Handler(void)
 /**
   * @brief This function handles Hard fault interrupt.
   */
-void HardFault_Handler(void)
+__attribute__((naked)) void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
+  FAULT_TRAMPOLINE(0);
 
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
@@ -97,9 +137,10 @@ void HardFault_Handler(void)
 /**
   * @brief This function handles Memory management fault.
   */
-void MemManage_Handler(void)
+__attribute__((naked)) void MemManage_Handler(void)
 {
   /* USER CODE BEGIN MemoryManagement_IRQn 0 */
+  FAULT_TRAMPOLINE(1);
 
   /* USER CODE END MemoryManagement_IRQn 0 */
   while (1)
@@ -112,9 +153,10 @@ void MemManage_Handler(void)
 /**
   * @brief This function handles Pre-fetch fault, memory access fault.
   */
-void BusFault_Handler(void)
+__attribute__((naked)) void BusFault_Handler(void)
 {
   /* USER CODE BEGIN BusFault_IRQn 0 */
+  FAULT_TRAMPOLINE(2);
 
   /* USER CODE END BusFault_IRQn 0 */
   while (1)
@@ -127,9 +169,10 @@ void BusFault_Handler(void)
 /**
   * @brief This function handles Undefined instruction or illegal state.
   */
-void UsageFault_Handler(void)
+__attribute__((naked)) void UsageFault_Handler(void)
 {
   /* USER CODE BEGIN UsageFault_IRQn 0 */
+  FAULT_TRAMPOLINE(3);
 
   /* USER CODE END UsageFault_IRQn 0 */
   while (1)

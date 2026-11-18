@@ -110,7 +110,6 @@ void telemetry_handler(void *argument)
         else { telemetry_printf("IPC write failed for a weird reason. %02X", ipc_status); }
 
         #ifdef CM7_TELEMETRY_DEBUG
-        telemetry_printf("\x1b[2J\x1b[H");
         #ifdef CM7_SENSOR_BATTERY_ENABLE
         {
             char telemetryStr[TELEMETRY_BATTERY_STR_SIZE];
@@ -223,6 +222,7 @@ static bool telemetry_pack(
         telemetry->pitch     = telemetry_boatGlobal->angP_pitch;
         telemetry->imu_valid |= LORA_TELEMETRY_TELEMETRY_VALID;
         telemetry->orientation_valid |= LORA_TELEMETRY_TELEMETRY_VALID;
+        telemetry->gps_valid |= LORA_TELEMETRY_TELEMETRY_VALID;
     }
     // Servo angles have no validity field: 0 until the arbiter first moves the servo
     if (telemetry_getRudder(telemetry_rudder) == TELEMETRY_OK) {

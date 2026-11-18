@@ -83,32 +83,32 @@ static void sweep(void (*set)(int), int limit)
 static void set_heading(int v)
 {
 #if defined(CM7_PID_HEADING_ENABLE) && defined(CM7_ARBITER_RUDDER_ENABLE)
-    if (v < 0 || v > 359) { printf("[CONSOLE] heading must be 0..359\r\n"); return; }
+    if (v < 0 || v > 359) { console_printf("heading must be 0..359"); return; }
     pidHeading_setTarget((uint16_t)v);
-    printf("[CONSOLE] OK heading %d\r\n", v);
+    console_printf("OK heading %d", v);
 #else
     (void)v;
-    printf("[CONSOLE] heading PID is not enabled in this build\r\n");
+    console_printf("heading PID is not enabled in this build");
 #endif
 }
 
 static void set_sail_target(int v)
   {
   #if defined(CM7_PID_SAIL_ENABLE) && defined(CM7_ARBITER_TAIL_ENABLE)
-      if (v < -180 || v > 180) { printf("[CONSOLE] sail must be -180..180\r\n"); return;
+      if (v < -180 || v > 180) { console_printf("sail must be -180..180"); return;
   }
       pidSail_setTarget((int16_t)v);
-      printf("[CONSOLE] OK sail target %d\r\n", v);
+      console_printf("OK sail target %d", v);
   #else
       (void)v;
-      printf("[CONSOLE] sail PID is not enabled in this build\r\n");
+      console_printf("sail PID is not enabled in this build");
   #endif
   }
 
 static void help(void)
 {
-    printf("[CONSOLE] commands: tail <deg> | rudder <deg> | heading <deg> | center | sweep tail|rudder | status | help\r\n");
-    printf("[CONSOLE] commands: tail <deg> | rudder <deg> | heading <deg> | sail <deg> | center | sweep tail|rudder | status | help\r\n");
+    console_printf("commands: tail <deg> | rudder <deg> | heading <deg> | center | sweep tail|rudder | status | help");
+    console_printf("commands: tail <deg> | rudder <deg> | heading <deg> | sail <deg> | center | sweep tail|rudder | status | help");
 }
 
 static void run(char *line)
@@ -118,16 +118,16 @@ static void run(char *line)
     int n = sscanf(line, "%11s %d", word, &value);
     if (n <= 0) { return; }
 
-    if (strcmp(word, "tail") == 0 && n == 2)            { set_tail(value);   printf("[CONSOLE] OK tail %d\r\n", tail_deg); }
-    else if (strcmp(word, "rudder") == 0 && n == 2)     { set_rudder(value); printf("[CONSOLE] OK rudder %d\r\n", rudder_deg); }
+    if (strcmp(word, "tail") == 0 && n == 2)            { set_tail(value);   console_printf("OK tail %d", tail_deg); }
+    else if (strcmp(word, "rudder") == 0 && n == 2)     { set_rudder(value); console_printf("OK rudder %d", rudder_deg); }
     else if (strcmp(word, "heading") == 0 && n == 2)    { set_heading(value); }
     else if (strcmp(word, "sail") == 0 && n == 2)       { set_sail_target(value); }
-    else if (strcmp(word, "center") == 0)               { set_tail(0); set_rudder(0); printf("[CONSOLE] OK centered\r\n"); }
-    else if (strcmp(word, "sweep") == 0 && strstr(line, "tail"))   { sweep(set_tail, 90);   printf("[CONSOLE] OK tail swept\r\n"); }
-    else if (strcmp(word, "sweep") == 0 && strstr(line, "rudder")) { sweep(set_rudder, 35); printf("[CONSOLE] OK rudder swept\r\n"); }
-    else if (strcmp(word, "status") == 0)               { printf("[CONSOLE] tail %d deg, rudder %d deg\r\n", tail_deg, rudder_deg); }
+    else if (strcmp(word, "center") == 0)               { set_tail(0); set_rudder(0); console_printf("OK centered"); }
+    else if (strcmp(word, "sweep") == 0 && strstr(line, "tail"))   { sweep(set_tail, 90);   console_printf("OK tail swept"); }
+    else if (strcmp(word, "sweep") == 0 && strstr(line, "rudder")) { sweep(set_rudder, 35); console_printf("OK rudder swept"); }
+    else if (strcmp(word, "status") == 0)               { console_printf("tail %d deg, rudder %d deg", tail_deg, rudder_deg); }
     else if (strcmp(word, "help") == 0)                 { help(); }
-    else                                                { printf("[CONSOLE] unknown: \"%s\" (type help)\r\n", line); }
+    else                                                { console_printf("unknown: \"%s\" (type help)", line); }
 }
 
 void console_handler(void *argument)
