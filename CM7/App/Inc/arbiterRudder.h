@@ -19,7 +19,7 @@
 #define ARBITER_RUDDER_STALE 200u // ms before a PID request is ignored and the rudder centers
 #define ARBITER_RUDDER_LIMIT 90 // clamps to the maximum degrees on either side
 #define ARBITER_RUDDER_MAX_STEP 6 // max deg change per update (120 deg/s at 20 Hz)
-#define ARBITER_RUDDER_SIGN 1
+#define ARBITER_RUDDER_SIGN -1 // servo is mounted upside down: a negative servo angle swings the rudder tip to starboard
 
 typedef enum {
     ARBITER_RUDDER_SOURCE_PID,
