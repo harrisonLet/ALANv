@@ -1,6 +1,11 @@
 // Virtual AMS AS5600 magnetic encoder (I2C, address 0x36) for the ALAN Renode board.
 // Answers the registers CM7/App/Src/sensorEncoder.c reads.
-// Monitor: i2c1.as5600 Angle 45   (deg, 0-360)
+// Monitor: i2c1.as5600 Angle 45   (deg, the wing to the hull, + = starboard, as the plant sends it)
+//          i2c1.as5600 Reversed false
+//
+// The magnet turns the opposite way to the wing on the real boat, so the counts go down as the wing swings
+// to starboard and sensorEncoder.c multiplies by -1. Reversed (on by default) reproduces that.
+// The firmware takes the angle at boot as zero, so the plant holds the wing on the centreline while it boots.
 using System;
 using Antmicro.Renode.Core;
 using Antmicro.Renode.Peripherals.I2C;
@@ -19,9 +24,11 @@ namespace Antmicro.Renode.Peripherals.Sensors
             regs = new byte[0x100];
             pointer = 0;
             Angle = 0;
+            Reversed = true;
         }
 
         public double Angle { get; set; }
+        public bool Reversed { get; set; }
 
         public void Write(byte[] data)
         {
@@ -42,7 +49,8 @@ namespace Antmicro.Renode.Peripherals.Sensors
 
         public byte[] Read(int count = 1)
         {
-            var raw = (int)Math.Round((((Angle % 360) + 360) % 360) * 4096.0 / 360.0) & 0x0FFF;
+            var a = Reversed ? -Angle : Angle;
+            var raw = (int)Math.Round((((a % 360) + 360) % 360) * 4096.0 / 360.0) & 0x0FFF;
             Put12(0x0C, raw);   // RAW ANGLE
             Put12(0x0E, raw);   // ANGLE (no ZPOS/MPOS programmed)
             regs[0x0B] = 0x20;  // STATUS: MD (magnet detected)

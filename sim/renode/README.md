@@ -41,9 +41,9 @@ Type these in the Renode monitor:
 
 | Sensor | Command | Firmware sees |
 |---|---|---|
-| BNO055 heading | `i2c2.bno055 Heading 90` | Yaw/heading 90° (quaternion, Euler, magnetometer) |
-| BNO055 turn rate | `i2c2.bno055 YawRate 5` | Gyro Z = 5 °/s |
-| AS5600 wing angle | `i2c1.as5600 Angle 45` | Raw angle 512 (45°) |
+| BNO055 heading | `i2c2.bno055 Heading 90` | Magnetic heading 90° of the hull; the chip reads 90 + `MountOffset` (50) and its quaternion turns the other way, as on the boat |
+| BNO055 turn rate | `i2c2.bno055 YawRate 5` | Gyro Z = −5 °/s (Z is up, so clockwise is negative) |
+| AS5600 wing angle | `i2c1.as5600 Angle 45` | Wing 45° to starboard; counts go down (`Reversed`, as on the boat) |
 | Wind vane | `windvane Angle 270.5` | Modbus reply 270.5° |
 | GPS | `gps Latitude 41.26`, `gps Longitude -111.82`, `gps Satellites 8`, `gps Fix 1` | `$GPGGA` once per second at 9600 baud |
 | User button | `gpioPortC.UserButton1 Press` / `Release` | PC13 |

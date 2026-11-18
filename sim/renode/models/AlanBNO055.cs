@@ -1,7 +1,15 @@
 // Virtual Bosch BNO055 IMU (I2C, address 0x28) for the ALAN Renode board.
 // Answers the registers CM7/App/Src/sensorMagnetometer.c reads.
-// Monitor: i2c2.bno055 Heading 90   (deg, 0-360, what the firmware's yaw shows)
+// Monitor: i2c2.bno055 Heading 90   (deg, 0-360, the magnetic heading of the hull, as the plant sends it)
 //          i2c2.bno055 YawRate 5    (deg/s, gyro Z)
+//          i2c2.bno055 MountOffset 50
+//
+// Mounted like the real chip, so the firmware's calibration in fusionOrientation.c applies unchanged:
+//   - the chip sits MountOffset degrees off the hull's centreline, so it reads Heading + MountOffset.
+//     The firmware subtracts COMPASS_OFFSET (50) and adds the declination, giving true heading again.
+//   - the quaternion turns the opposite way to the compass heading (it is a rotation about Z-up, which is
+//     counter-clockwise), so the firmware negates its yaw. The Euler heading register is clockwise.
+// Keep MountOffset equal to COMPASS_OFFSET, or the simulated boat will steer with a fixed heading error.
 using System;
 using Antmicro.Renode.Core;
 using Antmicro.Renode.Logging;
@@ -29,10 +37,12 @@ namespace Antmicro.Renode.Peripherals.Sensors
             pointer = 0;
             Heading = 0;
             YawRate = 0;
+            MountOffset = 50;
         }
 
         public double Heading { get; set; }
         public double YawRate { get; set; }
+        public double MountOffset { get; set; }
 
         public void Write(byte[] data)
         {
@@ -70,7 +80,7 @@ namespace Antmicro.Renode.Peripherals.Sensors
 
         private void UpdateMeasurements()
         {
-            var h = ((Heading % 360) + 360) % 360;
+            var h = (((Heading + MountOffset) % 360) + 360) % 360;   // what the chip itself reads
 
             // Accelerometer: boat level, 1 g on Z (1 m/s^2 = 100 LSB)
             Put16(0x08, 0); Put16(0x0A, 0); Put16(0x0C, 981);
@@ -81,14 +91,14 @@ namespace Antmicro.Renode.Peripherals.Sensors
             Put16(0x10, (short)(-16 * 22 * Math.Sin(rad)));
             Put16(0x12, (short)(16 * -40));
 
-            // Gyroscope (1 dps = 16 LSB)
-            Put16(0x14, 0); Put16(0x16, 0); Put16(0x18, (short)(16 * YawRate));
+            // Gyroscope (1 dps = 16 LSB). Z is up, so turning clockwise (heading increasing) is negative
+            Put16(0x14, 0); Put16(0x16, 0); Put16(0x18, (short)(-16 * YawRate));
 
             // Euler angles (1 deg = 16 LSB): heading, roll, pitch
             Put16(0x1A, (short)(16 * h)); Put16(0x1C, 0); Put16(0x1E, 0);
 
-            // Quaternion (1 = 16384 LSB), rotation about Z so the firmware's yaw = Heading
-            var half = rad / 2.0;
+            // Quaternion (1 = 16384 LSB): a rotation of -h about Z-up, so the firmware's yaw * -1 = h
+            var half = -rad / 2.0;
             Put16(0x20, (short)(16384 * Math.Cos(half))); // W
             Put16(0x22, 0);                                // X
             Put16(0x24, 0);                                // Y

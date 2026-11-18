@@ -20,6 +20,7 @@ from .geo import wrap180, wrap360
 
 RHO_AIR = 1.2
 RHO_WATER = 1000.0
+WING_DEAD_AFT_BAND_DEG = 20.0   # within this of dead aft, a wing on a hard stop stays on that stop
 
 
 @dataclass
@@ -34,7 +35,7 @@ class BoatParams:
     tail_to_aoa: float = 0.5           # wing angle of attack (deg) per degree of tail deflection
     tail_limit_deg: float = 90.0          # the tail servo can swing 90 degrees each way
     wing_limit_deg: float = 90.0          # hard stops at the mast base: the wing swings +/-90 deg (180 total), not 360
-    tail_sign: float = 1.0             # flip if a positive tail servo command gives negative angle of attack
+    tail_sign: float = -1.0            # flip if a positive tail servo command gives negative angle of attack
 
     keel_area_m2: float = 0.02
     keel_x_m: float = 0.0
@@ -132,6 +133,7 @@ class Boat:
         self.righting = righting or (lambda h: self.p.mass_kg * 9.81 * 0.2 * math.sin(math.radians(h)))
         self.bench = False             # on the stand: hull held still, wing/tail/rudder/vane still work
         self.hold_wing = None          # sim helper: move the tail so the wing settles at this angle (deg, to the hull)
+        self.wing_pinned = False       # held at the dock with the wing on the centreline, as at power-up (Simulation.pin_wing)
 
     # ---- actuators -------------------------------------------------------------------------
 
@@ -212,15 +214,21 @@ class Boat:
             if abs(t) <= p.wing_limit_deg:
                 want = t
             else:
-                # The wing would like to point past a stop (wind from behind): it stays pressed on the stop it is
-                # nearest to, instead of flipping across to the other stop every time the wind wobbles past dead aft.
-                side = s.wing_deg if abs(s.wing_deg) > 1.0 else t
-                want = math.copysign(p.wing_limit_deg, side)
+                # The wing would like to point past a stop. With the target near dead aft (wind from behind) it
+                # stays pressed on the stop it is on, instead of flipping across every time the wind wobbles past
+                # dead aft. Otherwise it goes to the stop on the target's side: a wing left on the far stop faces
+                # backwards into the wind, which is unstable, so it swings across through the bow.
+                if abs(t) >= 180.0 - WING_DEAD_AFT_BAND_DEG and abs(s.wing_deg) > 1.0:
+                    want = math.copysign(p.wing_limit_deg, s.wing_deg)
+                else:
+                    want = math.copysign(p.wing_limit_deg, t)
             s.wing_deg += (want - s.wing_deg) * min(1.0, dt / p.wing_tau_s)
             s.wing_on_stop = (1 if s.wing_deg >= p.wing_limit_deg - 0.5 else -1 if s.wing_deg <= -p.wing_limit_deg + 0.5 else 0)
         else:
             s.wing_deg = wrap180(s.wing_deg + wrap180(target - s.wing_deg) * min(1.0, dt / p.wing_tau_s))
             s.wing_on_stop = 0
+        if self.wing_pinned:
+            s.wing_deg, s.wing_on_stop = 0.0, 0
         s.aoa_deg = wrap180(s.awa_deg - s.wing_deg)
 
         fx, fy, n = 0.0, 0.0, 0.0
@@ -263,7 +271,7 @@ class Boat:
         v_dot = (fy - p.mass_kg * s.u * s.r) / p.sway_mass_kg
         r_dot = n / p.yaw_inertia
 
-        if self.bench:                 # the stand holds the hull: no surge, sway or yaw
+        if self.bench or self.wing_pinned:   # the stand (or the dock) holds the hull: no surge, sway or yaw
             u_dot = v_dot = r_dot = 0.0
             s.u = s.v = s.r = 0.0
         s.u += u_dot * dt
