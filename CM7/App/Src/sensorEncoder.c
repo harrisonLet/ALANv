@@ -82,6 +82,7 @@
 #define ENCODER_COUNTS     4096
 #define ENCODER_HALF_TURN  2048
 #define ENCODER_FORWARD    2048
+#define ENCODER_MIN_MAGNITUDE 500
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -236,12 +237,13 @@ void sensorEncoder_handler(void *argument)
         }
         else
         {
-            if      (metadata.status & AS5600_STATUS_MH)    { metadata.valid = VALIDITY_UNTRUSTED_OVER_SATURATION; }
-            else if (metadata.status & AS5600_STATUS_ML)    { metadata.valid = VALIDITY_UNTRUSTED_UNDER_SATURATION; }
-            else if (!(metadata.status & AS5600_STATUS_MD)) { metadata.valid = VALIDITY_UNTRUSTED; }
-            else if (metadata.raw_angle > ENCODER_COUNTS)   { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
-            else if (metadata.angle >= ENCODER_COUNTS)      { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
-            else                                            { metadata.valid = VALIDITY_VALID; }
+            if      (metadata.status & AS5600_STATUS_MH)                { metadata.valid = VALIDITY_UNTRUSTED_OVER_SATURATION; }
+            else if ((metadata.status & AS5600_STATUS_MD) == 0)         { metadata.valid = VALIDITY_UNTRUSTED; }
+            else if (metadata.raw_angle >= ENCODER_COUNTS)              { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
+            else if (metadata.angle >= ENCODER_COUNTS)                  { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
+            else if ((metadata.status & AS5600_STATUS_ML) &&
+                    metadata.magnitude < ENCODER_MIN_MAGNITUDE)        { metadata.valid = VALIDITY_UNTRUSTED_UNDER_SATURATION; }
+            else                                                        { metadata.valid = VALIDITY_VALID; }                                            { metadata.valid = VALIDITY_VALID; }
             
             if (metadata.valid == VALIDITY_VALID) {
                 int32_t delta = (int32_t)metadata.angle - metadata_angle_prev;
