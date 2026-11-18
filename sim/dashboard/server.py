@@ -26,6 +26,8 @@ import time
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+import fwlink
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
 sys.path.insert(0, os.path.join(REPO, "sim", "plant"))
@@ -37,6 +39,7 @@ from alan_plant.polar import polar  # noqa: E402
 from alan_plant.server import Simulation, load_scenario  # noqa: E402
 
 SCENARIO_DIR = os.path.join(REPO, "sim", "plant", "scenarios")
+FW_BOOT_WING_HOLD_S = 12.0    # virtual seconds: the firmware zeroes its encoder about 7 s after boot
 LOG_DIR = os.path.join(REPO, "sim", "plant", "logs")
 STATIC_DIR = os.path.join(HERE, "static")
 MODELS_DIR = os.path.join(HERE, "models")
@@ -131,6 +134,16 @@ class Hub:
         self.syslog = Feed(500)                # Renode and dashboard messages
         self.lock = threading.RLock()
         self.bench_seen = 0.0                  # last time a page showing the Bench tab checked in
+        # Ground-station commands for the firmware (fwlink.py): built here, pushed into SRAM4 by the plant bridge
+        self.fw_layout = None                  # command ring layout from ipc.h, read on first use
+        self.fw_queue = collections.deque()    # ipc_cmd_t hex strings waiting for the next lockstep reply
+        self.fw_seq = 0                        # sequence number of the next command, like the ground station's
+        self.fw_route = None                   # the route last sent, and what the firmware said about it
+        self.fw_results = collections.deque(maxlen=12)   # Commander's results for the commands sent from here
+        self.fw_sent = {}                      # seq -> command name, for the results above
+        self.fw_mode = None                    # Commander's mode, from its result lines
+        self.ltp = None                        # LTP's last debug line, parsed
+        self.ltp_event = None                  # LTP's last request for SAFE: route finished or out of the corridor
 
     # ---- simulation ----------------------------------------------------------------------------
 
@@ -183,6 +196,15 @@ class Hub:
             conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             self.syslog.add("Firmware connected: the boat now follows the emulated STM32")
             self.link_offset = None
+            with self.lock:                    # a new boot: empty ring, no route, Commander expects seq 0 again
+                self.fw_queue.clear()
+                self.fw_seq = 0
+                self.fw_route, self.fw_mode, self.ltp, self.ltp_event = None, None, None, None
+                self.fw_results.clear()
+                self.fw_sent.clear()
+            with self.lock:
+                self.sim.pin_wing(FW_BOOT_WING_HOLD_S)
+            self.syslog.add(f"Wing held on the centreline for {FW_BOOT_WING_HOLD_S:.0f} s while the firmware boots and zeroes its encoder")
             f = conn.makefile("rw", newline="\n")
             try:
                 for line in f:
@@ -195,6 +217,9 @@ class Hub:
                             self.link_offset = self.sim.t - t_fw
                         msg["t"] = f"{t_fw + self.link_offset:.4f}"
                         reply = self.sim.handle_line(" ".join(f"{k}={v}" for k, v in msg.items()))
+                        if self.fw_queue:          # a few commands per 50 ms tick; Commander drains the ring at 100 Hz
+                            batch = [self.fw_queue.popleft() for _ in range(min(4, len(self.fw_queue)))]
+                            reply += " " + fwlink.ring_spec(self.fw_layout) + "".join(f" ipc={h}" for h in batch)
                     self.renode_linked = True
                     self.last_link = time.time()
                     f.write(reply + "\n")
@@ -244,10 +269,123 @@ class Hub:
             m = UART_LINE.search(line)
             if m:
                 self.console.add(m.group(1))
+                self._firmware_said(m.group(1))
             elif line and not any(n in line for n in NOISY):
                 self.syslog.add(line)
         self.renode_state = "stopped"
         self.syslog.add(f"Renode exited (code {self.renode_proc.wait()})")
+
+    # ---- ground station -------------------------------------------------------------------------
+
+    def _queue_command(self, name, ctype, payload=b""):
+        """Queue one ipc_cmd_t. Call with the lock held."""
+        seq = self.fw_seq
+        self.fw_seq = (self.fw_seq + 1) & 0xFF
+        self.fw_queue.append(fwlink.command_hex(self.fw_layout, ctype, seq, payload))
+        self.fw_sent[seq] = name
+        return seq
+
+    def _ground_station_ready(self):
+        if not self.renode_linked:
+            return "Start the firmware first: commands go into the emulated board's memory"
+        if self.fw_layout is None:
+            self.fw_layout, note = fwlink.ring_layout(REPO)
+            self.syslog.add(f"Ground station: {note}")
+        return None
+
+    def fw_send_route(self, waypoints, arrive_m, warning_m, then_auto):
+        """Upload a route the way the ground station will: LOAD_START, the waypoints, LOAD_STOP, then AUTO."""
+        err = self._ground_station_ready()
+        if err:
+            return {"error": err}
+        try:
+            pts = [(float(w["n"]), float(w["e"]), int(round(float(w["margin"])))) for w in waypoints]
+            if any(not 1 <= m <= 255 for _, _, m in pts):
+                return {"error": "each margin must be 1 to 255 m"}
+            arrive_m, warning_m = int(round(float(arrive_m))), int(round(float(warning_m)))
+            with self.lock:
+                latlon = [(*self.sim.frame.to_latlon(n, e), m) for n, e, m in pts]
+                cmds, crc = fwlink.route_commands(latlon, arrive_m, warning_m)
+                def name(i, t):
+                    if t == fwlink.COMMAND_NVS_LOAD_START:
+                        return "route start"
+                    return "route commit" if t == fwlink.COMMAND_NVS_LOAD_STOP else f"waypoint {i - 1}"
+                seqs = [self._queue_command(name(i, t), t, p) for i, (t, p) in enumerate(cmds)]
+                if then_auto:
+                    self._queue_command("mode AUTO", fwlink.COMMAND_MODE_BASE + fwlink.SYSTEM_MODES["auto"])
+                s = self.sim.boat.s
+                self.fw_route = {
+                    "id": (self.fw_route or {}).get("id", 0) + 1, "sent_t": round(self.sim.t, 1),
+                    "waypoints": [{"n": n, "e": e, "margin": m} for n, e, m in pts],
+                    "arrive_m": arrive_m or 8, "warning_m": warning_m, "crc": crc,
+                    "commit_seq": seqs[-1], "commit_result": None, "version": None,
+                    "leg0_start": None, "sent_from": {"n": round(s.north_m, 2), "e": round(s.east_m, 2)},
+                }
+        except (KeyError, TypeError, ValueError) as e:
+            return {"error": str(e)}
+        self.syslog.add(f"Ground station: route of {len(pts)} waypoints queued (CRC 0x{crc:04X}, seq {seqs[0]}..{seqs[-1]})"
+                        + (", then AUTO" if then_auto else ""))
+        return {"ok": True, "commands": len(seqs) + (1 if then_auto else 0), "crc": crc}
+
+    def fw_send_mode(self, mode):
+        err = self._ground_station_ready()
+        if err:
+            return {"error": err}
+        if mode not in fwlink.SYSTEM_MODES:
+            return {"error": f"unknown mode {mode}"}
+        with self.lock:
+            seq = self._queue_command(f"mode {mode.upper()}", fwlink.COMMAND_MODE_BASE + fwlink.SYSTEM_MODES[mode])
+        self.syslog.add(f"Ground station: mode {mode.upper()} queued (seq {seq})")
+        return {"ok": True}
+
+    def _firmware_said(self, text):
+        """Pick out what the dashboard shows from the firmware's console. Lines can arrive interleaved."""
+        m = fwlink.LTP_LINE.search(text)
+        if m:
+            g = m.groups()
+            with self.lock:
+                self.ltp = {"t": round(self.sim.t, 1), "state": int(g[0]), "state_name": fwlink.NAV_STATES.get(int(g[0]), g[0]),
+                            "leg": int(g[1]), "xte": int(g[2]), "awa": int(g[3]), "twd": int(g[4]), "heading": int(g[5]),
+                            "target": None if int(g[6]) < 0 else int(g[6]), "sog_cms": int(g[7]),
+                            "valid": {"gps": g[8], "imu": g[9], "wind": g[10]} if g[8] else None,
+                            "enabled": "not in AUTO" not in text}
+            return
+        m = fwlink.SAFE_ASK_LINE.search(text)
+        if m:
+            # LTP only prints once a second and is IDLE again as soon as Commander obeys, so ARRIVED and the
+            # corridor FAULT are often never printed. This line is what says it happened.
+            with self.lock:
+                self.ltp_event = {"t": round(self.sim.t, 1), "why": m.group(1), "leg": self.ltp["leg"] if self.ltp else None}
+            self.syslog.add(f"LTP: {m.group(1)}, asked Commander for SAFE")
+        if fwlink.SAFE_DONE_LINE.search(text):
+            with self.lock:
+                self.fw_mode = fwlink.SYSTEM_MODES["safe"]
+            return
+        if m:
+            return
+        m = fwlink.ROUTE_LINE.search(text)
+        if m:
+            with self.lock:
+                self.ltp_event = None
+                if self.fw_route is not None and self.fw_route["version"] is None:
+                    s = self.sim.boat.s     # LTP starts leg 0 from where the boat is when it takes the route
+                    self.fw_route["version"] = int(m.group(1))
+                    self.fw_route["leg0_start"] = {"n": round(s.north_m, 2), "e": round(s.east_m, 2)}
+            return
+        m = fwlink.RESULT_LINE.search(text)
+        if m:
+            seq, result, mode = int(m.group(1)), int(m.group(3)), int(m.group(4))
+            with self.lock:
+                self.fw_mode = mode
+                name = self.fw_sent.pop(seq, None)
+                if name is None:
+                    return
+                self.fw_results.appendleft({"t": round(self.sim.t, 1), "seq": seq, "what": name, "result": result,
+                                            "result_name": fwlink.RESULT_NAMES.get(result, str(result))})
+                if self.fw_route is not None and seq == self.fw_route["commit_seq"]:
+                    self.fw_route["commit_result"] = result
+            if result != 1:
+                self.syslog.add(f"Ground station: {name} (seq {seq}) -> {fwlink.RESULT_NAMES.get(result, result)}")
 
     def _firmware_info(self, sensors):
         """Identify exactly which code the emulated chip is running."""
@@ -397,6 +535,9 @@ class Hub:
                 "renode": self.renode_state,
                 "scenario": os.path.basename(self.scenario_path) if self.scenario_path else "default.json",
                 "log": os.path.relpath(sim.log_path, REPO),
+                "fw": {"route": self.fw_route, "ltp": self.ltp, "event": self.ltp_event, "results": list(self.fw_results),
+                       "mode": self.fw_mode, "mode_name": fwlink.MODE_NAMES.get(self.fw_mode) if self.fw_mode is not None else None,
+                       "queued": len(self.fw_queue)},
             }
 
 
@@ -543,6 +684,13 @@ def make_handler(hub: Hub):
                 return self._json({"result": hub.renode_monitor(f'sysbus.usart3 WriteLine "{text}"')})
             if path == "/api/renode/monitor":
                 return self._json({"result": hub.renode_monitor(body.get("cmd", ""))})
+            if path == "/api/fw/route":
+                r = hub.fw_send_route(body.get("waypoints", []), body.get("arrive_m", 8), body.get("warning_m", 10),
+                                      bool(body.get("auto", True)))
+                return self._json(r, 200 if "ok" in r else 409)
+            if path == "/api/fw/mode":
+                r = hub.fw_send_mode(str(body.get("mode", "")))
+                return self._json(r, 200 if "ok" in r else 409)
             self.send_error(404)
 
     return Handler

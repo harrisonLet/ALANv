@@ -37,7 +37,8 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-SIM_FLAGS="-DRENODE_SIM -DCM7_CONSOLE_ENABLE"
+# The dashboard's Firmware route tab reads LTP's and Commander's debug lines (sim/dashboard/fwlink.py)
+SIM_FLAGS="-DRENODE_SIM -DCM7_CONSOLE_ENABLE -DCM7_NAVIGATION_DEBUG -DCM7_COMMANDER_DEBUG"
 [[ ",$sensors," == *",wind,"* ]]    && SIM_FLAGS+=" -DCM7_SENSOR_WIND_ENABLE"
 [[ ",$sensors," == *",imu,"* ]]     && SIM_FLAGS+=" -DCM7_SENSOR_MAGNETOMETER_ENABLE"
 [[ ",$sensors," == *",encoder,"* ]] && SIM_FLAGS+=" -DCM7_SENSOR_ENCODER_ENABLE"
