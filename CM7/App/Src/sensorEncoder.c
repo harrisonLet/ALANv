@@ -245,7 +245,10 @@ void sensorEncoder_handler(void *argument)
                     metadata.magnitude < ENCODER_MIN_MAGNITUDE)        { metadata.valid = VALIDITY_UNTRUSTED_UNDER_SATURATION; }
             else                                                        { metadata.valid = VALIDITY_VALID; }                                            { metadata.valid = VALIDITY_VALID; }
             
-            if (metadata.valid == VALIDITY_VALID) {
+            // A weak or strong magnet still gives a usable angle, so use it and let the validity flag report the problem
+            if (metadata.valid == VALIDITY_VALID ||
+                metadata.valid == VALIDITY_UNTRUSTED_OVER_SATURATION ||
+                metadata.valid == VALIDITY_UNTRUSTED_UNDER_SATURATION) {
                 int32_t delta = (int32_t)metadata.angle - metadata_angle_prev;
                 if (delta >  ENCODER_HALF_TURN) { delta -= ENCODER_COUNTS; }
                 if (delta < -ENCODER_HALF_TURN) { delta += ENCODER_COUNTS; }
