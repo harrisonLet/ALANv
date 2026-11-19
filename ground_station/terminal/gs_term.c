@@ -6,7 +6,7 @@
  * typed on the line at the bottom (type "help") and sent as command packets.
  *
  * Wire format from the boat (raw LoRa payload, forwarded byte for byte):
- *   [0] dest 0xAA  [1] src 0xBB  [2] seq  [3] len (= 63)  [4] status flags  [5..66] LoRaTelemetry_t
+ *   [0] dest 0xAA  [1] src 0xBB  [2] seq  [3] len (= 77)  [4] status flags  [5..80] LoRaTelemetry_t
  *
  * Wire format to the boat (the bridge sends each write as one LoRa packet):
  *   [0] dest 0xBB  [1] src 0xAA  [2] seq  [3] len = 1 + payload bytes  [4] command type  [5..] payload
@@ -36,7 +36,7 @@
 #include "telemetry.h"
 #include "commands.h"
 
-_Static_assert(sizeof(LoRaTelemetry_t) == 62, "LoRaTelemetry_t must be 62 bytes");
+_Static_assert(sizeof(LoRaTelemetry_t) == 76, "LoRaTelemetry_t must be 76 bytes");
 
 #define ADDR_GROUND    0xAA
 #define ADDR_BOAT      0xBB
@@ -91,6 +91,25 @@ static double   s_last_send;         /* seconds, monotonic; 0 = never */
 static int      s_hb_on = 1;
 static cmd_entry_t s_cmd_log[CMD_LOG_LEN];
 static int      s_cmd_log_n;
+
+/* How well the boat hears us, one sample per telemetry packet (about 1 s), oldest first */
+#define RADIO_HIST      30      /* samples in the sparklines */
+#define RADIO_WINDOW    30      /* samples the uplink delivery rate is taken over */
+#define RADIO_DBM_MIN   (-140)  /* bar scale */
+#define RADIO_DBM_MAX   (-40)
+#define RADIO_BAR_W     16
+#define LORA_SNR_FLOOR  (-10.0) /* lowest SNR the boat's radio decodes at SF8 (SX1276 datasheet) */
+#define RADIO_STALE_S   3       /* boat has heard nothing for this long: shown in red */
+typedef struct {
+    int16_t  rssi;      /* last packet the boat received, only meaningful when got > 0 */
+    int16_t  noise;
+    uint16_t got;       /* packets the boat received since the previous sample */
+    uint32_t sent;      /* packets we had sent (commands + heartbeats) when this sample arrived */
+    uint8_t  baseline;  /* first sample, or first after a reboot: no previous counters, so got is unknown */
+} radio_sample_t;
+static radio_sample_t s_radio[RADIO_HIST];
+static int      s_radio_n;
+static uint16_t s_radio_crc_delta;   /* CRC errors since the previous sample */
 
 /* Command line */
 static char     s_line[LINE_MAX_LEN + 1];
@@ -623,6 +642,30 @@ static void on_key(char ch)
 static uint8_t s_buf[1024];
 static size_t  s_buf_len;
 
+/* Add one radio sample from a telemetry packet. The boat's counters wrap and restart from 0 when it
+   reboots, so only the change since the previous packet is used, and none across a reboot. */
+static void radio_sample(const LoRaTelemetry_t *t)
+{
+    static LoRaTelemetry_t prev;
+    static int have_prev;
+    int same_boot = have_prev && t->uptime_ms >= prev.uptime_ms;
+
+    if (s_radio_n == RADIO_HIST) {
+        memmove(&s_radio[0], &s_radio[1], sizeof(s_radio[0]) * (RADIO_HIST - 1));
+        s_radio_n--;
+    }
+    radio_sample_t *r = &s_radio[s_radio_n++];
+    r->rssi  = t->rx_last_rssi;
+    r->noise = t->rx_noise;
+    r->got   = same_boot ? (uint16_t)(t->rx_ok - prev.rx_ok) : 0;
+    r->sent  = s_cmds_sent + s_hbs_sent;
+    r->baseline = !same_boot;
+    s_radio_crc_delta = same_boot ? (uint16_t)(t->rx_crc_err - prev.rx_crc_err) : 0;
+
+    prev = *t;
+    have_prev = 1;
+}
+
 static void handle_packet(const uint8_t *p)
 {
     uint8_t seq = p[2];
@@ -630,16 +673,21 @@ static void handle_packet(const uint8_t *p)
     s_lost += lost;
     s_last_seq = seq;
     memcpy(&s_telem, p + HDR_LEN, sizeof(s_telem));
-    log_note("RX      seq %-3u lost %-3u flags 0x%02X  mode %u  last_cmd %u -> %s  uptime %lu ms",
+    radio_sample(&s_telem);
+    log_note("RX      seq %-3u lost %-3u flags 0x%02X  mode %u  last_cmd %u -> %s  uptime %lu ms  "
+             "| boat rx seq %u type 0x%02X  rssi %d dBm  snr %.2f dB  noise %d dBm  age %u s  ok %u crc %u rej %u drop %u",
              seq, lost, p[4], s_telem.mode, (uint8_t)s_telem.last_cmd_seq,
-             result_name(s_telem.last_cmd_result), (unsigned long)s_telem.uptime_ms);
+             result_name(s_telem.last_cmd_result), (unsigned long)s_telem.uptime_ms,
+             s_telem.rx_last_seq, s_telem.rx_last_type, s_telem.rx_last_rssi,
+             s_telem.rx_last_snr / LORA_RX_SNR_SCALE, s_telem.rx_noise, s_telem.rx_age_s,
+             s_telem.rx_ok, s_telem.rx_crc_err, s_telem.rx_rejected, s_telem.rx_dropped);
     s_have_telem = 1;
     s_pkts++;
     s_last_rx = now_s();
     match_results();
 }
 
-/* Scan the buffer for [AA BB seq 73 flags] + payload, skipping anything else */
+/* Scan the buffer for [AA BB seq len flags] + payload, skipping anything else */
 static void parse(void)
 {
     size_t i = 0;
@@ -796,6 +844,119 @@ static void dial_print_row(int y)
     fputs("\033[0m", s_out);
 }
 
+/* ─── Radio panel ───────────────────────────────────────────────── */
+
+/* A dBm level as a bar on the fixed RADIO_DBM_MIN..MAX scale, so signal and noise line up */
+static void dbm_bar(int dbm, const char *col)
+{
+    int fill = (dbm - RADIO_DBM_MIN) * RADIO_BAR_W / (RADIO_DBM_MAX - RADIO_DBM_MIN);
+    if (fill < 0) fill = 0;
+    if (fill > RADIO_BAR_W) fill = RADIO_BAR_W;
+    fprintf(s_out, "[%s", col);
+    for (int i = 0; i < RADIO_BAR_W; i++) fputs(i < fill ? "#" : "\033[90m.", s_out);
+    fputs("\033[0m]", s_out);
+}
+
+/* Last RADIO_HIST samples, oldest on the left, scaled to their own min..max (printed after).
+   For the signal a second where the boat received nothing is a red x if we sent something
+   (a lost packet), or a gray - if we sent nothing. */
+static void radio_spark(int noise)
+{
+    static const char *LEVEL[] = { "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█" };
+    int lo = 0, hi = 0, have = 0;
+    for (int i = 0; i < s_radio_n; i++) {
+        if (!noise && !s_radio[i].got) continue;
+        int v = noise ? s_radio[i].noise : s_radio[i].rssi;
+        if (!have || v < lo) lo = v;
+        if (!have || v > hi) hi = v;
+        have = 1;
+    }
+
+    for (int i = 0; i < RADIO_HIST - s_radio_n; i++) fputc(' ', s_out);
+    for (int i = 0; i < s_radio_n; i++) {
+        if (!noise && s_radio[i].baseline) { fputs("\033[90m.\033[0m", s_out); continue; }
+        if (!noise && !s_radio[i].got) {
+            /* only a loss if we sent something since the previous sample */
+            int sent = i > 0 && s_radio[i].sent != s_radio[i - 1].sent;
+            fputs(sent ? "\033[31mx\033[0m" : "\033[90m-\033[0m", s_out);
+            continue;
+        }
+        int v = noise ? s_radio[i].noise : s_radio[i].rssi;
+        int lvl = hi > lo ? (v - lo) * 7 / (hi - lo) : 3;
+        fputs(LEVEL[lvl], s_out);
+    }
+    if (have) fprintf(s_out, " \033[90m%d..%d\033[0m", lo, hi);
+}
+
+/* What we sent with this seq, from the command log, or the type when it has scrolled off */
+static void radio_last_cmd(char *out, size_t n, uint8_t seq, uint8_t type)
+{
+    if (type == COMMAND_NONE) { snprintf(out, n, "hb"); return; }
+    for (int i = 0; i < s_cmd_log_n; i++)
+        if (s_cmd_log[i].seq == seq) { snprintf(out, n, "%s", s_cmd_log[i].text); return; }
+    snprintf(out, n, "type 0x%02X", type);
+}
+
+/* Uplink delivery over the last RADIO_WINDOW samples: packets the boat received vs packets we sent.
+   Returns 0 when nothing was sent in the window. */
+static int radio_delivery(uint32_t *got, uint32_t *sent)
+{
+    int first = s_radio_n > RADIO_WINDOW ? s_radio_n - RADIO_WINDOW : 0;
+    *got = 0;
+    for (int i = first + 1; i < s_radio_n; i++) *got += s_radio[i].got;
+    *sent = s_radio_n ? s_radio[s_radio_n - 1].sent - s_radio[first].sent : 0;
+    if (*got > *sent) *got = *sent;   /* a packet sent just before a sample lands in the next one */
+    return *sent > 0;
+}
+
+static void draw_radio(const LoRaTelemetry_t *t)
+{
+    char last[48];
+    radio_last_cmd(last, sizeof(last), t->rx_last_seq, t->rx_last_type);
+
+    fprintf(s_out, "\033[1mRADIO\033[0m  ");
+    if (t->rx_age_s == LORA_RX_AGE_NEVER)
+        fprintf(s_out, "\033[1;31mboat has heard nothing yet\033[0m\n");
+    else
+        fprintf(s_out, "%slast heard %us ago\033[0m  #%u %s\n",
+                t->rx_age_s >= RADIO_STALE_S ? "\033[1;31m" : "", t->rx_age_s, t->rx_last_seq, last);
+
+    /* Link margin: how far the SNR is above what the radio can still decode */
+    double snr = t->rx_last_snr / LORA_RX_SNR_SCALE;
+    double margin = snr - LORA_SNR_FLOOR;
+    const char *qcol = margin >= 10 ? "\033[32m" : margin >= 5 ? "\033[33m" : "\033[31m";
+    const char *qname = margin >= 10 ? "GOOD" : margin >= 5 ? "FAIR" : "WEAK";
+
+    fprintf(s_out, "  signal %5d dBm ", t->rx_last_rssi);
+    dbm_bar(t->rx_last_rssi, qcol);
+    fputs("  ", s_out);
+    radio_spark(0);
+    fputc('\n', s_out);
+
+    fprintf(s_out, "  noise  %5d dBm ", t->rx_noise);
+    dbm_bar(t->rx_noise, "\033[90m");
+    fputs("  ", s_out);
+    radio_spark(1);
+    fputc('\n', s_out);
+
+    fprintf(s_out, "  snr   %+6.2f dB   margin %s%+.1f dB %s\033[0m (floor %.0f dB)   bars %d..%d dBm\n",
+            snr, qcol, margin, qname, LORA_SNR_FLOOR, RADIO_DBM_MIN, RADIO_DBM_MAX);
+
+    uint32_t got, sent;
+    fprintf(s_out, "  uplink ");
+    if (radio_delivery(&got, &sent)) {
+        unsigned pct = (unsigned)(got * 100 / sent);
+        fprintf(s_out, "%s%u/%u delivered (%u%%)\033[0m last %ds",
+                pct >= 90 ? "\033[32m" : pct >= 60 ? "\033[33m" : "\033[31m", got, sent, pct, RADIO_WINDOW);
+    } else {
+        fprintf(s_out, "\033[90mnothing sent lately\033[0m");
+    }
+    fprintf(s_out, "   ok %u  %scrc %u (+%u)\033[0m  %srej %u\033[0m  %sdrop %u\033[0m\n",
+            t->rx_ok, s_radio_crc_delta ? "\033[31m" : "", t->rx_crc_err, s_radio_crc_delta,
+            t->rx_rejected ? "\033[33m" : "", t->rx_rejected,
+            t->rx_dropped ? "\033[31m" : "", t->rx_dropped);
+}
+
 /* ─── Display ───────────────────────────────────────────────────── */
 
 static const char *HR =
@@ -893,6 +1054,9 @@ static void draw(const char *port)
                    ACT_NAME[MODES[t->mode].rudder], ACT_NAME[MODES[t->mode].sail], MODES[t->mode].name, t->mode);
         else
             fprintf(s_out, "\033[1mMODE  unknown (%u)\033[0m\n", t->mode);
+
+        fprintf(s_out, "%s\n", HR);
+        draw_radio(t);
     }
 
     fprintf(s_out, "%s\n", HR);
