@@ -40,6 +40,17 @@ from alan_plant.server import Simulation, load_scenario  # noqa: E402
 
 SCENARIO_DIR = os.path.join(REPO, "sim", "plant", "scenarios")
 FW_BOOT_WING_HOLD_S = 12.0    # virtual seconds: the firmware zeroes its encoder about 7 s after boot
+
+
+def compass_offset():
+    """COMPASS_OFFSET from fusionOrientation.c: how far the real BNO055 sits off the centreline. The sim's IMU model
+    is mounted the same way, so the firmware's calibration applies unchanged after every recalibration."""
+    try:
+        with open(os.path.join(REPO, "CM7", "App", "Src", "fusionOrientation.c")) as f:
+            m = re.search(r"^#define\s+COMPASS_OFFSET\s+(-?\d+)", f.read(), re.M)
+        return int(m.group(1)) if m else None
+    except OSError:
+        return None
 LOG_DIR = os.path.join(REPO, "sim", "plant", "logs")
 STATIC_DIR = os.path.join(HERE, "static")
 MODELS_DIR = os.path.join(HERE, "models")
@@ -260,8 +271,12 @@ class Hub:
                         f"{' + uncommitted edits' if fw['dirty'] else ''}")
         self.renode_state = "starting"
         self.syslog.add("Starting Renode")
+        mount = compass_offset()
+        if mount is None:
+            self.syslog.add("COMPASS_OFFSET not found in fusionOrientation.c: the simulated IMU keeps its default mount")
+        mount_cmd = f"i2c2.bno055 MountOffset {mount}; " if mount is not None else ""
         self.renode_proc = subprocess.Popen(
-            [renode, "--disable-gui", "--console", "-e", "include @sim/renode/alan_cm7.resc; start"],
+            [renode, "--disable-gui", "--console", "-e", f"include @sim/renode/alan_cm7.resc; {mount_cmd}start"],
             cwd=REPO, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
         self.renode_state = "running"
         for raw in self.renode_proc.stdout:

@@ -9,7 +9,8 @@
 //     The firmware subtracts COMPASS_OFFSET (50) and adds the declination, giving true heading again.
 //   - the quaternion turns the opposite way to the compass heading (it is a rotation about Z-up, which is
 //     counter-clockwise), so the firmware negates its yaw. The Euler heading register is clockwise.
-// Keep MountOffset equal to COMPASS_OFFSET, or the simulated boat will steer with a fixed heading error.
+// MountOffset must equal COMPASS_OFFSET, or the simulated boat steers with a fixed heading error. The dashboard and
+// run.sh read it from fusionOrientation.c and set it when they start Renode; 50 is only the default.
 using System;
 using Antmicro.Renode.Core;
 using Antmicro.Renode.Logging;

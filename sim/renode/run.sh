@@ -59,9 +59,13 @@ if [[ $build -eq 1 ]]; then
 fi
 [[ $build_only -eq 1 ]] && exit 0
 
+# Mount the simulated IMU like the real one: COMPASS_OFFSET is the firmware's calibration for it
+MOUNT=$(sed -n 's/^#define[[:space:]]*COMPASS_OFFSET[[:space:]]*\(-\{0,1\}[0-9][0-9]*\).*/\1/p' CM7/App/Src/fusionOrientation.c)
+MOUNT_CMD=${MOUNT:+"i2c2.bno055 MountOffset $MOUNT; "}
+
 if [[ $headless -eq 1 ]]; then
-    "$RENODE" --disable-gui --console -e "include @sim/renode/alan_cm7.resc; emulation RunFor \"00:00:$(printf '%02d' "$seconds")\"; quit" 2>&1 \
+    "$RENODE" --disable-gui --console -e "include @sim/renode/alan_cm7.resc; ${MOUNT_CMD}emulation RunFor \"00:00:$(printf '%02d' "$seconds")\"; quit" 2>&1 \
         | sed 's/\x1b\[[0-9;]*m//g' | grep -E "usart3:|ERROR|error" | sed -E 's/.*usart3: \[[^]]*\] //'
 else
-    "$RENODE" sim/renode/alan_cm7.resc
+    "$RENODE" -e "include @sim/renode/alan_cm7.resc; ${MOUNT_CMD}"
 fi
