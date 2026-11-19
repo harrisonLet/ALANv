@@ -5,7 +5,7 @@
 
 /*
  * Telemetry record sent from the boat to the ground station over LoRa.
- * Packed so the layout on the wire matches the struct exactly (73 bytes).
+ * Packed so the layout on the wire matches the struct exactly (62 bytes).
  *
  * Copy of Common/Inc/loraTelemetry.h on command-pipeline. Keep the two identical.
  */
@@ -26,12 +26,11 @@ typedef struct __attribute__((packed)) {
     int16_t  ang_wind;               /* apparent wind vs bow, -180..180 deg, + = from starboard */
     uint8_t  wind_valid;             /* Validity_e */
 
-    /* GPS */
-    double   latitude;               /* degrees, + = north */
-    double   longitude;              /* degrees, + = east */
-    float    altitude;               /* m */
-    uint8_t  satellites;             /* satellites used in fix */
-    uint8_t  fix_valid;              /* GGA fix quality, 0 = no fix */
+    /* GPS. Sized to what the GGA sentence gives (lat/lon to 1.67e-6 deg, altitude to 0.1 m), so nothing is lost */
+    int32_t  latitude;               /* 1e-7 degrees (LORA_GPS_DEG_SCALE), + = north */
+    int32_t  longitude;              /* 1e-7 degrees (LORA_GPS_DEG_SCALE), + = east */
+    int16_t  altitude;               /* dm */
+    uint8_t  sats_fix;               /* LORA_GPS_SATS_FIX: bits 0-4 satellites used in fix, bits 5-7 GGA fix quality (0 = no fix) */
     uint8_t  utc_hours;
     uint8_t  utc_minutes;
     uint8_t  utc_seconds;
@@ -62,5 +61,12 @@ typedef struct __attribute__((packed)) {
     uint8_t  last_cmd_result;        /* cmd_result_t of the command in last_cmd_seq */
 
 } LoRaTelemetry_t;
+
+/* GPS field encoding */
+#define LORA_GPS_DEG_SCALE 10000000.0   /* latitude/longitude: degrees * 1e7, about 1 cm */
+#define LORA_GPS_ALT_SCALE 10.0         /* altitude: metres * 10 */
+#define LORA_GPS_SATS_FIX(sats, fix) ((uint8_t)((((fix) > 7U ? 7U : (fix)) << 5) | ((sats) > 31U ? 31U : (sats))))
+#define LORA_GPS_SATS(sats_fix)      ((uint8_t)((sats_fix) & 0x1FU))
+#define LORA_GPS_FIX(sats_fix)       ((uint8_t)((sats_fix) >> 5))
 
 #endif

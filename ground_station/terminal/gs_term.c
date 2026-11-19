@@ -6,7 +6,7 @@
  * typed on the line at the bottom (type "help") and sent as command packets.
  *
  * Wire format from the boat (raw LoRa payload, forwarded byte for byte):
- *   [0] dest 0xAA  [1] src 0xBB  [2] seq  [3] len (= 74)  [4] status flags  [5..77] LoRaTelemetry_t
+ *   [0] dest 0xAA  [1] src 0xBB  [2] seq  [3] len (= 63)  [4] status flags  [5..66] LoRaTelemetry_t
  *
  * Wire format to the boat (the bridge sends each write as one LoRa packet):
  *   [0] dest 0xBB  [1] src 0xAA  [2] seq  [3] len = 1 + payload bytes  [4] command type  [5..] payload
@@ -36,7 +36,7 @@
 #include "telemetry.h"
 #include "commands.h"
 
-_Static_assert(sizeof(LoRaTelemetry_t) == 73, "LoRaTelemetry_t must be 73 bytes");
+_Static_assert(sizeof(LoRaTelemetry_t) == 62, "LoRaTelemetry_t must be 62 bytes");
 
 #define ADDR_GROUND    0xAA
 #define ADDR_BOAT      0xBB
@@ -840,9 +840,10 @@ static void draw(const char *port)
                validity_tag(t->wind_valid), validity_name(t->wind_valid),
                t->ang_wind, t->ang_wind > 0 ? "starboard" : t->ang_wind < 0 ? "port" : "ahead");
 
-        fprintf(s_out, "%-12s %s %-18s %.6f %.6f  alt %.1fm  sats %u fix %u  %02u:%02u:%02uZ\n", "gps",
+        fprintf(s_out, "%-12s %s %-18s %.7f %.7f  alt %.1fm  sats %u fix %u  %02u:%02u:%02uZ\n", "gps",
                validity_tag(t->gps_valid), validity_name(t->gps_valid),
-               t->latitude, t->longitude, t->altitude, t->satellites, t->fix_valid,
+               t->latitude / LORA_GPS_DEG_SCALE, t->longitude / LORA_GPS_DEG_SCALE, t->altitude / LORA_GPS_ALT_SCALE,
+               LORA_GPS_SATS(t->sats_fix), LORA_GPS_FIX(t->sats_fix),
                t->utc_hours, t->utc_minutes, t->utc_seconds);
 
         fprintf(s_out, "%-12s %s %-18s cal S%u G%u A%u M%u   temp %dC\n", "imu",
