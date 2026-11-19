@@ -63,9 +63,10 @@ for(;;){
         if (step == 0) { continue; }
         current_turn += step;
 
-        // invert the rudder angle so it is more intuitive 
+        // Tip to starboard turns the boat to starboard, so the position and the turn have the same sign.
+        // The servo's mounting direction is handled by ARBITER_RUDDER_SIGN, not here.
         TelemetryRudder_t rudder = {
-            .ang_forward = -current_turn,
+            .ang_forward = current_turn,
             .ang_turn = current_turn
         };
         servoRudder_setAngle(ARBITER_RUDDER_SIGN * rudder.ang_forward);

@@ -84,6 +84,7 @@
 #define ENCODER_COUNTS     4096
 #define ENCODER_HALF_TURN  2048
 #define ENCODER_FORWARD    2048
+#define ENCODER_MIN_MAGNITUDE 500
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -241,12 +242,14 @@ void sensorEncoder_handler(void *argument)
         }
         else
         {
-            if      (metadata.status & AS5600_STATUS_MH)        { metadata.valid = VALIDITY_UNTRUSTED_OVER_SATURATION; }
-            else if (metadata.status & AS5600_STATUS_ML)        { metadata.valid = VALIDITY_UNTRUSTED_UNDER_SATURATION; }
-            else if ((metadata.status & AS5600_STATUS_MD) == 0) { metadata.valid = VALIDITY_UNTRUSTED; }
-            else if (metadata.raw_angle >= ENCODER_COUNTS)      { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
-            else if (metadata.angle >= ENCODER_COUNTS)          { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
-            else                                                { metadata.valid = VALIDITY_VALID; }
+            // Weak magnet (ML) is only untrusted when the field is too low to read reliably
+            if      (metadata.status & AS5600_STATUS_MH)                { metadata.valid = VALIDITY_UNTRUSTED_OVER_SATURATION; }
+            else if ((metadata.status & AS5600_STATUS_MD) == 0)         { metadata.valid = VALIDITY_UNTRUSTED; }
+            else if (metadata.raw_angle >= ENCODER_COUNTS)              { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
+            else if (metadata.angle >= ENCODER_COUNTS)                  { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
+            else if ((metadata.status & AS5600_STATUS_ML) &&
+                    metadata.magnitude < ENCODER_MIN_MAGNITUDE)        { metadata.valid = VALIDITY_UNTRUSTED_UNDER_SATURATION; }
+            else                                                        { metadata.valid = VALIDITY_VALID; }
         }
         #ifdef CM7_SENSOR_ENCODER_DEBUG
         char metadata_str[METADATA_ENCODER_STR_SIZE];
@@ -256,7 +259,10 @@ void sensorEncoder_handler(void *argument)
 
         // Telemetry
         #ifdef CM7_TELEMETRY_ENABLE
-        if (metadata.valid != VALIDITY_VALID) { continue; }
+        // A weak or strong magnet still gives a usable angle, so use it and let the validity flag report the problem
+        if (metadata.valid != VALIDITY_VALID &&
+            metadata.valid != VALIDITY_UNTRUSTED_OVER_SATURATION &&
+            metadata.valid != VALIDITY_UNTRUSTED_UNDER_SATURATION) { continue; }
         TelemetryMainSail_t telemetry = {0};
         int32_t degrees = ((metadata.raw_angle - metadata_angle_offset) * 360) / ENCODER_COUNTS;
         telemetry.ang_forward = ANG_WRAP_180(degrees) * -1;

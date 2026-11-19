@@ -31,11 +31,10 @@ typedef struct {
      * Turn angle of the rudder relative to the centerline of the vessel.
      *
      * Measured in degrees this represents the kind of turn that will be performed
-     * based on the position of the rudder. Because a rudder pointed toward the
-     * starboard side will cause the vessel to turn to port and vice versa it is
-     * useful to have a separate representation for the turn angle. For this
-     * measurment positive values indicate a turn to starboard and negative values 
-     * indicate a turn to port.
+     * based on the position of the rudder. A rudder tip pointed toward the
+     * starboard side pushes the stern to port, so the vessel turns to starboard:
+     * with this rudder the turn angle equals ang_forward. Positive values indicate
+     * a turn to starboard and negative values indicate a turn to port.
      *
      * - Operational Range: -90 to 90 degrees
      * - Precision: 1 degree
