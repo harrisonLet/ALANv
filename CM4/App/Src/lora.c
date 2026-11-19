@@ -390,7 +390,7 @@ int LoRa_init(void){
 
     // writing important transmit configuraations
     // REGMODEM CONFIG 1 IS 0X1D
-    SPI_tx_byte(REG_MODEM_CFG_1, 0x72);
+    SPI_tx_byte(REG_MODEM_CFG_1, 0x82); // BW 250 kHz, CR 4/5, explicit header (0x72 was 125 kHz)
     HAL_Delay(1);
 
     SPI_tx_byte(REG_MODEM_CFG_2, 0x84); // sf 8, crc on
