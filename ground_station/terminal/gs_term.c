@@ -13,7 +13,7 @@
  *   Heartbeat and mode commands have no payload (5 bytes), angles are a little-endian int16 (7 bytes).
  *
  * Build:  make
- * Run:    ./gs_term [/dev/ttyACM0]
+ * Run:    ./gs_term [/dev/ttyACM0] [log file]   (default log: gs_log_YYYYMMDD_HHMMSS.txt here)
  * Quit:   Ctrl-C
  */
 
@@ -110,6 +110,10 @@ static int      s_jog_rudder, s_jog_sail;      /* angles last asked for */
 static int      s_jog_pend_rudder, s_jog_pend_sail;   /* changed but not sent yet */
 static double   s_jog_last_send;
 
+/* Session log: every byte read from or written to the bridge (RX-RAW / TX-RAW), plus decoded notes */
+static FILE    *s_log;
+static char     s_log_path[256];
+
 /* ─── Helpers ───────────────────────────────────────────────────── */
 
 static double now_s(void)
@@ -120,6 +124,39 @@ static double now_s(void)
 }
 
 static void on_signal(int sig) { (void)sig; s_quit = 1; }
+
+/* Wall clock to the millisecond, so the log lines up with the boat's serial output */
+static void log_stamp(void)
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    struct tm tm;
+    localtime_r(&tv.tv_sec, &tm);
+    fprintf(s_log, "%02d:%02d:%02d.%03ld  ", tm.tm_hour, tm.tm_min, tm.tm_sec, (long)(tv.tv_usec / 1000));
+}
+
+/* Raw bytes exactly as they crossed the serial port */
+static void log_bytes(const char *dir, const uint8_t *p, size_t n)
+{
+    if (!s_log) return;
+    log_stamp();
+    fprintf(s_log, "%-7s n=%-4zu", dir, n);
+    for (size_t i = 0; i < n; i++) fprintf(s_log, " %02X", p[i]);
+    fputc('\n', s_log);
+}
+
+/* Decoded note about the raw bytes around it */
+static void log_note(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+static void log_note(const char *fmt, ...)
+{
+    if (!s_log) return;
+    log_stamp();
+    va_list ap;
+    va_start(ap, fmt);
+    vfprintf(s_log, fmt, ap);
+    va_end(ap);
+    fputc('\n', s_log);
+}
 
 static void write_all(const char *p, size_t n);
 
@@ -247,8 +284,8 @@ static void set_status(int err, const char *fmt, ...)
 }
 
 /* Build and write one command packet with plen payload bytes (0, or ANGLE_LEN for value).
-   Returns the seq used, or -1 on a write error. */
-static int send_packet(uint8_t type, int16_t value, uint8_t plen)
+   text only labels it in the log. Returns the seq used, or -1 on a write error. */
+static int send_packet(uint8_t type, int16_t value, uint8_t plen, const char *text)
 {
     /* Two writes closer than the bridge's 10 ms flush gap would go out as one packet,
        which the CM4 rejects for its length */
@@ -274,7 +311,13 @@ static int send_packet(uint8_t type, int16_t value, uint8_t plen)
     }
 
     size_t n = HDR_LEN + plen;
-    if (write(s_serial_fd, pkt, n) != (ssize_t)n) return -1;
+    ssize_t w = write(s_serial_fd, pkt, n);
+    if (w > 0) log_bytes("TX-RAW", pkt, (size_t)w);   /* only what actually went out */
+    if (w != (ssize_t)n) {
+        log_note("TX      seq %-3u %s  WRITE FAILED (%zd of %zu bytes): %s", s_tx_seq, text, w, n, strerror(errno));
+        return -1;
+    }
+    log_note("TX      seq %-3u %s", s_tx_seq, text);
     s_last_send = now_s();
     return s_tx_seq++;   /* wraps 255 -> 0 like the boat expects */
 }
@@ -282,7 +325,7 @@ static int send_packet(uint8_t type, int16_t value, uint8_t plen)
 /* Send a command and add it to the log. Heartbeats are not logged: the boat reports no result for them. */
 static void send_logged(uint8_t type, int16_t value, uint8_t plen, const char *text)
 {
-    int seq = send_packet(type, value, plen);
+    int seq = send_packet(type, value, plen, text);
     if (seq < 0) {
         set_status(1, "serial write failed: %s", strerror(errno));
         return;
@@ -306,7 +349,7 @@ static void send_logged(uint8_t type, int16_t value, uint8_t plen, const char *t
 
 static void send_heartbeat(void)
 {
-    if (send_packet(COMMAND_NONE, 0, 0) >= 0) s_hbs_sent++;
+    if (send_packet(COMMAND_NONE, 0, 0, "hb") >= 0) s_hbs_sent++;
 }
 
 /* auto/semi/man, plus a few spellings */
@@ -516,6 +559,7 @@ static void match_results(void)
         uint8_t ahead = (uint8_t)(reported - e->seq);
         if (ahead == 0)        e->result = s_telem.last_cmd_result;
         else if (ahead < 128)  e->result = RES_MISSED;
+        if (e->result != RES_PENDING) log_note("RESULT  seq %-3u %s -> %s", e->seq, e->text, result_name(e->result));
     }
 }
 
@@ -582,9 +626,13 @@ static size_t  s_buf_len;
 static void handle_packet(const uint8_t *p)
 {
     uint8_t seq = p[2];
-    if (s_pkts > 0) s_lost += (uint8_t)(seq - s_last_seq - 1);
+    uint8_t lost = s_pkts > 0 ? (uint8_t)(seq - s_last_seq - 1) : 0;
+    s_lost += lost;
     s_last_seq = seq;
     memcpy(&s_telem, p + HDR_LEN, sizeof(s_telem));
+    log_note("RX      seq %-3u lost %-3u flags 0x%02X  mode %u  last_cmd %u -> %s  uptime %lu ms",
+             seq, lost, p[4], s_telem.mode, (uint8_t)s_telem.last_cmd_seq,
+             result_name(s_telem.last_cmd_result), (unsigned long)s_telem.uptime_ms);
     s_have_telem = 1;
     s_pkts++;
     s_last_rx = now_s();
@@ -595,16 +643,20 @@ static void handle_packet(const uint8_t *p)
 static void parse(void)
 {
     size_t i = 0;
+    size_t junk_run = 0;   /* skipped bytes since the last packet, noted in the log as one line */
     while (s_buf_len - i >= PKT_LEN) {
         const uint8_t *p = s_buf + i;
         if (p[0] == ADDR_GROUND && p[1] == ADDR_BOAT && p[3] == 1 + sizeof(LoRaTelemetry_t)) {
+            if (junk_run) { log_note("JUNK    %zu bytes skipped before this packet", junk_run); junk_run = 0; }
             handle_packet(p);
             i += PKT_LEN;
         } else {
             s_junk++;
+            junk_run++;
             i++;
         }
     }
+    if (junk_run) log_note("JUNK    %zu bytes skipped", junk_run);
     memmove(s_buf, s_buf + i, s_buf_len - i);
     s_buf_len -= i;
 }
@@ -759,7 +811,7 @@ static void draw(const char *port)
     frame_begin();
     if (!s_out) return;
 
-    fprintf(s_out, "ALANv GROUND STATION   %s\n", port);
+    fprintf(s_out, "ALANv GROUND STATION   %s   log %s\n", port, s_log_path);
     fprintf(s_out, "pkts %-6u lost %-5u junk %-6s ", s_pkts, s_lost, junk);
     if (!s_have_telem)                  fprintf(s_out, "WAITING FOR BOAT...\n");
     else if (age * 1000 > NO_SIGNAL_MS) fprintf(s_out, "NO SIGNAL  last %.1fs ago\n", age);
@@ -891,6 +943,23 @@ int main(int argc, char **argv)
     }
     s_serial_fd = fd;
 
+    /* Log path from argv[2], or a new timestamped file in the current directory */
+    if (argc > 2) {
+        snprintf(s_log_path, sizeof(s_log_path), "%s", argv[2]);
+    } else {
+        time_t t = time(NULL);
+        struct tm tm;
+        localtime_r(&t, &tm);
+        strftime(s_log_path, sizeof(s_log_path), "gs_log_%Y%m%d_%H%M%S.txt", &tm);
+    }
+    s_log = fopen(s_log_path, "a");
+    if (!s_log) {
+        fprintf(stderr, "cannot open log %s: %s\n", s_log_path, strerror(errno));
+        return 1;
+    }
+    setvbuf(s_log, NULL, _IOLBF, 0);   /* line buffered, so a crash or Ctrl-C loses nothing written */
+    log_note("OPEN    %s", port);
+
     signal(SIGINT, on_signal);
     signal(SIGTERM, on_signal);
     stdin_raw();
@@ -919,6 +988,7 @@ int main(int argc, char **argv)
         if (n > 0 && FD_ISSET(fd, &rfds)) {
             ssize_t r = read(fd, s_buf + s_buf_len, sizeof(s_buf) - s_buf_len);
             if (r > 0) {
+                log_bytes("RX-RAW", s_buf + s_buf_len, (size_t)r);
                 s_buf_len += r;
                 parse();
             } else if (r == 0 || (errno != EAGAIN && errno != EINTR)) {
@@ -942,5 +1012,8 @@ int main(int argc, char **argv)
     close(fd);
     restore_terminal();   /* back on the normal screen, so the message stays visible */
     if (port_closed) fprintf(stderr, "serial port closed\n");
+    log_note("CLOSE   %s", port_closed ? "serial port closed" : "quit");
+    fclose(s_log);
+    fprintf(stderr, "log: %s\n", s_log_path);
     return 0;
 }
