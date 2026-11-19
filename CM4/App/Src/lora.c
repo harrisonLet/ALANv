@@ -260,7 +260,12 @@
 /* ─── RX registers (added for receive support) ───────────────────── */
 #define REG_FIFO_RX_CURRENT_ADDR 0x10   /* FIFO address of start of last received packet */
 #define REG_RX_NB_BYTES          0x13   /* number of bytes in last received payload */
+#define REG_PKT_SNR_VALUE        0x19   /* SNR of last packet, signed, quarter dB */
+#define REG_PKT_RSSI_VALUE       0x1A   /* RSSI of last packet, dBm = RSSI_OFFSET_HF + value */
+#define REG_RSSI_VALUE           0x1B   /* current channel RSSI, dBm = RSSI_OFFSET_HF + value */
 #define REG_DIO_MAPPING_1        0x40   /* DIO0 mapping: 0x00=RxDone, 0x40=TxDone */
+
+#define RSSI_OFFSET_HF           (-157) /* RSSI register offset on the 862-1020 MHz port (SX1276 datasheet 5.5.5) */
 
 /* IRQ flag bits */
 #define IRQ_RX_DONE              0x40
@@ -285,6 +290,7 @@ static volatile LoRaState_t s_state = LORA_STATE_IDLE;
 static uint8_t          s_rx_buf[64];
 static uint8_t          s_rx_len;
 static volatile uint8_t s_rx_ready;
+static LoRaRxStats_t    s_rx_stats;
 
 static void read_rx_packet(void);
 
@@ -421,6 +427,8 @@ void LoRa_Send(uint8_t *data, uint8_t len){
         uint8_t irq = SPI_rx_byte(REG_IRQ_FLAGS);
         if ((irq & IRQ_RX_DONE) && !(irq & IRQ_PAYLOAD_CRC_ERROR)) {
             read_rx_packet();
+        } else if ((irq & IRQ_RX_DONE) && (irq & IRQ_PAYLOAD_CRC_ERROR)) {
+            s_rx_stats.crc_err++;
         }
     }
 
@@ -497,6 +505,7 @@ void LoRa_ProcessDIO0(void)
 
     if (s_state == LORA_STATE_RX) {
         if (irq & IRQ_PAYLOAD_CRC_ERROR) {
+            s_rx_stats.crc_err++;
             LoRa_StartRX();     // crc error
             return;
         }
@@ -519,6 +528,26 @@ static void read_rx_packet(void)
     SPI_FIFO_rx(s_rx_buf, pkt_len);
     s_rx_len   = pkt_len;
     s_rx_ready = 1;
+
+    // Packet strength (SX1276 datasheet 5.5.5): below the noise floor (SNR < 0) the SNR is added on,
+    // above it the RSSI register reads a little low and is scaled by 16/15
+    int8_t  snr  = (int8_t)SPI_rx_byte(REG_PKT_SNR_VALUE);
+    int16_t rssi = SPI_rx_byte(REG_PKT_RSSI_VALUE);
+    s_rx_stats.last_rssi    = (int16_t)(RSSI_OFFSET_HF + ((snr < 0) ? rssi + snr / 4 : (rssi * 16) / 15));
+    s_rx_stats.last_snr     = snr;
+    s_rx_stats.last_rx_tick = HAL_GetTick();
+    s_rx_stats.ok++;
+}
+
+/* Copy out the receive stats, see LoRaRxStats_t.
+   Call it right before LoRa_Send: while the radio is still listening it also samples the channel noise */
+void LoRa_GetRxStats(LoRaRxStats_t *stats)
+{
+    if (s_state == LORA_STATE_RX) {
+        // Channel RSSI right now, the noise floor unless a packet happens to be arriving
+        s_rx_stats.noise = (int16_t)(RSSI_OFFSET_HF + SPI_rx_byte(REG_RSSI_VALUE));
+    }
+    *stats = s_rx_stats;
 }
 
 /*

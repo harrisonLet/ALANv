@@ -13,7 +13,7 @@ typedef enum {
 
 /*
  * Telemetry record sent from the boat to the ground station over LoRa.
- * Packed so the layout on the wire matches the struct exactly (62 bytes).
+ * Packed so the layout on the wire matches the struct exactly (76 bytes).
  */
 typedef struct __attribute__((packed)) {
 
@@ -66,10 +66,26 @@ typedef struct __attribute__((packed)) {
     uint32_t uptime_ms;              /* board uptime */
     uint8_t  last_cmd_result;        /* cmd_result_t of the command in last_cmd_seq */
 
+    /* LoRa receive stats. The CM7 leaves these 0, the CM4 fills them in right before sending */
+    uint8_t  rx_last_seq;            /* seq of the last packet received, heartbeats included */
+    uint8_t  rx_last_type;           /* command type of that packet, 0x00 = heartbeat */
+    int16_t  rx_last_rssi;           /* dBm, signal strength of that packet */
+    int8_t   rx_last_snr;            /* quarter dB (LORA_RX_SNR_SCALE), SNR of that packet */
+    uint8_t  rx_age_s;               /* seconds since anything was received, 255 = 255+ or never */
+    int16_t  rx_noise;               /* dBm, channel RSSI with the radio listening, sampled right before this send */
+    uint16_t rx_ok;                  /* packets received with a good CRC, wraps */
+    uint16_t rx_crc_err;             /* packets received with a bad CRC, wraps */
+    uint8_t  rx_rejected;            /* good CRC but failed the header/address/length check, wraps */
+    uint8_t  rx_dropped;             /* valid command that could not be queued for the CM7, wraps */
+
 } LoRaTelemetry_t;
 
 /* The ground station decodes this exact layout, so a size change has to go out on both sides */
-_Static_assert(sizeof(LoRaTelemetry_t) == 62, "LoRaTelemetry_t must be 62 bytes, update the ground station with it");
+_Static_assert(sizeof(LoRaTelemetry_t) == 76, "LoRaTelemetry_t must be 76 bytes, update the ground station with it");
+
+/* LoRa receive stats encoding */
+#define LORA_RX_SNR_SCALE  4.0          /* rx_last_snr: dB * 4, as the radio reports it */
+#define LORA_RX_AGE_NEVER  255U         /* rx_age_s when nothing has been received, or 255 s or more ago */
 
 /* GPS field encoding */
 #define LORA_GPS_DEG_SCALE 10000000.0   /* latitude/longitude: degrees * 1e7, about 1 cm */

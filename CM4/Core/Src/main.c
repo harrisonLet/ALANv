@@ -65,6 +65,12 @@ volatile uint8_t  dio0_flag = 0; /* set by EXTI ISR when DIO0 (PG9) fires */
 #if defined(CM4_FAKE_COMMANDS)
 volatile uint8_t  fake_rx_flag = 0; /* set by TIM6 ISR every CM4_FAKE_CMD_PERIOD_S */
 #endif
+
+/* What handle_rx_packet saw, sent in the telemetry next to the radio's own stats */
+static uint8_t rx_last_seq  = 0;
+static uint8_t rx_last_type = 0;
+static uint8_t rx_rejected  = 0;  /* wraps */
+static uint8_t rx_dropped   = 0;  /* wraps */
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -72,6 +78,7 @@ volatile uint8_t  fake_rx_flag = 0; /* set by TIM6 ISR every CM4_FAKE_CMD_PERIOD
 #if defined(CM4_LORA_COMMANDS_ENABLE) || defined(CM4_FAKE_COMMANDS)
 static void handle_rx_packet(const uint8_t *cmd, uint8_t len, bool ipc_attached);
 #endif
+static void fill_rx_stats(LoRaTelemetry_t *telem);
 static void MX_SPI1_Init(void);
 static void MX_TIM6_Init(void);
 static void MX_StatusLED_Init(void);
@@ -236,6 +243,7 @@ int main(void)
         #endif
         if (telem_ready) {
           tx_flag = 0;
+          fill_rx_stats(&telemetryPacket);   // last, so the noise sample is right before the send
           LoRaTelemetry_t *payload = &telemetryPacket;
           uint8_t plen = sizeof(LoRaTelemetry_t);
           uint8_t pkt[LORA_HDR_LEN_BYTES + plen];
@@ -293,21 +301,49 @@ static void handle_rx_packet(const uint8_t *cmd, uint8_t len, bool ipc_attached)
     {
         ipc_cmd_t c = { .type = cmd[4], .seq = cmd[2] };   // raw starts zeroed, so a short payload reads as 0
         memcpy(c.raw, &cmd[LORA_HDR_LEN_BYTES], body - 1U);
+        rx_last_seq  = c.seq;
+        rx_last_type = c.type;
         // Without a successful attach the CM7 may not be using SRAM4, or may lay it out differently
         if (!ipc_attached)
         {
+            rx_dropped++;
             printf("[RX] IPC not attached, dropped\r\n");
         }
         else if (ipc_cm4_push_command(&c) != IPC_STATUS_OK)
         {
+            rx_dropped++;
             printf("[RX] ring full, dropped\r\n");
         }
     }
     else {
+        rx_rejected++;
         printf("[RX] ignored len=%u dest=0x%02X\r\n", len, cmd[0]);
     }
 }
 #endif
+
+/*
+   Overwrite the receive stats in the telemetry with the CM4's own (the CM7 leaves them 0).
+   Samples the channel noise, so call it right before LoRa_Send.
+*/
+static void fill_rx_stats(LoRaTelemetry_t *telem)
+{
+    LoRaRxStats_t radio;
+    LoRa_GetRxStats(&radio);
+
+    uint32_t age_s = (HAL_GetTick() - radio.last_rx_tick) / 1000U;
+    telem->rx_age_s     = (radio.last_rx_tick == 0U || age_s > LORA_RX_AGE_NEVER)
+                          ? (uint8_t)LORA_RX_AGE_NEVER : (uint8_t)age_s;
+    telem->rx_last_seq  = rx_last_seq;
+    telem->rx_last_type = rx_last_type;
+    telem->rx_last_rssi = radio.last_rssi;
+    telem->rx_last_snr  = radio.last_snr;
+    telem->rx_noise     = radio.noise;
+    telem->rx_ok        = radio.ok;
+    telem->rx_crc_err   = radio.crc_err;
+    telem->rx_rejected  = rx_rejected;
+    telem->rx_dropped   = rx_dropped;
+}
 
 static void MX_SPI1_Init(void)
 {
