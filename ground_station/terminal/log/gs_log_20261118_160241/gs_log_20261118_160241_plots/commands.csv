@@ -1,0 +1,66 @@
+datetime,time,seq,command,result,outcome
+2026-11-18T16:10:08.054,16:10:08.054,17,head 200,WRONG_MODE,Refused (wrong mode)
+2026-11-18T16:10:15.017,16:10:15.017,18,mode SEMI_RUDDER_AUTO_SAIL,OK,OK
+2026-11-18T16:10:20.317,16:10:20.317,19,head 200,OK,OK
+2026-11-18T16:12:12.428,16:12:12.428,20,head 110,OK,OK
+2026-11-18T16:12:24.396,16:12:24.396,21,head 20,OK,OK
+2026-11-18T16:13:54.961,16:13:54.961,22,head 65,OK,OK
+2026-11-18T16:14:03.837,16:14:03.837,23,head 200,OK,OK
+2026-11-18T16:14:29.956,16:14:29.956,24,head 245,OK,OK
+2026-11-18T16:15:48.306,16:15:48.306,25,head 290,OK,OK
+2026-11-18T16:16:21.457,16:16:21.457,26,head 200,OK,OK
+2026-11-18T16:16:29.487,16:16:29.487,27,head 20,not reported,Superseded before report
+2026-11-18T16:16:48.512,16:16:48.512,28,head 20,OK,OK
+2026-11-18T16:17:36.071,16:17:36.071,29,head 20,OK,OK
+2026-11-18T16:18:15.068,16:18:15.068,30,mode SEMI_RUDDER_AUTO_SAIL,OK,OK
+2026-11-18T16:18:24.493,16:18:24.493,31,head 20,OK,OK
+2026-11-18T16:18:51.349,16:18:51.349,32,head 200,OK,OK
+2026-11-18T16:19:06.271,16:19:06.271,33,head 150,not reported,Superseded before report
+2026-11-18T16:19:25.447,16:19:25.447,34,head 150,not reported,Superseded before report
+2026-11-18T16:19:36.121,16:19:36.121,35,head 150,OK,OK
+2026-11-18T16:19:55.021,16:19:55.021,36,head 300,not reported,Superseded before report
+2026-11-18T16:20:03.975,16:20:03.975,37,head 300,OK,OK
+2026-11-18T16:20:25.158,16:20:25.158,38,head 10,not reported,Superseded before report
+2026-11-18T16:20:35.809,16:20:35.809,39,head 10,not reported,Superseded before report
+2026-11-18T16:20:49.735,16:20:49.735,40,head 10,not reported,Superseded before report
+2026-11-18T16:21:41.031,16:21:41.031,41,mode AUTO_SAIL_MAN_RUDDER,not reported,Superseded before report
+2026-11-18T16:21:48.771,16:21:48.771,42,mode AUTO_SAIL_MAN_RUDDER,not reported,Superseded before report
+2026-11-18T16:22:16.416,16:22:16.416,43,mode AUTO_SAIL_MAN_RUDDER,OK,OK
+2026-11-18T16:22:23.546,16:22:23.546,44,rsang 40,not reported,Superseded before report
+2026-11-18T16:22:24.241,16:22:24.241,45,rsang 45,not reported,Superseded before report
+2026-11-18T16:22:29.213,16:22:29.213,46,rsang 50,not reported,Superseded before report
+2026-11-18T16:22:30.216,16:22:30.216,47,rsang 55,not reported,Superseded before report
+2026-11-18T16:22:41.264,16:22:41.264,48,rsang 60,not reported,Superseded before report
+2026-11-18T16:22:53.093,16:22:53.093,49,rsang 65,OK,OK
+2026-11-18T16:23:00.337,16:23:00.337,50,rsang 70,OK,OK
+2026-11-18T16:23:01.052,16:23:01.052,51,rsang 75,not reported,Superseded before report
+2026-11-18T16:23:01.325,16:23:01.325,52,rsang 80,OK,OK
+2026-11-18T16:23:02.188,16:23:02.188,53,rsang 75,OK,OK
+2026-11-18T16:23:02.485,16:23:02.485,54,rsang 70,no report,Never acknowledged
+2026-11-18T16:23:03.041,16:23:03.041,55,rsang 65,no report,Never acknowledged
+2026-11-18T16:23:03.309,16:23:03.309,56,rsang 55,not reported,Superseded before report
+2026-11-18T16:23:03.603,16:23:03.603,57,rsang 45,OK,OK
+2026-11-18T16:23:04.043,16:23:04.043,58,rsang 40,not reported,Superseded before report
+2026-11-18T16:23:04.348,16:23:04.348,59,rsang 35,not reported,Superseded before report
+2026-11-18T16:23:04.621,16:23:04.621,60,rsang 30,OK,OK
+2026-11-18T16:23:05.046,16:23:05.046,61,rsang 25,not reported,Superseded before report
+2026-11-18T16:23:05.331,16:23:05.331,62,rsang 15,not reported,Superseded before report
+2026-11-18T16:23:05.611,16:23:05.611,63,rsang 10,OK,OK
+2026-11-18T16:23:07.022,16:23:07.022,64,rsang 5,no report,Never acknowledged
+2026-11-18T16:23:07.321,16:23:07.321,65,rsang 0,not reported,Superseded before report
+2026-11-18T16:23:07.587,16:23:07.587,66,rsang -5,OK,OK
+2026-11-18T16:23:08.025,16:23:08.025,67,rsang -10,not reported,Superseded before report
+2026-11-18T16:23:08.280,16:23:08.280,68,rsang -20,not reported,Superseded before report
+2026-11-18T16:23:08.545,16:23:08.545,69,rsang -25,OK,OK
+2026-11-18T16:23:09.027,16:23:09.027,70,rsang -30,not reported,Superseded before report
+2026-11-18T16:23:09.329,16:23:09.329,71,rsang -40,OK,OK
+2026-11-18T16:23:10.030,16:23:10.030,72,rsang -45,not reported,Superseded before report
+2026-11-18T16:23:10.301,16:23:10.301,73,rsang -55,OK,OK
+2026-11-18T16:23:14.391,16:23:14.391,74,rsang -60,not reported,Superseded before report
+2026-11-18T16:23:14.980,16:23:14.980,75,rsang -65,not reported,Superseded before report
+2026-11-18T16:23:15.319,16:23:15.319,76,rsang -70,OK,OK
+2026-11-18T16:23:15.980,16:23:15.980,77,rsang -75,no report,Never acknowledged
+2026-11-18T16:23:22.942,16:23:22.942,78,rsang -80,no report,Never acknowledged
+2026-11-18T16:23:26.196,16:23:26.196,79,rsang -85,no report,Never acknowledged
+2026-11-18T16:23:40.117,16:23:40.117,80,rsang -90,no report,Never acknowledged
+2026-11-18T16:23:53.779,16:23:53.779,81,mode FULL_MAN,no report,Never acknowledged
