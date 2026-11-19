@@ -171,11 +171,10 @@ int main(void)
       .encoder_valid          = LORA_TELEMETRY_ALL_VALID,
       .ang_wind               = -45,
       .wind_valid             = LORA_TELEMETRY_ALL_VALID,
-      .latitude               = 40.7608,
-      .longitude              = -111.8910,
-      .altitude               = 1300.0f,
-      .satellites             = 8,
-      .fix_valid              = 1,
+      .latitude               = 407608000,    /* 40.7608 deg */
+      .longitude              = -1118910000,  /* -111.8910 deg */
+      .altitude               = 13000,        /* 1300.0 m */
+      .sats_fix               = LORA_GPS_SATS_FIX(8, 1),
       .utc_hours              = 12,
       .utc_minutes            = 34,
       .utc_seconds            = 56,
