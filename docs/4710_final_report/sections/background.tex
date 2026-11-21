@@ -1,0 +1,203 @@
+\section{Background}
+\label{sec:background}
+
+\subsection{Terminology}
+Directions on a boat are relative to the helm: \emph{forward} (fore) points
+toward the front and \emph{aft} toward the back, while \emph{outboard} points
+away from the centerline and \emph{inboard} toward it. The front of the vessel
+is the \emph{bow}, the rear is the \emph{stern}, and the right and left sides
+are \emph{starboard} and \emph{port}. The \emph{hull} is the body of the boat;
+the \emph{keel} is the fully submerged fin beneath it; the \emph{rudder} is the
+small steering plate at the stern; and the \emph{mast} is the vertical member
+that carries the sail. \emph{Freeboard} is the height of hull above the
+waterline and \emph{draft} is the depth below it. A self-trimming wingsail
+consists of a rigid main wing, a smaller
+\emph{tail} (also called a vane) carried aft on a boom, a counterweight, and
+the pivot about which the assembly rotates. Fig.~\ref{fig:anatomy} labels
+these terms on ALAN's layout.
+
+\begin{figure}[!t]
+\centering
+\subfloat[]{%
+\begin{tikzpicture}[scale=0.8, every node/.style={font=\scriptsize}]
+  % hull
+  \draw[fill=gray!25] (-2.0,0) -- (-2.0,0.32) .. controls (0.2,0.42) and (1.6,0.35) .. (2.6,0)
+                       .. controls (1.6,-0.35) and (0.2,-0.42) .. (-2.0,-0.32) -- cycle;
+  \draw[dashed,gray] (-2.4,0) -- (3.2,0);
+  \fill (0.35,0) circle (1.5pt);
+  \node[anchor=north west,inner sep=1pt] at (0.4,0) {mast};
+  \node[anchor=east] at (-2.05,0.25) {stern};
+  \node[anchor=south west,inner sep=1pt] at (2.6,0.02) {bow};
+  \node at (0.3,0.95) {port};
+  \node at (0.3,-0.95) {starboard};
+  \node[gray,anchor=north west,inner sep=1pt] at (2.6,-0.02) {centerline};
+  % direction arrows
+  \draw[{Stealth[length=1.6mm]}-{Stealth[length=1.6mm]}] (-1.6,-1.6) -- (1.6,-1.6);
+  \node[anchor=east] at (-1.6,-1.6) {aft};
+  \node[anchor=west] at (1.6,-1.6) {fore};
+  \draw[-{Stealth[length=1.6mm]}] (3.9,0.45) -- (3.9,1.25) node[above] {outboard};
+  \draw[-{Stealth[length=1.6mm]}] (3.9,-1.25) -- (3.9,-0.45);
+  \node[anchor=north] at (3.9,-1.25) {inboard};
+\end{tikzpicture}}
+
+\subfloat[]{%
+\begin{tikzpicture}[scale=0.8, every node/.style={font=\scriptsize}]
+  % water
+  \fill[blue!8] (-2.6,-2.3) rectangle (3.9,0);
+  \draw[blue!60!black] (-2.6,0) -- (3.9,0) node[anchor=south east,inner sep=1pt] {waterline};
+  % hull profile
+  \draw[fill=gray!25] (-2.0,0.32) -- (2.5,0.32) .. controls (2.3,0.0) and (1.7,-0.32) .. (0.8,-0.36)
+                       -- (-1.9,-0.3) -- cycle;
+  % keel and bulb
+  \draw[fill=gray!45] (0.1,-0.34) -- (0.55,-0.36) -- (0.45,-1.7) -- (0.1,-1.7) -- cycle;
+  \draw[fill=gray!60] (-0.35,-1.62) .. controls (-0.2,-1.45) and (0.9,-1.45) .. (1.05,-1.72)
+                       .. controls (0.9,-1.95) and (-0.2,-1.95) .. (-0.35,-1.72) -- cycle;
+  \node[anchor=west] at (0.6,-1.15) {keel and bulb};
+  % rudder
+  \draw[fill=gray!45] (-1.75,-0.3) -- (-1.45,-0.3) -- (-1.5,-1.0) -- (-1.8,-1.0) -- cycle;
+  \node[anchor=east] at (-1.85,-0.75) {rudder};
+  % mast
+  \draw[thick] (0.35,0.32) -- (0.35,1.7);
+  \node[anchor=west] at (0.4,1.5) {mast};
+  % freeboard and draft
+  \draw[{Stealth[length=1.2mm]}-{Stealth[length=1.2mm]}] (-2.2,0) -- (-2.2,0.32);
+  \node[anchor=east,inner sep=1pt] at (-2.25,0.2) {freeboard};
+  \draw[{Stealth[length=1.4mm]}-{Stealth[length=1.4mm]}] (3.3,0) -- (3.3,-1.95);
+  \draw[densely dotted] (-0.35,-1.95) -- (3.4,-1.95);
+  \node[anchor=west] at (3.35,-1.0) {draft};
+  \node[anchor=south] at (-1.6,0.32) {stern};
+  \node[anchor=south] at (2.1,0.32) {bow};
+\end{tikzpicture}}
+\caption{Vessel terminology on ALAN's layout (schematic, not to scale).
+(a) Top view of the hull with the fore--aft and inboard--outboard
+directions. Port is on the left when facing the bow.
+(b) Side view: freeboard and draft are measured from the waterline; the fin
+keel and bulb sit below the mast, and the spade rudder at the stern.}
+\label{fig:anatomy}
+\end{figure}
+
+\subsection{Physics of Sailing}
+A sailboat is propelled by two opposing lift forces~\cite{skene2001}. Wind
+flowing past the sail produces lift perpendicular to the apparent wind, and
+on most headings this force points largely sideways. The keel, moving
+through the water at a small leeway angle, produces a second lift force that
+opposes the sideways component. What remains is a forward drive force, as
+shown in Fig.~\ref{fig:physics}(b).
+
+Because of this two-force balance, both the \emph{point of sail} (the boat's
+heading relative to the wind) and the sail's \emph{angle of attack} (the angle
+between the wing chord and the apparent wind) determine boat speed. A boat
+cannot make headway within roughly \SI{45}{\degree} of the true wind on either
+side; this \SI{90}{\degree} sector is called \emph{in irons} or the
+\emph{no-go zone} (Fig.~\ref{fig:physics}(a)). To reach a target inside the
+no-go zone, the boat must \emph{tack}, sailing a zig-zag course at the edge of
+the zone.
+
+The rudder acts as a second, smaller foil at the stern. Turning it toward
+the wind reduces the effective keel force aft and turns the bow away from the
+wind; turning it away from the wind does the opposite. The point at which the
+sail force acts is the \emph{center of effort} (COE), and the point at which the
+keel force acts is the \emph{center of lateral resistance} (CLR). Placing the
+COE slightly aft of the CLR gives a mild \emph{weather helm}: the boat tends to
+turn into the wind and depower if left uncontrolled, which is a safe default
+for an autonomous vessel.
+
+\begin{figure}[!t]
+\centering
+\subfloat[]{%
+\begin{tikzpicture}[scale=0.72, every node/.style={font=\scriptsize}]
+  % no-go zone
+  \fill[red!15] (0,0) -- (45:2.5) arc (45:135:2.5) -- cycle;
+  \node at (90:2.1) {no-go zone};
+  % wind
+  \foreach \x in {-0.6,0,0.6}
+    \draw[-{Latex[length=2mm]},thick,blue!70!black] (\x,3.6) -- (\x,2.85);
+  \node[blue!70!black,anchor=east] at (-0.8,3.25) {true wind};
+  % headings
+  \foreach \a/\lab/\anc in {45/close-hauled/west, 135/close-hauled/east,
+                            0/beam reach/north, 180/beam reach/north,
+                            -45/broad reach/north, -135/broad reach/north,
+                            -90/run/north}
+    \draw[-{Stealth[length=2mm]}] (0,0) -- (\a:2.2);
+  \node[anchor=south west] at (45:2.2) {close-hauled};
+  \node[anchor=south east] at (135:2.2) {close-hauled};
+  \node[anchor=north] at (0:2.0) {\shortstack{beam\\reach}};
+  \node[anchor=north] at (180:2.0) {\shortstack{beam\\reach}};
+  \node[anchor=north west] at (-45:2.1) {broad reach};
+  \node[anchor=north east] at (-135:2.1) {broad reach};
+  \node[anchor=north] at (-90:2.2) {run};
+  \draw[dashed] (0,0) -- (90:2.5);
+  \draw (90:1.1) arc (90:45:1.1); \node at (67.5:1.45) {$45^\circ$};
+  \fill (0,0) circle (1.5pt);
+\end{tikzpicture}}
+\hfil
+\subfloat[]{%
+\begin{tikzpicture}[scale=0.72, every node/.style={font=\scriptsize}]
+  % hull, heading +x
+  \draw[fill=gray!20] (-1.6,0) .. controls (-1.2,0.45) and (0.9,0.45) .. (1.7,0)
+                       .. controls (0.9,-0.45) and (-1.2,-0.45) .. (-1.6,0);
+  \foreach \x in {-0.6,0,0.6}
+    \draw[-{Latex[length=2mm]},thick,blue!70!black] (\x+0.3,2.9) -- (\x+0.3,2.2);
+  \node[blue!70!black] at (1.75,2.55) {wind};
+  % sail force (lift)
+  \coordinate (C) at (0.1,0);
+  \draw[-{Stealth[length=2.5mm]},very thick,red!70!black] (C) -- ++(-62:2.3) node[below] {$F_S$};
+  % components
+  \draw[-{Stealth[length=2mm]},dashed,red!70!black] (C) -- ++(1.08,0) node[above right=-2pt] {$F_D$};
+  \draw[-{Stealth[length=2mm]},dashed,red!70!black] (C) -- ++(0,-2.03) node[left] {$F_H$};
+  % keel force
+  \draw[-{Stealth[length=2.5mm]},very thick,green!50!black] (C) -- ++(0,2.03) node[left] {$F_K$};
+  \draw[-{Stealth[length=2mm]},thick] (1.9,0) -- (2.8,0) node[right] {motion};
+\end{tikzpicture}}
+\caption{Sailing fundamentals. (a) Points of sail; headings within
+\SI{45}{\degree} of the true wind are not sailable. (b) Force balance seen from
+above: the sail force $F_S$ splits into a drive component $F_D$ and a heeling
+component $F_H$, which the keel force $F_K$ cancels.}
+\label{fig:physics}
+\end{figure}
+
+\subsection{Hull, Keel, and Rudder Options}
+Hulls are broadly \emph{displacement} or \emph{planing}. Displacement hulls
+are rounder and deeper and float by displacing water; they are slower but
+more stable. Planing hulls are flatter and rise onto the surface at speed;
+they are faster but less stable~\cite{skene2001}. Keels are either
+\emph{full}, running the length of the hull with shallow draft and high drag,
+or \emph{fin}, a thin deep plate that is more efficient but increases
+draft~\cite{sailingcats}. Rudders are classified by balance: a fully balanced
+rudder pivots about its center of pressure and is easy to turn but does not
+self-center, while an unbalanced rudder pivots at its leading edge, needs more
+torque, and returns to center on its own~\cite{noahrudder}. A \emph{spade}
+rudder hangs from its stock alone; a \emph{skeg} rudder is additionally
+supported by a fin bolted to the hull.
+
+\subsection{Wingsail Control Strategies}
+Cloth sails are inexpensive but wear quickly. Rigid sails made of foam,
+plastic, or composite are more durable and generate lift more efficiently,
+which is why most autonomous sailboats use them~\cite{silva2019,sun2025}.
+Three control strategies exist for rigid wingsails~\cite{sun2025}, compared
+in Table~\ref{tab:sailtypes}. A \emph{traditional} wingsail is rotated
+directly by a motor at the mast, which is simple but requires enough torque
+to turn and hold the whole wing. A \emph{flap} wingsail adds a hinged trailing
+flap; the motor moves only the flap, and the aerodynamic force on the flap
+rotates the wing. A \emph{self-trimming} wingsail carries a tail roughly one
+third the size of the main wing on a boom aft of the pivot. The motor turns
+only the tail, whose aerodynamic moment rotates the wing to an equilibrium
+angle of attack~\cite{elkaim2008,sailwings}. Actuation power is lowest for
+the self-trimming design, at the cost of an indirect, delayed response that is
+harder to control.
+
+\begin{table}[!t]
+\caption{Comparison of Rigid Wingsail Control Strategies}
+\label{tab:sailtypes}
+\centering
+\begin{tabular}{@{}lccc@{}}
+\toprule
+ & Traditional & Flap & Self-trimming \\
+\midrule
+Actuated surface    & Whole wing & Flap & Tail \\
+Actuator power      & High       & Medium & Low \\
+Control complexity  & Low        & Medium & High \\
+Response to command & Direct     & Indirect & Indirect, delayed \\
+\bottomrule
+\end{tabular}
+\end{table}

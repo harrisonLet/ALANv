@@ -1,0 +1,36 @@
+\section{Related Work}
+\label{sec:related}
+
+Autonomous sailing has been an active research area for over a decade.
+Stelzer's dissertation on autonomous sailboat navigation set foundational
+algorithms for waypoint tracking and tacking under varying wind
+conditions~\cite{stelzer2012}. From that research, the team found that a
+state-machine approach to points of sail is most efficient in open water; his
+earlier short-course routing method with Pr\"oll~\cite{stelzer2008} is the
+basis for the tacking logic in Section~\ref{sec:sw}.
+
+Commercial companies such as Saildrone have validated the viability of
+autonomous wind-driven vessels for long-endurance ocean monitoring, using
+rigid wingsail designs similar to ALAN's~\cite{saildrone,meinig2019}.
+
+Furthermore, Sun \emph{et al.} provide a comprehensive review of autonomous
+sailboat sail designs, concluding that rigid wingsails consistently
+outperform cloth sails in autonomous applications due to their repeatability,
+durability, and ability to be precisely controlled with low-power
+actuators~\cite{sun2025}. Silva \emph{et al.} survey rigid-wing sailboats in
+academia and industry~\cite{silva2019}, and Elkaim's Atlantis project showed
+that a free-rotating wing with an aft tail can be made passively stable and
+used it for GPS-guided line following~\cite{elkaim2006,elkaim2008}. The
+Sailwings project documents practical mechanisms for driving the tail of a
+self-trimming wingsail~\cite{sailwings}.
+
+Also, Skene's foundational work on yacht design informs ALAN's hull geometry
+decisions, particularly the relationship between center of effort and center
+of lateral resistance~\cite{skene2001}. Rudder sizing followed a marine
+rudder guide~\cite{noahrudder}, and the choice of a fixed fin keel drew on a
+comparison of keels and daggerboards~\cite{sailingcats}.
+
+Current autonomous platforms are either expensive (Saildrone) or use
+conventional cloth sails. ALAN addresses this gap by pairing a self-trimming
+rigid wingsail with a ballasted displacement hull, built entirely from
+accessible components and low-cost fabrication resources.

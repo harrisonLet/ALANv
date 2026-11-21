@@ -1,0 +1,73 @@
+\section{Bill of Materials}
+\label{app:bom}
+Tables~\ref{tab:bom_mech} and~\ref{tab:bom_elec} list the materials and
+components in the vessel as built. Consumables such as brushes, mixing cups,
+sandpaper, and personal protective equipment are omitted.
+
+\begin{table*}[!t]
+\caption{Bill of Materials: Mechanical}
+\label{tab:bom_mech}
+\centering
+\footnotesize
+\begin{tabular}{@{}p{0.12\textwidth}p{0.36\textwidth}p{0.45\textwidth}@{}}
+\toprule
+Subsystem & Item & Specification or note \\
+\midrule
+Hull & PLA filament (mold) & Two-piece female mold, lab provided \\
+     & Filler primer, 2K gloss topcoat & Mold surface finish \\
+     & PARTALL \#2 paste wax, PARTALL \#10 PVA & Mold release \\
+     & Fiberglass cloth & \SI{4}{oz} plain weave, \SI{50}{in} wide, seven plies \\
+     & TotalBoat 5:1 marine epoxy, peel ply & Layup \\
+     & XPS foam board & Deck; laminated with fiberglass \\
+     & Plywood & Laser-cut bulkheads and sail templates \\
+     & Printed hatch coamings and latches & Two hatches, four over-center latches each \\
+Keel & 304 SS square bar & \SI{0.5}{in} $\times$ \SI{7}{in} post \\
+     & 304 SS plate & \SI{0.25}{in} mounting bracket \\
+     & 304 SS round tube & \SI{2}{in} $\times$ \SI{8.5}{in} bulb core \\
+     & Ballast canisters & Stainless tubes with threaded studs, printed nose and tail caps \\
+     & PLA fairing halves & Mirrored, bolted around the post \\
+     & 1/4-20 bolts, nylon-insert lock nuts, washers & Bracket mounting; replace zinc-plated bolts \\
+Rudder & 304 SS round bar & \SI{0.25}{in} $\times$ \SI{12}{in} shaft \\
+       & R188 ceramic bearings (2) & $1/4 \times 1/2 \times 3/16$ in \\
+       & Aluminum plates & \SI{0.065}{in}, rear clamp \\
+       & Printed blade, cross bolt and barrel nut & Swappable blade \\
+       & 25-tooth spline to 1/4-in.\ coupler & Servo to shaft \\
+Wingsail & 6061 aluminum tube & \SI{3}{ft} mast \\
+         & Flanged ball-bearing unit & Deck mast partner \\
+         & XPS foam board & Main wing and tail \\
+         & Carbon fiber rods & Tail and counterweight booms \\
+         & Printed parts & Collar and stops, tail servo bracket, upper pivot, counterweight \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{table*}[!t]
+\caption{Bill of Materials: Electrical}
+\label{tab:bom_elec}
+\centering
+\footnotesize
+\begin{tabular}{@{}p{0.12\textwidth}p{0.36\textwidth}p{0.45\textwidth}@{}}
+\toprule
+Subsystem & Item & Specification or note \\
+\midrule
+Control  & NUCLEO-H755ZI-Q & STM32H755 dual-core development board \\
+Sensors  & Adafruit BNO055 breakout & Nine-axis orientation, I\textsuperscript{2}C \\
+         & u-blox NEO-6 GPS module & NMEA over UART \\
+         & DFRobot wind vane & RS-485 Modbus RTU, aviation connector \\
+         & RS-485 to UART adapter & Wind vane interface \\
+         & AS5600 magnetic encoder & Sail angle, I\textsuperscript{2}C \\
+Actuators & DS3218MG digital servo & 20 kg-cm, waterproof, rudder \\
+          & MG90S 9G Servo & Mounted on the lower tail boom \\
+Radio    & Adafruit RFM95W breakout & 915 MHz LoRa, boat \\
+         & SparkFun SAMD21 Pro RF & Ground station USB-to-LoRa bridge \\
+         & \SI{10}{dBi} whip antennas (2) & Boat masthead and ground station \\
+         & SMA to u.FL cables, \SI{5}{ft} SMA extension & Antenna feed to masthead \\
+         & SMA bulkhead connector & Enclosure pass-through \\
+Power    & 4S LiPo battery & \SI{14.8}{\volt} nominal, 1300 mAh \\
+         & Power distribution board, XT60 connectors & Servo and logic rails \\
+         & 82 k$\Omega$ / 18 k$\Omega$ dividers, 100 nF capacitors & Four cell-tap channels \\
+Packaging & Printed enclosure, cable glands & Aft hatch \\
+          & Solderless breadboard & Interconnections \\
+\bottomrule
+\end{tabular}
+\end{table*}

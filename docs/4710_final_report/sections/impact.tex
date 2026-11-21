@@ -1,0 +1,99 @@
+\section{Safety, Global, Societal, and Ethical Considerations}
+\label{sec:impact}
+
+\begin{table*}[!t]
+\caption{Risks: Planned Mitigation and Outcome}
+\label{tab:risks}
+\centering
+\footnotesize
+\begin{tabular}{@{}p{0.15\textwidth}p{0.33\textwidth}p{0.45\textwidth}@{}}
+\toprule
+Risk & Planned mitigation (ECE 3992) & Outcome \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Mechanical}} \\
+Hull integrity failure & Seven fiberglass plies, reinforced keel mount and stern, submersion test & Seven plies with reinforced keel boss and transom; leak test passed with no water inside \\
+Keel detachment & Stainless bracket, bolts with lock nuts, embedded plate & 304 bracket bolted through the reinforced boss with nylon-insert lock nuts; zinc-plated fasteners corroding, to be replaced \\
+Rudder bearing seizure & R188 ceramic bearings, marine grease, field-replaceable & Ceramic bearings in a removable two-part clamp \\
+Mast or sail damage & Design margin; self-trimming wing feathers in gusts & Wing weathervanes freely; $\pm\SI{90}{\degree}$ stops protect the mast cable; high-wind check passed: the keel righted the boat after hard pushes and in field-test gusts \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Electrical}} \\
+Water ingress & Sealed Pelican case, IP-rated pass-throughs, conformal coating & Printed enclosure under a latched hatch, cable glands, sealed SMA bulkhead and vane connector; breadboard not yet coated (open) \\
+Battery failure & BMS & Per-cell voltage telemetry from four ADC taps; BMS fitted \\
+LoRa link loss & \SI{10}{dBi} antennas, return to home, mission stored on board & Masthead \SI{10}{dBi} antenna; route stored on board with CRC; 95.9\% packet delivery to \SI{228}{\meter} in the field test; link-loss timeout implemented but off by default; return to home not implemented (open) \\
+Servo failure & Waterproof 20 kg-cm servos, stall current monitoring & DS3218MG rudder servo; PID output limits and \SI{120}{\degree\per\second} slew limit; current monitoring not implemented \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Software}} \\
+Sensor fusion divergence & Complementary filter, range checks, GPS-only fallback & BNO055 onboard fusion; every reading carries a validity code and staleness timeout; the heading PID stops when orientation data are unavailable \\
+Real-time deadline miss & Task priorities, execution profiling, dual-core split & Radio moved to the CM4; fixed-rate tasks with consequence-ordered priorities \\
+Path-planning edge cases & Tacking state machine, simulation before water trials & Tack planner implemented with 941 unit-test checks and a simulator route mode; not yet sailed on the water \\
+No viable path & Planning timeout, loiter, then return to home & Corridor fault and arrival put the boat in SAFE; loiter and return to home not implemented (open) \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Found during development}} \\
+Mismatched core firmware & -- & Shared-memory layout version checked at boot; CM4 refuses to attach on mismatch \\
+Angle averaging at the seam & -- & Unwrapped running averages for encoder and vane; circular mean in navigation \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+
+\subsection{Public Health, Safety, and Welfare}
+ALAN operates on open water near other watercraft, swimmers, and wildlife.
+It is small (\SI{1}{\meter}, about \SI{5}{\kilo\gram}) and wind-powered, so
+its speed and the energy of any collision are low. Testing is limited to
+small, controlled bodies of water with an operator in sight, and the boat
+reports its GPS position every second so it can always be located. The
+operator can take control at any time with a mode command, and the SAFE mode
+centers the rudder and feathers the tail. Within the firmware, each actuator
+has a single writer with a timeout: if a controller crashes or is starved, the
+rudder centers within \SI{200}{\milli\second} and the tail returns to its
+safe angle within \SI{300}{\milli\second}. The link-loss timeout that drops
+manual and semi-autonomous modes to SAFE is implemented but disabled for bench
+work. It must be enabled before any unattended run. The 4S LiPo battery is the
+main hazard on board; per-cell voltages are reported in every telemetry
+packet so a weak or over-discharged cell is visible from shore.
+The pack is fitted with a BMS and is charged with a professional battery
+charger. Between uses it is unplugged completely from the circuit and left to
+sit.
+
+\subsection{Environmental Factors}
+Wind propulsion produces no emissions and no underwater noise, and the battery
+powers only the electronics. The hull is sealed fiberglass and epoxy, and the
+keel and rudder hardware is stainless steel. Zinc-plated fasteners on the keel
+are already corroding and will be replaced, so that no coating or rust
+residue enters the water. A lost vessel would become debris, which is a
+further reason for continuous position telemetry.
+
+\subsection{Global and Cultural Factors}
+Low-cost autonomous sailing platforms could make marine research more
+accessible, particularly for coastal nations and institutions with limited
+research budgets. The same technology could be misused, for example for
+smuggling or for operation in protected marine areas without authorization.
+Responsible deployment requires operating only where permitted.
+
+\subsection{Economic Factors}
+ALAN was built for roughly \$1000 from development boards, commodity sensors,
+and fabrication resources available to most universities, a small fraction
+of the cost of a commercial uncrewed sailing vessel. The firmware, simulator,
+and design files are kept in a shared repository so other teams can build on
+them.
+
+\subsection{Professional and Regulatory Obligations}
+Engineers have an obligation to ensure the vessel cannot harm people or the
+environment, which motivates the failsafe behavior above, clear marking of
+the boat as uncrewed, and operation only in permitted waterways. The radio
+uses the unlicensed 902--928 MHz band, where Section 15.247 of the Federal Communications Commission (FCC) rules
+covers only frequency-hopping and digitally modulated transmitters. In this
+band, a hopping system with a channel narrower than \SI{250}{\kilo\hertz}
+must use at least 50 frequencies and dwell no more than \SI{0.4}{\second} on
+any one in \SI{20}{\second}, and a digitally modulated system must have a
+bandwidth of at least \SI{500}{\kilo\hertz}~\cite{cfr15247}. ALAN currently
+transmits on a single fixed \SI{125}{\kilo\hertz} channel for about
+\SI{246}{\milli\second} every second, so it meets neither condition at its
+present \SI{17}{dBm} output. Before further field use, the team should either
+add frequency hopping across the band or reduce power to the limits for
+non-hopping transmitters. Neither change has been made yet,
+and the November 18 field test used the single-channel configuration.
+Frequency hopping is the preferred option because it keeps the present range.
+The SX1276 includes a hopping mode that changes channel on a programmable
+period~\cite{sx1276}, and the ground-station radio would need to follow the
+same channel sequence. This change is listed in Section~\ref{sec:future}.

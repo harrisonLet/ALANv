@@ -1,0 +1,37 @@
+\section{Remaining Work}
+\label{sec:future}
+
+To finish the capstone vessel, the team must complete the following:
+\begin{itemize}
+\item Merge the \texttt{ltp} branch into \texttt{master} and sail the test
+route on the water. The field test showed that the heading PID alone stalls when a
+turn passes through the wind.
+\item Enable the link-loss timeout and confirm the safe tail angle before
+unattended operation.
+\item Bring the radio link into compliance with FCC Part~15, by adding
+frequency hopping or reducing output power (Section~\ref{sec:impact}).
+\item Report each command's result individually, for example as a short
+history in telemetry. In the field test, 27 of 65 command results were
+overwritten before the ground station could see them.
+\item Find the cause of the restart at 16:04:18 in the field test.
+\item Confirm on the water that the \texttt{ltp} firmware's longer battery
+window (20 readings instead of 2) removes the cell-voltage noise seen in the
+field test, where individual cells varied by about \SI{180}{\milli\volt}
+between packets.
+\item Calibrate the simulator's hull drag and tail-to-angle-of-attack gain
+from the field-test log, then retune both PIDs and the sail-planner table.
+\item Run the full waypoint mission and record the data for
+Section~\ref{sec:test}.
+\end{itemize}
+Before any longer deployment, the following changes are recommended:
+\begin{itemize}
+\item Replace the solderless breadboard with soldered connections.
+\item Replace zinc-plated fasteners on the keel with stainless hardware.
+\item Test the monohull's stability in rough water, and add outriggers if the
+keel alone does not keep heel within limits.
+\item Emulate the CM4 and radio in the simulator so the full command path can
+be tested off the water.
+\item Add an energy source, such as a solar panel, and use the cell-voltage
+telemetry to manage energy on long missions.
+\item Add obstacle avoidance and weather routing~\cite{stelzer2012}.
+\end{itemize}

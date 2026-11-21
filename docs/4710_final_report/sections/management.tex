@@ -1,0 +1,73 @@
+\section{Project Management}
+\label{sec:mgmt}
+
+\subsection{Team and Responsibilities}
+The five team members split into sub-teams by subsystem, and three additional
+contributors assisted with the radio and sensors.
+Table~\ref{tab:team} lists each member's responsibilities, taken from the
+proposal schedule and the fall firmware task plan. The proposal organized the work into four sub-teams:
+\begin{itemize}
+\item \emph{LoRa}: Harrison LeTourneau, Jared Pratt, Adam Welsh, and Aliou
+Tippett designed, implemented, and tested the radio link between the vessel
+and the ground station.
+\item \emph{Sensor}: Corbin Barney, Charbel Salloum, Connor Stevens, and
+Derek Tinoco selected, integrated, and tested the GPS, IMU, and wind vane.
+\item \emph{Embedded}: all five members, with Derek Tinoco, Adam Welsh, and
+Aliou Tippett, built the bench test setups for the radio and sensor suite.
+\item \emph{ALAN}: the five members shared vessel integration, mechanical
+assembly, firmware integration, and on-water testing.
+\end{itemize}
+Adam Welsh and Aliou Tippett are students at the University of Utah, and
+Derek Tinoco is a computer scientist who assisted with early sensor
+integration.
+
+\begin{table}[!htb]
+\caption{Team Responsibilities}
+\label{tab:team}
+\centering
+\footnotesize
+\begin{tabular}{@{}p{0.22\columnwidth}p{0.3\columnwidth}p{0.38\columnwidth}@{}}
+\toprule
+Member & Mechanical & Firmware and software \\
+\midrule
+Charbel Salloum & Wingsail & Wingsail control, live tack planner, path planning \\
+Connor Stevens & Wingsail & Wingsail control, telemetry \\
+Corbin Barney & Keel, rudder & Sensor drivers, shared data types, positioning, emergency recovery \\
+Harrison LeTourneau & Hull & LoRa link (CM4), commander, positioning, ground station \\
+Jared Pratt & Keel, rudder & Heading and sail PIDs, arbiters, sail planner, ground station, path planning \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Schedule}
+Fig.~\ref{fig:gantt} shows the schedule planned in the proposal. The spring
+and summer covered fabrication and assembly, and the fall covered firmware,
+control, navigation, and water testing. Table~\ref{tab:schedule} gives the
+owner assigned in the proposal and the status of each milestone at the time
+of writing.
+
+\subsection{Cost}
+The proposal estimated a total of about \$1000, shown against actual
+spending in Table~\ref{tab:cost}. The largest single expense was expected to be
+epoxy resin, and the most expensive component the hull, because of the
+printed mold and its filament. On-campus groups sponsored some materials,
+including 3D printing filament, and university staff loaned reusable
+equipment such as respirators. John Davies provided a space in the ECE Senior Capstone Lab to house materials and a space to assemble the project.
+
+\begin{table}[!htb]
+\caption{Estimated and Actual Cost}
+\label{tab:cost}
+\centering
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Category & Estimate (\$) & Actual (\$) \\
+\midrule
+Hull materials (resin, fiberglass, mold) & 400 & 375 \\
+Keel, rudder, sail/tail (steel, carbon fiber, etc.)    & 200 & 145 \\
+Electronics                              & 200 & 250 \\
+Contingency                              & 200 & 250 \\
+\midrule
+Total                                    & 1000 &  1020\\
+\bottomrule
+\end{tabular}
+\end{table}

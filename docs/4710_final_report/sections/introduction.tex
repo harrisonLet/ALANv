@@ -1,0 +1,69 @@
+\section{Introduction}
+\label{sec:intro}
+
+% Problem statement
+Autonomous marine vessels have the potential to revolutionize environmental
+monitoring, oceanographic data collection, and maritime logistics by
+eliminating the need for crewed expeditions. However, existing solutions are
+often prohibitively expensive, reliant on motor-driven propulsion with limited
+range, or lack the robustness required for extended blue-water operation. A
+low-cost, sail-powered autonomous vessel would enable persistent ocean
+presence for data collection without the fuel constraints and maintenance
+overhead of motorized platforms.
+
+% Solution space
+Several approaches to autonomous sailing have been explored in both academic
+and commercial domains. The SailBot competition community has produced
+numerous small-scale autonomous sailboats, typically using cloth sails with
+servo-actuated sheets. Commercial efforts such as Saildrone~\cite{saildrone}
+employ rigid wingsails on large platforms for ocean
+research~\cite{meinig2019}. University projects have explored various hull
+configurations, sail types, and control algorithms ranging from simple
+reactive controllers to machine learning approaches.
+
+% Related work summary
+Prior autonomous sailboat projects have demonstrated the viability of viability of Global Positioning System (GPS)
+waypoint navigation combined with wind-aware path planning. The
+self-trimming wingsail concept, where a tail vane provides passive torque to
+rotate the main sail element, has been shown to minimize power consumption
+compared to motor-actuated sail systems.
+
+% Solution and contribution
+ALAN is a semi-autonomous sailboat designed to navigate between
+user-defined waypoints without human intervention. The vessel employs a
+self-trimming rigid wingsail for propulsion, minimizing power draw while
+maximizing aerodynamic efficiency. A dual-core STM32H755 microcontroller
+running FreeRTOS manages real-time sensor fusion of the GPS receiver,
+inertial measurement unit (IMU), magnetometer, and wind vane, and runs the
+proportional-integral-derivative (PID) control loops for rudder and sail
+actuation. Long-range communication is achieved via LoRa radio at \SI{915}{\mega\hertz}, providing
+telemetry uplink and command and route downlink from a ground station.
+
+% Scope
+The scope of this project included:
+\begin{itemize}
+\item hull design and fabrication;
+\item keel and rudder construction;
+\item a rigid wingsail with a self-trimming mechanism;
+\item sensor integration for navigation and orientation;
+\item long-range wireless communication;
+\item embedded firmware for autonomous waypoint navigation.
+\end{itemize}
+Solar charging, full blue-water endurance testing, additional environmental
+sensors, and machine-learning-based control were treated as stretch goals
+and excluded from scope. The demonstration plan was autonomous navigation
+between a series of waypoints on open water, recorded beforehand and shown by
+video at Demo Day.
+
+This paper describes the vessel as built. Section~\ref{sec:background}
+summarizes the sailing principles that drove the design, and
+Section~\ref{sec:related} reviews related work. Section~\ref{sec:overview}
+gives the system requirements and architecture. Sections~\ref{sec:mech},
+\ref{sec:elec}, and~\ref{sec:sw} describe the mechanical, electrical, and
+software subsystems, including the changes made since the proposal.
+Section~\ref{sec:test} reports testing, simulation, and the final
+demonstration. Section~\ref{sec:impact} discusses safety, societal, and
+ethical considerations, Section~\ref{sec:risks} reviews the project's risks
+and how they were handled, and Section~\ref{sec:mgmt} covers the team,
+schedule, and cost. Section~\ref{sec:conclusion} concludes, and the appendix
+lists the bill of materials.

@@ -1,0 +1,23 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+ALAN is a wind-propelled sailboat built to carry out waypoint missions with
+little energy beyond what its sensors and radio require. The team built a
+fiberglass displacement hull from a printed mold, a 304 stainless keel with
+adjustable ballast canisters, a servo-driven spade rudder, and a
+self-trimming wingsail whose tail is driven directly by a small servo. The
+firmware divides the STM32H755's two cores by timing requirement: the CM7 runs
+sensing, sail planning, PID control, and eleven operating modes under
+FreeRTOS, and the CM4 runs the LoRa link. The cores share data through a
+versioned, lock-free shared-memory interface. Single-writer arbiters with
+timeouts keep each actuator safe if a controller stalls, and a
+firmware-in-the-loop simulator built from the CAD let the team develop the
+control logic before water time was available. In its first field test the
+boat sailed \SI{375}{\meter} under semi-autonomous control and held
+reachable headings within 4 to \SI{8}{\degree}, while the self-trimming wing
+followed the wind with tail authority to spare. The boat pointed within
+\SI{42}{\degree} to \SI{46}{\degree} of the wind, and the radio delivered
+95.9\% of packets. The same test confirmed the limits that the remaining
+work addresses: without the tack planner, the boat cannot turn through the
+wind, and the command acknowledgment scheme loses results during rapid
+command sequences.

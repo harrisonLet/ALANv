@@ -1,0 +1,101 @@
+%% ALAN: Autonomous Long-Range Aquatic Navigation Vessel
+%% Final technical report -- IEEE two-column conference format
+%%
+%% Build:  pdflatex main && bibtex main && pdflatex main && pdflatex main
+%%    or:  latexmk -pdf main
+%%
+%% Items the team still has to supply are marked with \tbd{...}; they print
+%% in red so they are easy to find. Search this file for "\tbd" before
+%% submitting. Set \showtbdfalse to hide any that remain.
+
+\documentclass[conference]{IEEEtran}
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage[caption=false,font=footnotesize]{subfig}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc,fit,backgrounds}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+
+\graphicspath{{figures/}}
+\sisetup{detect-all}
+
+% ---------------------------------------------------------------------------
+% Placeholder marker for information only the team can provide
+\newif\ifshowtbd \showtbdtrue
+\newcommand{\tbd}[1]{\ifshowtbd\textcolor{red}{[TBD: #1]}\fi}
+% ---------------------------------------------------------------------------
+
+\begin{document}
+
+\title{ALAN: Autonomous Long-Range Aquatic Navigation Vessel\\{\normalsize (The V is silent.)}}
+
+\author{
+\IEEEauthorblockN{Charbel Salloum, Connor Stevens, Corbin Barney, Harrison LeTourneau, and Jared Pratt}
+\IEEEauthorblockA{Department of Electrical and Computer Engineering\\
+University of Utah, Salt Lake City, UT, USA}
+}
+
+\maketitle
+
+% ===========================================================================
+\begin{abstract}
+This paper describes the design and implementation of ALAN (Autonomous
+Long-Range Aquatic Navigation), a semi-autonomous sailboat intended for
+long-duration operation in open water environments. The vessel navigates
+between user-defined waypoints using wind-powered propulsion, requiring no
+human intervention during transit. This work addresses the challenge of
+building a low-cost autonomous sailing platform suitable for environmental
+monitoring and oceanographic data collection, where conventional motorized
+vessels are limited by fuel capacity and operational cost. The mechanical,
+electrical, and software subsystems are presented, along with the testing
+used to validate them, the risks encountered and how they were mitigated, and
+the results of the final demonstration. The vessel combines a fiberglass
+hull, a bulbed fin keel, a spade rudder, and a self-trimming rigid wingsail
+with a dual-core STM32H755 microcontroller that runs sensing and control under
+FreeRTOS on one core and a \SI{915}{\mega\hertz} LoRa link on the other.
+In a 23-minute field test, the boat sailed \SI{375}{\meter} under
+semi-autonomous control. It held heading targets at least \SI{49}{\degree}
+off the wind with a mean absolute error of 4 to \SI{8}{\degree}, pointed
+within about \SI{45}{\degree} of the wind, and delivered 95.9\% of telemetry
+packets at up to \SI{228}{\meter}.
+\end{abstract}
+
+\begin{IEEEkeywords}
+autonomous sailboat, self-trimming wingsail, uncrewed surface vehicle, PID
+control, LoRa, FreeRTOS, STM32
+\end{IEEEkeywords}
+
+% ===========================================================================
+% Body: one file per section. Edit the section files, not this list.
+\input{sections/introduction}
+\input{sections/background}
+\input{sections/relatedWork}
+\input{sections/overview}
+\input{sections/tasks/mechanical}
+\input{sections/tasks/electrical}
+\input{sections/tasks/software}
+\input{sections/testing}
+\input{sections/impact}
+\input{sections/risks}
+\input{sections/management}
+\input{sections/remaining}
+\input{sections/conclusion}
+
+% ===========================================================================
+\appendices
+\input{appendices/bom}
+\input{appendices/acknowledgements}
+
+\IEEEtriggercmd{\enlargethispage{\baselineskip}}
+\IEEEtriggeratref{12}
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

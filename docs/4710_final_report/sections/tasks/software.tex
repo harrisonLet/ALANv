@@ -1,0 +1,476 @@
+\section{Software Architecture}
+\label{sec:sw}
+
+This section describes the firmware on the \texttt{ltp} branch (commit
+\texttt{ca2e48e}), the most recent version. It merges the \texttt{master}
+branch with the tack planner and the sensor and stack updates from
+\texttt{sensor-upgrade-2}. The firmware is written in C on the STM32 hardware
+abstraction layer (HAL),
+about 8000 lines of application code across the two cores and a shared
+library. It is built with CMake. A single shared configuration header enables
+or disables each module at compile time, so any subsystem can be built and
+tested alone. The same header selects built-in test modes.
+
+\subsection{Dual-Core Partitioning}
+The STM32H755 has a Cortex-M7 and a Cortex-M4 that share memory but run
+separate firmware images~\cite{rm0399}. ALAN divides the work by timing
+requirement. The CM7 runs the FreeRTOS real-time operating system
+(RTOS)~\cite{barry2016} and owns every sensor, both planners and control
+loops, both actuators, and the mode logic. The CM4 runs without an operating
+system and owns only the radio. Its main loop sleeps on a wait-for-interrupt
+instruction and wakes for two events: the radio's DIO0 line, which signals a
+finished transmission or a received packet, and timer TIM6, which fires once
+per second to start a telemetry transmission. Because radio transfers and
+timeouts happen on the other core, they cannot delay a control loop.
+
+\subsection{Inter-Core Communication}
+\label{sec:ipc}
+The cores exchange data only through a \SI{64}{\kilo\byte} block of SRAM4 at
+address \texttt{0x38000000}, which both linker scripts place at the same
+address (Fig.~\ref{fig:ipc}). At boot the CM7 configures its memory protection
+unit (MPU) to make the region non-cacheable, clears it, and writes a layout
+version followed by a magic word (``ALAN'' in ASCII). The CM4 waits for the
+magic word and refuses to attach if the version, which combines a revision
+number with the structure size, does not match its own. This catches the
+common mistake of flashing the cores with different layouts. The block holds
+two channels:
+\begin{itemize}
+\item \emph{Telemetry} (CM7 to CM4): a single latest-value copy of the
+telemetry record, guarded by hardware semaphore (HSEM) 1. Only the newest
+record matters, so a core that finds the semaphore taken skips that cycle
+instead of waiting.
+\item \emph{Commands} (CM4 to CM7): a lock-free single-producer,
+single-consumer ring of 64 slots of 18 bytes (type, sequence number, and a
+16-byte payload). The CM4 writes only the head index and the CM7 only the
+tail, and memory barriers order each slot write before its index update.
+After each push the CM4 takes and releases HSEM 2, which raises an interrupt
+on the CM7 that wakes the command task.
+\end{itemize}
+
+\begin{figure}[!t]
+\centering
+\begin{tikzpicture}[font=\scriptsize, >={Stealth[length=2mm]}]
+\node[draw, thick, fill=blue!6, minimum width=16mm, minimum height=28mm, align=center] (m7) at (0,0) {\textbf{CM7}\\[4pt]telemetry\\task\\[8pt]commander\\task};
+\node[draw, thick, fill=blue!6, minimum width=16mm, minimum height=28mm, align=center] (m4) at (6.3,0) {\textbf{CM4}\\[4pt]TIM6\\1 Hz tick\\[8pt]LoRa RX\\handler};
+\node[draw, fill=gray!10, minimum width=34mm, minimum height=30mm] (s) at (3.15,0) {};
+\node[anchor=south, align=center] at (s.north) {SRAM4 at 0x38000000 (non-cacheable)};
+\node[draw, fill=white, minimum width=29mm, align=center] (tr) at (3.15,0.7) {telemetry record (73 B)\\guarded by HSEM 1};
+\foreach \i in {0,...,7} \draw[fill=white] (1.85+\i*0.325,-0.95) rectangle ++(0.325,0.42);
+\node at (3.15,-0.27) {command ring, 64 $\times$ 18 B};
+\node[font=\tiny] at (2.0,-1.2) {tail};
+\node[font=\tiny] at (4.3,-1.2) {head};
+\draw[->] (m7.east |- tr) -- node[above,font=\tiny]{write} (tr.west);
+\draw[->] (tr.east) -- node[above,font=\tiny]{read} (m4.west |- tr);
+\draw[->] (m4.west |- 0,-0.74) -- node[above,font=\tiny]{push} (4.45,-0.74);
+\draw[->] (1.85,-0.74) -- node[above,font=\tiny]{pop} (m7.east |- 0,-0.74);
+\draw[->, dashed] (m4.south) -- ++(0,-0.35) -| node[pos=0.25,below]{HSEM 2 doorbell interrupt} (m7.south);
+\end{tikzpicture}
+\caption{Inter-core communication. Telemetry is a single latest-value record
+under a hardware semaphore; commands use a lock-free ring, and a second
+semaphore acts as a doorbell that wakes the CM7.}
+\label{fig:ipc}
+\end{figure}
+
+\subsection{Task Structure and Data Flow}
+Table~\ref{tab:tasks} lists the CM7 tasks. Every periodic task waits on
+\texttt{vTaskDelayUntil}, so its period is fixed and each PID uses a constant
+sample time. Each sensor task publishes its latest result to a single-slot
+FreeRTOS queue that is overwritten on every update. Every result carries a
+timestamp, a validity code (for example valid, calibrating, window filling,
+or untrusted), and a sequence number, so consumers can reject stale or bad
+data instead of acting on it. Priorities follow consequence. The commander
+runs highest so a mode change takes effect at once. The arbiters and the
+telemetry task run above the sensor drivers, whose I\textsuperscript{2}C and
+UART reads busy-wait, so servo outputs and the SRAM4 publish are never
+starved. The planners run lowest.
+
+\begin{table}[!t]
+\caption{CM7 FreeRTOS Tasks}
+\label{tab:tasks}
+\centering
+\begin{tabular}{@{}llr@{}}
+\toprule
+Task & Priority & Rate (Hz) \\
+\midrule
+Commander (modes, commands) & High         & event, 10 \\
+Telemetry packing           & Above normal & 1 \\
+Rudder arbiter              & Above normal & 20 \\
+Tail arbiter                & Above normal & 20 \\
+Heading PID                 & Normal       & 10 \\
+Sail PID                    & Normal       & 10 \\
+IMU (BNO055)                & Normal       & 50 \\
+Sail encoder (AS5600)       & Normal       & 10 \\
+Orientation fusion          & Normal       & on IMU data \\
+Wind vane                   & Normal       & 5 \\
+GPS                         & Low          & 1 \\
+Battery                     & Low          & 2 \\
+Live sail planner (LSP)     & Low          & 2 \\
+Live tack planner (LTP)     & Normal       & 2 \\
+Serial console (debug)      & Low          & on demand \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Angles need care when averaged. The encoder jumps from 4095 to 0 counts once
+per turn, and the wind vane does the same at \SI{180}{\degree}, so a plain
+average of readings that straddle the seam points in the opposite direction.
+Both drivers instead track a continuous, \emph{unwrapped} count
+\begin{equation}
+u_k = u_{k-1} + \mathrm{wrap}_{\pm N/2}\!\left(r_k - r_{k-1}\right),
+\label{eq:unwrap}
+\end{equation}
+where $r_k$ is the raw reading and $N$ the counts per turn, and the wind driver averages $u$ from~\eqref{eq:unwrap} over 20 samples with a
+running sum. The encoder driver originally did the same over ten samples. On
+the final firmware it reads at \SI{10}{\hertz} without averaging, because its
+readings proved stable and the $\pm\SI{90}{\degree}$ stops keep the wing from
+reaching the seam. The
+navigation code uses the circular mean
+$\bar{\theta} = \operatorname{atan2}(\sum\sin\theta_i, \sum\cos\theta_i)$ for
+the same reason.
+
+The fusion task wakes on each new IMU sample. It averages the last ten BNO055
+quaternions, normalizes the result, and converts it to Euler angles. Heading is
+corrected from magnetic to true north with the local declination
+(\SI{11}{\degree} in Salt Lake City) and for the sensor's mounting offset. The
+task also estimates surge speed from successive GPS fixes.
+
+\subsection{Sail and Heading Control}
+Fig.~\ref{fig:control} shows the two control chains. Each consists of a
+target source, a PID controller, an arbiter, and a servo. The PID
+implementation~\cite{astrom1995} computes
+\begin{align}
+u_k &= \mathrm{sat}\!\left(K_p e_k + I_k - K_d\,\frac{y_k - y_{k-1}}{T}\right), \label{eq:pid}\\
+I_k &= I_{k-1} + K_i T e_k , \label{eq:integral}
+\end{align}
+where $e_k$ is the error wrapped to $\pm\SI{180}{\degree}$, $y_k$ the measured
+angle, and $T$ the sample period. In~\eqref{eq:pid}, the derivative acts on the measurement
+rather than the error, so a new target does not cause a derivative kick. The
+integral update~\eqref{eq:integral} is skipped whenever the output is
+saturated in the direction of the error, which prevents windup, and the controller resets after a new target or a
+gap in data.
+
+\begin{figure*}[!t]
+\centering
+\begin{tikzpicture}[
+  font=\scriptsize, >={Stealth[length=2mm]},
+  b/.style={draw, rounded corners=2pt, fill=blue!6, align=center, minimum height=9mm, minimum width=19mm},
+  p/.style={draw, rounded corners=2pt, fill=gray!12, align=center, minimum height=9mm, minimum width=19mm},
+  sum/.style={draw, circle, inner sep=1.2pt}
+]
+% sail chain
+\node[align=center] (vane) at (0,0) {wind vane\\$\gamma$};
+\node[b] (lsp) at (2.3,0) {LSP (2 Hz)\\$\beta^{*} = \gamma \mp \alpha_z$};
+\node[sum] (s1) at (4.3,0) {$+$};
+\node[b] (pids) at (6.2,0) {sail PID (10 Hz)\\$K_p{=}2,\ K_i{=}K_d{=}0.5$};
+\node[b] (arbt) at (9.5,0) {tail arbiter\\(20 Hz)};
+\node[p] (tsv) at (12.1,0) {tail servo\\$\delta$};
+\node[p] (wing) at (14.7,0) {self-trimming\\wing};
+\draw[->] (vane) -- (lsp);
+\draw[->] (lsp) -- node[above]{$\beta^{*}$} (s1);
+\draw[->] (s1) -- node[above]{$e$} (pids);
+\draw[->] (pids) -- node[above]{request} (arbt);
+\draw[->] (arbt) -- (tsv);
+\draw[->] (tsv) -- (wing);
+\draw[->] (wing.east) -- ++(0.4,0) |- node[pos=0.75,below]{wing angle $\beta$ (AS5600)} ([yshift=-8mm]s1.south) -- node[pos=0.7,right]{$-$} (s1.south);
+\draw[->] (4.3,1.05) node[above]{semi: ground station $\beta^{*}$} -- (s1.north);
+\draw[->] (9.5,1.05) node[above]{manual: ground station $\delta$} -- (arbt.north);
+% heading chain
+\begin{scope}[yshift=-2.9cm]
+\node[align=center] (src) at (0,0) {target\\$\psi^{*}$};
+\node[sum] (s2) at (4.3,0) {$+$};
+\node[b] (pidh) at (6.2,0) {heading PID (10 Hz)\\$K_p{=}1$};
+\node[b] (arbr) at (9.5,0) {rudder arbiter\\(20 Hz)};
+\node[p] (rsv) at (12.1,0) {rudder servo};
+\node[p] (hull) at (14.7,0) {hull and keel};
+\draw[->] (src) -- node[above]{ground station or LTP} (s2);
+\draw[->] (s2) -- node[above]{$e_\psi$} (pidh);
+\draw[->] (pidh) -- node[above]{request} (arbr);
+\draw[->] (arbr) -- (rsv);
+\draw[->] (rsv) -- (hull);
+\draw[->] (hull.east) -- ++(0.4,0) |- node[pos=0.75,below]{heading $\psi$ (BNO055 and fusion)} ([yshift=-8mm]s2.south) -- node[pos=0.7,right]{$-$} (s2.south);
+\draw[->] (9.5,1.05) node[above]{manual: ground station rudder angle} -- (arbr.north);
+\end{scope}
+\end{tikzpicture}
+\caption{Sail (top) and heading (bottom) control chains. In AUTO the planners
+set the targets; in SEMI the ground station sets the PID target; in MANUAL the
+arbiter passes the ground-station servo angle straight through.}
+\label{fig:control}
+\end{figure*}
+
+\paragraph*{Live sail planning}
+The wind vane gives the apparent wind angle $\gamma$ relative to the bow
+(positive from starboard), and the encoder gives the wing angle $\beta$ on the
+same scale. The angle of attack is therefore $\alpha = \gamma - \beta$. The
+live sail planner (LSP) chooses a wing-angle target that points the wing into
+the apparent wind and then rotates it toward the bow by an angle of attack
+$\alpha_z$ that depends on the point of sail:
+\begin{equation}
+\beta^{*} = \mathrm{wrap}_{\pm 180}\bigl(\gamma - \operatorname{sgn}(\gamma)\,\alpha_z(|\gamma|)\bigr),
+\label{eq:lsp}
+\end{equation}
+with $\alpha_z$ in~\eqref{eq:lsp} taken from Table~\ref{tab:lsp}. A \SI{3}{\degree} deadband keeps
+the planner from chasing vane noise, and it runs only when the tail arbiter is
+in AUTO. The values in Table~\ref{tab:lsp} are the initial firmware settings. The
+team will refine them through further water testing by logging boat speed
+against angle of attack on each point of sail and keeping the angle that
+gives the most forward drive for this wing's lift and drag characteristics.
+
+\begin{table}[!t]
+\caption{Sail Planner Angle of Attack by Point of Sail}
+\label{tab:lsp}
+\centering
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Point of sail & $|\gamma|$ (deg) & $\alpha_z$ (deg) \\
+\midrule
+In irons      & 0--30    & 0 \\
+Close-hauled  & 30--50   & 30 \\
+Close reach   & 50--75   & 35 \\
+Beam reach    & 75--105  & 40 \\
+Broad reach   & 105--130 & 45 \\
+Training run  & 130--150 & 55 \\
+Run           & 150--180 & 90 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph*{Sail PID}
+Rather than commanding the tail angle open loop, the sail PID closes the loop
+on the measured wing angle $\beta$ and outputs the tail deflection $\delta$,
+limited to $\pm\SI{90}{\degree}$. Section~\ref{sec:mech} showed that the
+self-trimming equilibrium depends only on $\delta$, but the gain from tail
+deflection to angle of attack depends on the tail and wing geometry and is not
+known precisely; the simulator currently estimates it at
+\SI{0.5}{\degree} of angle of attack per degree of tail. Measuring $\beta$
+directly and integrating the error removes the steady offset that an
+uncertain gain would leave. The gains are $K_p = 2$ degrees of tail per degree
+of error, $K_i = 0.5$, and $K_d = 0.5$. The derivative term, acting on the
+measured wing angle, damps the wing's swing as it weathervanes toward
+equilibrium.
+
+\paragraph*{Heading PID}
+The heading PID wraps the heading error as
+\begin{equation}
+e_\psi = \bigl((\psi^{*} - \psi + \SI{180}{\degree}) \bmod \SI{360}{\degree}\bigr) - \SI{180}{\degree}
+\label{eq:wrap}
+\end{equation}
+so the boat always turns the short way, and feeds $e_\psi$ from~\eqref{eq:wrap} to~\eqref{eq:pid}. It runs at \SI{10}{\hertz} and outputs a rudder angle limited to
+$\pm\SI{35}{\degree}$. On the final firmware it is proportional only, with
+$K_p = 1$ degree of rudder per degree of error; an earlier version used
+$K_i = 0.05$. With no target from the ground station or planner, it holds the
+heading the boat settles on five seconds after the first valid reading. If
+orientation data become unavailable, it stops sending requests, and the
+rudder arbiter centers the rudder after its timeout. A check that treated an
+unchanging heading as a frozen IMU was disabled after it stopped the PID
+during steady sailing.
+
+\subsection{Actuator Arbiters}
+Each servo has one arbiter task, the only code allowed to write its pulse
+width. The arbiter's mode (MANUAL, AUTO, SEMI, or SAFE) selects which source
+it obeys: a manual angle from the ground station or a request from the PID.
+A PID request older than \SI{200}{\milli\second} (rudder) or
+\SI{300}{\milli\second} (tail) is ignored, and the actuator moves to its safe
+position: rudder centered, tail at \SI{0}{\degree}. With the tail at
+\SI{0}{\degree} in line with the wing chord, \eqref{eq:moment} puts the
+wing's equilibrium at zero angle of attack, so the wing should feather. This
+has not yet been verified on the water; the boat did not enter SAFE mode
+during the field test (Section~\ref{sec:field}). Every
+output is clamped and slew-limited to \SI{6}{\degree} per \SI{50}{\milli\second}
+cycle (\SI{120}{\degree\per\second}), which protects the servos and linkages
+from step commands. Because each actuator has one writer and a timeout, a
+crashed or starved controller leaves its actuator in a safe state rather than
+frozen at its last command.
+
+\subsection{Operating Modes and Commander}
+The proposal required manual control, autonomous sailing, and semi-autonomous
+sailing with either actuator under manual control. The commander task
+implements these as eleven operating modes (Table~\ref{tab:modes}). Each
+actuator is independently \emph{auto} (PID with a planner target),
+\emph{semi} (PID with a target from the ground station), or \emph{manual}
+(servo follows a ground-station angle directly). STANDBY and SAFE put both
+actuators in their safe positions. Switching modes sets both arbiter modes and
+suspends any PID that is not needed through FreeRTOS task notifications, so a
+disabled loop always stops at the top of its cycle and restarts with fresh
+history.
+
+\begin{table}[!t]
+\caption{Operating Modes}
+\label{tab:modes}
+\centering
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Mode & Rudder & Sail \\
+\midrule
+AUTO (boot default)       & auto   & auto \\
+FULL\_SEMI                & semi   & semi \\
+FULL\_MAN                 & manual & manual \\
+AUTO\_SAIL\_MAN\_RUDDER   & manual & auto \\
+AUTO\_RUDDER\_MAN\_SAIL   & auto   & manual \\
+SEMI\_RUDDER\_MAN\_SAIL   & semi   & manual \\
+SEMI\_RUDDER\_AUTO\_SAIL  & semi   & auto \\
+SEMI\_SAIL\_MAN\_RUDDER   & manual & semi \\
+SEMI\_SAIL\_AUTO\_RUDDER  & auto   & semi \\
+STANDBY, SAFE             & safe   & safe \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The commander is the highest-priority task. It wakes on the the inter-processor communication (IPC) doorbell or
+every \SI{100}{\milli\second}, decodes each command, and range-checks its
+payload. Commands set the mode, drive a servo directly, set a PID target, or
+upload a route. A command that does not apply in the current mode, such as a
+manual rudder angle while the rudder is in AUTO, is rejected. Every command
+produces a result code (for example OK, bad value, wrong mode, or bad CRC) that
+is returned in telemetry with the command's sequence number, so the ground
+station knows whether to resend. Gaps in the sequence are reported as dropped
+commands. A compile-time option drops any manual or semi mode to SAFE after
+\SI{5}{\second} without a command or heartbeat; it is currently disabled for
+bench work and must be enabled before unattended operation on the water.
+
+\subsection{Navigation}
+\paragraph*{Route manager}
+The ground station uploads a route as a start command, up to 32 waypoint
+commands, and a commit. Each waypoint carries its index, latitude and
+longitude as signed 32-bit integers in units of $10^{-7}$ degrees, and the
+half-width of the corridor around the leg that ends at it. The commit carries
+the waypoint count, a CRC-16/CCITT checksum over the waypoints, an arrival
+radius (default \SI{8}{\meter}), and a warning margin beyond each corridor.
+Waypoints accumulate in a spare buffer. The commit swaps it into the active
+route, under a mutex, only if every index arrived and the checksum matches. A
+failed upload therefore never disturbs the route being sailed, and a version
+counter tells the planner when a new route is active.
+
+\paragraph*{Geometry}
+Over the few-kilometer scale of a mission, the navigation code projects
+latitude $\phi$ and longitude $\lambda$ onto a local tangent plane around a
+reference point $(\phi_0, \lambda_0)$:
+\begin{equation}
+n = k(\phi - \phi_0), \qquad e = k(\lambda - \lambda_0)\cos\phi_0 ,
+\label{eq:local}
+\end{equation}
+with $k = \SI{111320}{\meter}$ per degree. Using~\eqref{eq:local}, the bearing between two points is
+$\operatorname{atan2}(\Delta e, \Delta n)$. For a leg from start to end with
+direction vector $\mathbf{d}$ and boat offset $\mathbf{b}$ from the start, the
+signed cross-track and along-track distances are
+\begin{equation}
+x_{\mathrm{xt}} = \frac{d_n b_e - d_e b_n}{|\mathbf{d}|}, \qquad
+x_{\mathrm{at}} = \frac{\mathbf{d}\cdot\mathbf{b}}{|\mathbf{d}|},
+\label{eq:xtrack}
+\end{equation}
+with $x_{\mathrm{xt}} > 0$ to starboard of the path. The planner compares $x_{\mathrm{xt}}$ from~\eqref{eq:xtrack} with each leg's corridor. The route manager and
+geometry library contain no RTOS or hardware calls, so they compile and run on
+a laptop under a unit-test harness (Section~\ref{sec:test}).
+
+\paragraph*{Live tack planner}
+The live tack planner (LTP) turns the active route into a heading target for
+the heading PID. It is implemented on the \texttt{ltp} branch and has not yet
+been run on the water. It runs at \SI{2}{\hertz} as a pure function with no
+RTOS calls, so the same code runs under the unit-test harness. Each cycle it
+checks that GPS, IMU, and wind data are fresh and valid. It then updates a
+ten-second circular mean of the wind direction, estimated as heading plus
+apparent wind angle. Wind samples are skipped during a tack because the vane
+lags the turn. Optionally, the planner can recover the true wind from the GPS
+velocity using $\mathbf{v}_T = \mathbf{v}_A + \mathbf{v}_B$. The state
+machine in Fig.~\ref{fig:fsm} follows the short-course approach of Stelzer and
+Pr\"oll~\cite{stelzer2008}:
+\begin{itemize}
+\item \emph{DIRECT}: if the waypoint bearing is at least
+\SI{45}{\degree} from the wind, steer along the leg, angled back toward the
+line by up to \SI{45}{\degree} in proportion to $x_{\mathrm{xt}}$ from
+\eqref{eq:xtrack}, but never into the no-go zone.
+\item \emph{UPWIND\_PORT} and \emph{UPWIND\_STBD}: if the waypoint is upwind,
+sail close-hauled at \SI{45}{\degree} to the wind on the tack nearer the
+current heading, so the first move never turns through the wind.
+\item \emph{TACKING}: tack when $|x_{\mathrm{xt}}|$ reaches 80\% of the leg's
+corridor half-width while the heading is taking the boat further out, or when
+the waypoint can be reached on the other tack. A tack is complete within
+\SI{20}{\degree} of the new heading. Tacks are at least \SI{15}{\second}
+apart, and a \SI{5}{\degree} hysteresis prevents flip-flopping at the layline.
+\item \emph{ARRIVED} and \emph{FAULT}: a waypoint is reached within the
+arrival radius, or once the boat passes the end of the leg inside the
+corridor. Leaving the corridor by more than the warning margin latches a fault.
+Both states put the boat in SAFE through the commander.
+\end{itemize}
+The planner sends a new heading target to the PID only when it changes by
+more than \SI{3}{\degree}. A compile-time test route (an
+\SI{80}{\meter} $\times$ \SI{60}{\meter} box with one leg in each direction, so
+that one leg is always upwind) loads automatically at the first GPS fix for
+bench and simulator runs.
+
+\begin{figure}[!t]
+\centering
+\begin{tikzpicture}[
+  font=\scriptsize, >={Stealth[length=2mm]},
+  st/.style={draw, rounded corners=3pt, minimum width=16mm, minimum height=6.5mm, align=center, fill=blue!6},
+  en/.style={draw, rounded corners=3pt, minimum width=16mm, minimum height=6.5mm, align=center, fill=gray!12}
+]
+\node[en] (idle) at (0,0)      {IDLE};
+\node[st] (dir)  at (3.0,0)    {DIRECT};
+\node[en] (arr)  at (6.3,0)    {ARRIVED};
+\node[st] (up)   at (3.0,-2.6) {UPWIND\\PORT or STBD};
+\node[st] (tk)   at (6.3,-2.6) {TACKING};
+\node[en] (flt)  at (0,-2.6)   {FAULT};
+\draw[->] (idle) -- node[above]{route loaded} (dir);
+\draw[->] (dir) -- node[above]{last waypoint} (arr);
+\draw[->] ([xshift=-3mm]dir.south) -- node[left,align=right]{waypoint\\upwind} ([xshift=-3mm]up.north);
+\draw[->] ([xshift=3mm]up.north) -- node[right,align=left]{layline on\\same tack} ([xshift=3mm]dir.north |- dir.south);
+\draw[->] ([yshift=1.5mm]up.east) -- node[above]{corridor edge} ([yshift=1.5mm]tk.west);
+\draw[->] ([yshift=-1.5mm]tk.west) -- node[below]{within \SI{20}{\degree}} ([yshift=-1.5mm]up.east);
+\draw[->] (up) -- node[above]{stale inputs} (flt);
+\draw[->] (dir.north east) to[out=45,in=135,looseness=5] node[above]{next waypoint} (dir.north west);
+\end{tikzpicture}
+\caption{Live tack planner states. A fault (stale inputs, too little wind
+history, or leaving the corridor) can occur from any sailing state, and
+ARRIVED or a corridor fault puts the boat in SAFE.}
+\label{fig:fsm}
+\end{figure}
+
+\subsection{Telemetry}
+The telemetry task packs a 73-byte record into SRAM4 once per second. The
+record contains pack and cell voltages; encoder angle, magnetic field
+strength, and status; apparent wind angle; GPS position, altitude, satellite
+count, fix quality, and time; IMU calibration state and temperature; fused
+heading, roll, and pitch; both servo angles as actually driven after clamping
+and slew limiting; the mode, desired heading, active leg, and cross-track
+distance; the last command's sequence number and result; and uptime. Each
+sensor group carries a validity byte. On each TIM6 tick the CM4 copies the
+record, retrying about \SI{1}{\milli\second} later if the CM7 is mid-write,
+prepends a five-byte header (destination, source, sequence number, length,
+and status flags), and transmits the 78-byte frame. Commands from the ground
+station use the same header with a payload of up to 16 bytes.
+
+\subsection{Ground Station}
+The ground station radio is a SparkFun SAMD21 Pro RF board running a
+transparent bridge. Bytes arriving from the laptop over USB are collected
+until the line has been idle for \SI{10}{\milli\second} and then sent as one
+LoRa packet. Every packet received is written back to USB byte for byte. The
+bridge uses the same radio settings as the boat (SF8, \SI{125}{\kilo\hertz},
+CR 4/5, \SI{17}{dBm}). All protocol logic runs on the laptop, in three
+programs:
+\begin{itemize}
+\item \texttt{gs\_term}, a terminal program in C. It validates each telemetry
+frame's addresses and length and redraws a text status screen. It sends
+typed commands for modes, heading and sail-angle targets, and direct servo
+angles, and a heartbeat every second. It logs every raw byte with a
+timestamp.
+\item \texttt{gs\_web}, a browser dashboard written with only the Python
+standard library. It reads the telemetry layout from the same C header at
+startup, so the firmware structure stays the single definition of the
+packet.
+\item \texttt{plot\_log}, which converts a session log into CSV files,
+twelve plots, and an HTML summary. It decodes the raw radio bytes rather than
+the terminal's decoded text, so the plots show exactly what was received. The
+field-test figures in Section~\ref{sec:test} were produced with it.
+\end{itemize}
+A simulated CM4 and bridge on a pseudo-terminal lets the ground station
+software be tested without the boat.
+
+Both radios are half duplex, which shaped the command timing. The bridge
+cannot read its serial port while it transmits (about \SI{70}{\milli\second}
+for a 7-byte command), so the terminal spaces packets at least
+\SI{150}{\milli\second} apart. The boat cannot receive while it sends its
+\SI{246}{\milli\second} telemetry frame. The team measured that any command
+sent between 87 and \SI{347}{\milli\second} before a telemetry packet arrives
+is lost. The terminal therefore predicts the next arrival from the boat's
+measured \SI{0.997}{\second} telemetry period and holds any command that
+would fall in that window.
