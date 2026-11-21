@@ -1,0 +1,721 @@
+16:18:24.923  OPEN    /dev/ttys000
+16:18:24.923  RX-RAW  n=1022 AA BB 5A 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 9C E0 43 18 EB 5A 46 BD 71 32 2B 17 02 1F 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 78 63 01 00 00 1B 00 99 FF 36 00 8D FF 1E 00 02 00 00 00 AA BB 5B 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 BA E0 43 18 CE 5A 46 BD 71 32 2B 17 02 20 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 65 67 01 00 00 1B 00 99 FF 36 01 8E FF 1E 00 02 00 00 00 AA BB 5C 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 CF E0 43 18 ED 5A 46 BD 71 32 2B 17 02 21 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 4A 6B 01 00 00 1B 00 99 FF 36 02 89 FF 1E 00 02 00 00 00 AA BB 5D 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 AA E0 43 18 D7 5A 46 BD 71 32 2B 17 02 22 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 33 6F 01 00 00 1B 00 99 FF 36 03 89 FF 1E 00 02 00 00 00 AA BB 5E 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B5 E0 43 18 CD 5A 46 BD 71 32 2B 17 02 23 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 1D 73 01 00 00 1B 00 99 FF 36 04 8C FF 1E 00 02 00 00 00 AA BB 5F 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B7 E0 43 18 D2 5A 46 BD 71 32 2B 17 02 24 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 00 77 01 00 00 1B 00 99 FF 36 05 89 FF 1E 00 02 00 00 00 AA BB 60 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C8 E0 43 18 CD 5A 46 BD 71 32 2B 17 02 25 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 ED 7A 01 00 00 1B 00 99 FF 36 06 8B FF 1E 00 02 00 00 00 AA BB 61 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B4 E0 43 18 CB 5A 46 BD 71 32 2B 17 02 26 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 D5 7E 01 00 00 1B 00 99 FF 36 07 88 FF 1E 00 02 00 00 00 AA BB 62 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 9E E0 43 18 E8 5A 46 BD 71 32 2B 17 02 27 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 B8 82 01 00 00 1B 00 99 FF 36 08 8B FF 1E 00 02 00 00 00 AA BB 63 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A9 E0 43 18 D3 5A 46 BD 71 32 2B 17 02 28 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 A5 86 01 00 00 1B 00 99 FF 36 09 89 FF 1E 00 02 00 00 00 AA BB 64 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A9 E0 43 18 C8 5A 46 BD 71 32 2B 17 02 29 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 88 8A 01 00 00 1B 00 99 FF 36 0A 8A FF 1E 00 02 00 00 00 AA BB 65 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 CB E0 43 18 F1 5A 46 BD 71 32 2B 17 02 2A 03 FF 0C 03 C4 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 75 8E 01 00 00 1B 00 99 FF 36 0B 8E FF 1E 00 02 00 00 00 AA BB 66 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 AF E0 43 18 BD 5A 46 BD 71 32 2B 17 02 2B 03 FF 0C 03 C5 00 FB FF 02 00 03
+16:18:24.923  RX      seq 90  lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 91000 ms  | boat rx seq 27 type 0x00  rssi -103 dBm  snr 13.50 dB  noise -115 dBm  age 0 s  ok 30 crc 2 rej 0 drop 0
+16:18:24.923  RX      seq 91  lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 92005 ms  | boat rx seq 27 type 0x00  rssi -103 dBm  snr 13.50 dB  noise -114 dBm  age 1 s  ok 30 crc 2 rej 0 drop 0
+16:18:24.923  RX      seq 92  lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 93002 ms  | boat rx seq 27 type 0x00  rssi -103 dBm  snr 13.50 dB  noise -119 dBm  age 2 s  ok 30 crc 2 rej 0 drop 0
+16:18:24.923  RX      seq 93  lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 94003 ms  | boat rx seq 27 type 0x00  rssi -103 dBm  snr 13.50 dB  noise -119 dBm  age 3 s  ok 30 crc 2 rej 0 drop 0
+16:18:24.923  RX      seq 94  lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 95005 ms  | boat rx seq 27 type 0x00  rssi -103 dBm  snr 13.50 dB  noise -116 dBm  age 4 s  ok 30 crc 2 rej 0 drop 0
+16:18:24.923  RX      seq 95  lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 96000 ms  | boat rx seq 27 type 0x00  rssi -103 dBm  snr 13.50 dB  noise -119 dBm  age 5 s  ok 30 crc 2 rej 0 drop 0
+16:18:24.923  RX      seq 96  lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 97005 ms  | boat rx seq 27 type 0x00  rssi -103 dBm  snr 13.50 dB  noise -117 dBm  age 6 s  ok 30 crc 2 rej 0 drop 0
+16:18:24.923  RX      seq 97  lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 98005 ms  | boat rx seq 27 type 0x00  rssi -103 dBm  snr 13.50 dB  noise -120 dBm  age 7 s  ok 30 crc 2 rej 0 drop 0
+16:18:24.923  RX      seq 98  lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 99000 ms  | boat rx seq 27 type 0x00  rssi -103 dBm  snr 13.50 dB  noise -117 dBm  age 8 s  ok 30 crc 2 rej 0 drop 0
+16:18:24.923  RX      seq 99  lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 100005 ms  | boat rx seq 27 type 0x00  rssi -103 dBm  snr 13.50 dB  noise -119 dBm  age 9 s  ok 30 crc 2 rej 0 drop 0
+16:18:24.923  RX      seq 100 lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 101000 ms  | boat rx seq 27 type 0x00  rssi -103 dBm  snr 13.50 dB  noise -118 dBm  age 10 s  ok 30 crc 2 rej 0 drop 0
+16:18:24.923  RX      seq 101 lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 102005 ms  | boat rx seq 27 type 0x00  rssi -103 dBm  snr 13.50 dB  noise -114 dBm  age 11 s  ok 30 crc 2 rej 0 drop 0
+16:18:24.923  TX-RAW  n=5    BB AA 00 01 00
+16:18:24.923  TX      seq 0   hb
+16:18:24.923  RX-RAW  n=436  00 00 00 00 08 C8 00 00 00 00 FF 00 5C 92 01 00 00 1B 00 99 FF 36 0C 89 FF 1E 00 02 00 00 00 AA BB 67 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 97 E0 43 18 C0 5A 46 BD 71 32 2B 17 02 30 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 3E A7 01 00 00 1B 00 99 FF 36 11 89 FF 1E 00 02 00 00 00 AA BB 68 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A4 E0 43 18 E0 5A 46 BD 71 32 2B 17 02 30 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 3E A7 01 00 00 1B 00 99 FF 36 11 88 FF 1E 00 02 00 00 00 AA BB 69 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 CC E0 43 18 C3 5A 46 BD 71 32 2B 17 02 30 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 3E A7 01 00 00 1B 00 99 FF 36 11 89 FF 1E 00 02 00 00 00 AA BB 6A 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A5 E0 43 18 DB 5A 46 BD 71 32 2B 17 02 30 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 3E A7 01 00 00 1B 00 99 FF 36 11 8A FF 1E 00 02 00 00 00 AA BB 6B 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A1 E0 43 18 D3 5A 46 BD 71 32 2B 17 02 30 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 3E A7 01 00 00 1B 00 99 FF 36 11 88 FF 1E 00 02 00 00 00
+16:18:24.923  RX      seq 102 lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 103004 ms  | boat rx seq 27 type 0x00  rssi -103 dBm  snr 13.50 dB  noise -119 dBm  age 12 s  ok 30 crc 2 rej 0 drop 0
+16:18:24.923  RX      seq 103 lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 108350 ms  | boat rx seq 27 type 0x00  rssi -103 dBm  snr 13.50 dB  noise -119 dBm  age 17 s  ok 30 crc 2 rej 0 drop 0
+16:18:24.923  RX      seq 104 lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 108350 ms  | boat rx seq 27 type 0x00  rssi -103 dBm  snr 13.50 dB  noise -120 dBm  age 17 s  ok 30 crc 2 rej 0 drop 0
+16:18:24.923  RX      seq 105 lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 108350 ms  | boat rx seq 27 type 0x00  rssi -103 dBm  snr 13.50 dB  noise -119 dBm  age 17 s  ok 30 crc 2 rej 0 drop 0
+16:18:24.923  RX      seq 106 lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 108350 ms  | boat rx seq 27 type 0x00  rssi -103 dBm  snr 13.50 dB  noise -118 dBm  age 17 s  ok 30 crc 2 rej 0 drop 0
+16:18:24.923  RX      seq 107 lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 108350 ms  | boat rx seq 27 type 0x00  rssi -103 dBm  snr 13.50 dB  noise -120 dBm  age 17 s  ok 30 crc 2 rej 0 drop 0
+16:18:25.578  RX-RAW  n=81   AA BB 6C 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A2 E0 43 18 B8 5A 46 BD 71 32 2B 17 02 31 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 CD A9 01 00 00 00 00 82 FF DB 00 8E FF 1F 00 02 00 00 00
+16:18:25.578  RX      seq 108 lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 109005 ms  | boat rx seq 0 type 0x00  rssi -126 dBm  snr -9.25 dB  noise -114 dBm  age 0 s  ok 31 crc 2 rej 0 drop 0
+16:18:26.080  TX-RAW  n=5    BB AA 01 01 00
+16:18:26.081  TX      seq 1   hb
+16:18:26.574  RX-RAW  n=81   AA BB 6D 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 9E E0 43 18 E7 5A 46 BD 71 32 2B 17 02 32 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 B0 AD 01 00 00 00 00 82 FF DB 01 8B FF 1F 00 02 00 00 00
+16:18:26.574  RX      seq 109 lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 110000 ms  | boat rx seq 0 type 0x00  rssi -126 dBm  snr -9.25 dB  noise -117 dBm  age 1 s  ok 31 crc 2 rej 0 drop 0
+16:18:27.082  TX-RAW  n=5    BB AA 02 01 00
+16:18:27.083  TX      seq 2   hb
+16:18:27.577  RX-RAW  n=81   AA BB 6E 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 AE E0 43 18 EB 5A 46 BD 71 32 2B 17 02 33 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 9C B1 01 00 00 00 00 82 FF DB 02 8A FF 1F 00 02 00 00 00
+16:18:27.578  RX      seq 110 lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 111004 ms  | boat rx seq 0 type 0x00  rssi -126 dBm  snr -9.25 dB  noise -118 dBm  age 2 s  ok 31 crc 2 rej 0 drop 0
+16:18:28.086  TX-RAW  n=5    BB AA 03 01 00
+16:18:28.086  TX      seq 3   hb
+16:18:28.578  RX-RAW  n=81   AA BB 6F 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C7 E0 43 18 C8 5A 46 BD 71 32 2B 17 02 34 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 85 B5 01 00 00 03 00 83 FF DF 00 94 FF 20 00 02 00 00 00
+16:18:28.578  RX      seq 111 lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 112005 ms  | boat rx seq 3 type 0x00  rssi -125 dBm  snr -8.25 dB  noise -108 dBm  age 0 s  ok 32 crc 2 rej 0 drop 0
+16:18:29.088  TX-RAW  n=5    BB AA 04 01 00
+16:18:29.088  TX      seq 4   hb
+16:18:29.578  RX-RAW  n=81   AA BB 70 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 CE E0 43 18 D3 5A 46 BD 71 32 2B 17 02 35 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 6D B9 01 00 00 04 00 84 FF E2 00 8A FF 21 00 02 00 00 00
+16:18:29.578  RX      seq 112 lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 113005 ms  | boat rx seq 4 type 0x00  rssi -124 dBm  snr -7.50 dB  noise -118 dBm  age 0 s  ok 33 crc 2 rej 0 drop 0
+16:18:30.092  TX-RAW  n=5    BB AA 05 01 00
+16:18:30.092  TX      seq 5   hb
+16:18:30.577  RX-RAW  n=81   AA BB 71 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B4 E0 43 18 DA 5A 46 BD 71 32 2B 17 02 36 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 54 BD 01 00 00 05 00 85 FF E6 00 8C FF 22 00 02 00 00 00
+16:18:30.578  RX      seq 113 lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 114004 ms  | boat rx seq 5 type 0x00  rssi -123 dBm  snr -6.50 dB  noise -116 dBm  age 0 s  ok 34 crc 2 rej 0 drop 0
+16:18:31.578  TX-RAW  n=5    BB AA 06 01 00
+16:18:31.578  TX      seq 6   hb
+16:18:31.578  RX-RAW  n=81   AA BB 72 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 AD E0 43 18 DC 5A 46 BD 71 32 2B 17 02 37 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 3D C1 01 00 00 05 00 85 FF E6 01 8C FF 22 00 02 00 00 00
+16:18:31.578  RX      seq 114 lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 115005 ms  | boat rx seq 5 type 0x00  rssi -123 dBm  snr -6.50 dB  noise -116 dBm  age 1 s  ok 34 crc 2 rej 0 drop 0
+16:18:32.578  RX-RAW  n=81   AA BB 73 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C4 E0 43 18 EC 5A 46 BD 71 32 2B 17 02 38 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 08 C8 00 00 00 00 FF 00 25 C5 01 00 00 06 00 87 FF EF 00 8A FF 23 00 02 00 00 00
+16:18:32.578  RX      seq 115 lost 0   flags 0x00  mode 8  last_cmd 255 -> NONE  uptime 116005 ms  | boat rx seq 6 type 0x00  rssi -121 dBm  snr -4.25 dB  noise -118 dBm  age 0 s  ok 35 crc 2 rej 0 drop 0
+16:18:32.578  TX-RAW  n=5    BB AA 07 01 00
+16:18:32.578  TX      seq 7   hb
+16:18:32.843  TX-RAW  n=5    BB AA 08 01 16
+16:18:32.843  TX      seq 8   mode FULL_SEMI
+16:18:33.574  RX-RAW  n=81   AA BB 74 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A3 E0 43 18 C9 5A 46 BD 71 32 2B 17 02 39 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 08 C9 01 00 01 08 16 88 FF F3 00 8D FF 24 00 03 00 00 00
+16:18:33.574  RX      seq 116 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 117000 ms  | boat rx seq 8 type 0x16  rssi -120 dBm  snr -3.25 dB  noise -115 dBm  age 0 s  ok 36 crc 3 rej 0 drop 0
+16:18:33.574  RESULT  seq 8   mode FULL_SEMI -> OK
+16:18:34.084  TX-RAW  n=5    BB AA 09 01 00
+16:18:34.084  TX      seq 9   hb
+16:18:34.576  RX-RAW  n=81   AA BB 75 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A2 E0 43 18 BE 5A 46 BD 71 32 2B 17 02 3A 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 F3 CC 01 00 01 08 16 88 FF F3 01 89 FF 24 00 03 00 00 00
+16:18:34.576  RX      seq 117 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 118003 ms  | boat rx seq 8 type 0x16  rssi -120 dBm  snr -3.25 dB  noise -119 dBm  age 1 s  ok 36 crc 3 rej 0 drop 0
+16:18:35.084  TX-RAW  n=5    BB AA 0A 01 00
+16:18:35.084  TX      seq 10  hb
+16:18:35.577  RX-RAW  n=81   AA BB 76 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 CB E0 43 18 C4 5A 46 BD 71 32 2B 17 02 3B 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 DC D0 01 00 01 0A 00 8B FF FF 00 8E FF 25 00 03 00 00 00
+16:18:35.578  RX      seq 118 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 119004 ms  | boat rx seq 10 type 0x00  rssi -117 dBm  snr -0.25 dB  noise -114 dBm  age 0 s  ok 37 crc 3 rej 0 drop 0
+16:18:36.575  TX-RAW  n=5    BB AA 0B 01 00
+16:18:36.575  TX      seq 11  hb
+16:18:36.575  RX-RAW  n=81   AA BB 77 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 9E E0 43 18 C4 5A 46 BD 71 32 2B 17 02 00 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 C2 D4 01 00 01 0B 00 8B FF 01 00 8D FF 26 00 03 00 00 00
+16:18:36.575  RX      seq 119 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 120002 ms  | boat rx seq 11 type 0x00  rssi -117 dBm  snr 0.25 dB  noise -115 dBm  age 0 s  ok 38 crc 3 rej 0 drop 0
+16:18:37.578  RX-RAW  n=81   AA BB 78 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 9E E0 43 18 D7 5A 46 BD 71 32 2B 17 02 01 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 AD D8 01 00 01 0B 00 8B FF 01 01 88 FF 26 00 03 00 00 00
+16:18:37.580  RX      seq 120 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 121005 ms  | boat rx seq 11 type 0x00  rssi -117 dBm  snr 0.25 dB  noise -120 dBm  age 1 s  ok 38 crc 3 rej 0 drop 0
+16:18:37.580  TX-RAW  n=5    BB AA 0C 01 00
+16:18:37.580  TX      seq 12  hb
+16:18:38.576  RX-RAW  n=81   AA BB 79 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B9 E0 43 18 C0 5A 46 BD 71 32 2B 17 02 02 03 FF 0C 03 C9 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 93 DC 01 00 01 0C 00 8E FF 0A 00 91 FF 27 00 03 00 00 00
+16:18:38.576  RX      seq 121 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 122003 ms  | boat rx seq 12 type 0x00  rssi -114 dBm  snr 2.50 dB  noise -111 dBm  age 0 s  ok 39 crc 3 rej 0 drop 0
+16:18:38.828  TX-RAW  n=5    BB AA 0D 01 00
+16:18:38.828  TX      seq 13  hb
+16:18:39.578  RX-RAW  n=81   AA BB 7A 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 9E E0 43 18 F0 5A 46 BD 71 32 2B 17 02 03 03 FF 0C 03 CA 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 7D E0 01 00 01 0C 00 8E FF 0A 01 8E FF 27 00 04 00 00 00
+16:18:39.578  RX      seq 122 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 123005 ms  | boat rx seq 12 type 0x00  rssi -114 dBm  snr 2.50 dB  noise -114 dBm  age 1 s  ok 39 crc 4 rej 0 drop 0
+16:18:39.834  TX-RAW  n=5    BB AA 0E 01 00
+16:18:39.834  TX      seq 14  hb
+16:18:40.578  RX-RAW  n=81   AA BB 7B 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B6 E0 43 18 E5 5A 46 BD 71 32 2B 17 02 04 03 FF 0C 03 CA 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 65 E4 01 00 01 0E 00 8E FF 0E 00 88 FF 28 00 04 00 00 00
+16:18:40.578  RX      seq 123 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 124005 ms  | boat rx seq 14 type 0x00  rssi -114 dBm  snr 3.50 dB  noise -120 dBm  age 0 s  ok 40 crc 4 rej 0 drop 0
+16:18:41.085  TX-RAW  n=5    BB AA 0F 01 00
+16:18:41.086  TX      seq 15  hb
+16:18:41.573  RX-RAW  n=81   AA BB 7C 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 BE E0 43 18 DC 5A 46 BD 71 32 2B 17 02 05 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 48 E8 01 00 01 0F 00 91 FF 1A 00 89 FF 29 00 04 00 00 00
+16:18:41.573  RX      seq 124 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 125000 ms  | boat rx seq 15 type 0x00  rssi -111 dBm  snr 6.50 dB  noise -119 dBm  age 0 s  ok 41 crc 4 rej 0 drop 0
+16:18:42.576  TX-RAW  n=5    BB AA 10 01 00
+16:18:42.576  TX      seq 16  hb
+16:18:42.576  RX-RAW  n=81   AA BB 7D 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 9F E0 43 18 EF 5A 46 BD 71 32 2B 17 02 06 03 FF 0C 03 CA 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 33 EC 01 00 01 0F 00 91 FF 1A 01 8D FF 29 00 04 00 00 00
+16:18:42.576  RX      seq 125 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 126003 ms  | boat rx seq 15 type 0x00  rssi -111 dBm  snr 6.50 dB  noise -115 dBm  age 1 s  ok 41 crc 4 rej 0 drop 0
+16:18:43.578  RX-RAW  n=81   AA BB 7E 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B8 E0 43 18 C4 5A 46 BD 71 32 2B 17 02 07 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 1D F0 01 00 01 10 00 96 FF 2B 01 8D FF 2A 00 04 00 00 00
+16:18:43.578  RX      seq 126 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 127005 ms  | boat rx seq 16 type 0x00  rssi -106 dBm  snr 10.75 dB  noise -115 dBm  age 1 s  ok 42 crc 4 rej 0 drop 0
+16:18:43.578  TX-RAW  n=5    BB AA 11 01 00
+16:18:43.578  TX      seq 17  hb
+16:18:44.573  RX-RAW  n=81   AA BB 7F 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C0 E0 43 18 DE 5A 46 BD 71 32 2B 17 02 08 03 FF 0C 03 C9 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 00 F4 01 00 01 11 00 95 FF 26 00 8B FF 2B 00 04 00 00 00
+16:18:44.599  RX      seq 127 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 128000 ms  | boat rx seq 17 type 0x00  rssi -107 dBm  snr 9.50 dB  noise -117 dBm  age 0 s  ok 43 crc 4 rej 0 drop 0
+16:18:44.599  TX-RAW  n=5    BB AA 12 01 00
+16:18:44.599  TX      seq 18  hb
+16:18:45.574  RX-RAW  n=81   AA BB 80 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 D0 E0 43 18 D3 5A 46 BD 71 32 2B 17 02 09 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 E8 F7 01 00 01 12 00 97 FF 31 00 89 FF 2C 00 04 00 00 00
+16:18:45.574  RX      seq 128 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 129000 ms  | boat rx seq 18 type 0x00  rssi -105 dBm  snr 12.25 dB  noise -119 dBm  age 0 s  ok 44 crc 4 rej 0 drop 0
+16:18:45.829  TX-RAW  n=5    BB AA 13 01 00
+16:18:45.829  TX      seq 19  hb
+16:18:46.577  RX-RAW  n=81   AA BB 81 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 AD E0 43 18 F1 5A 46 BD 71 32 2B 17 02 0A 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 D4 FB 01 00 01 13 00 9B FF 3C 00 8D FF 2D 00 04 00 00 00
+16:18:46.578  RX      seq 129 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 130004 ms  | boat rx seq 19 type 0x00  rssi -101 dBm  snr 15.00 dB  noise -115 dBm  age 0 s  ok 45 crc 4 rej 0 drop 0
+16:18:46.830  TX-RAW  n=5    BB AA 14 01 00
+16:18:46.830  TX      seq 20  hb
+16:18:47.577  RX-RAW  n=81   AA BB 82 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 97 E0 43 18 EE 5A 46 BD 71 32 2B 17 02 0B 03 FF 0C 03 C9 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 BC FF 01 00 01 14 00 9D FF 3C 00 89 FF 2E 00 04 00 00 00
+16:18:47.578  RX      seq 130 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 131004 ms  | boat rx seq 20 type 0x00  rssi -99 dBm  snr 15.00 dB  noise -119 dBm  age 0 s  ok 46 crc 4 rej 0 drop 0
+16:18:48.084  TX-RAW  n=5    BB AA 15 01 00
+16:18:48.084  TX      seq 21  hb
+16:18:48.577  RX-RAW  n=81   AA BB 83 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B9 E0 43 18 DF 5A 46 BD 71 32 2B 17 02 0C 03 FF 0C 03 CA 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 A4 03 02 00 01 15 00 9F FF 3C 00 8C FF 2F 00 04 00 00 00
+16:18:48.578  RX      seq 131 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 132004 ms  | boat rx seq 21 type 0x00  rssi -97 dBm  snr 15.00 dB  noise -116 dBm  age 0 s  ok 47 crc 4 rej 0 drop 0
+16:18:49.577  TX-RAW  n=5    BB AA 16 01 00
+16:18:49.577  TX      seq 22  hb
+16:18:49.578  RX-RAW  n=81   AA BB 84 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C4 E0 43 18 D9 5A 46 BD 71 32 2B 17 02 0D 03 FF 0C 03 C9 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 8C 07 02 00 01 16 00 A0 FF 3C 00 8C FF 30 00 04 00 00 00
+16:18:49.578  RX      seq 132 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 133004 ms  | boat rx seq 22 type 0x00  rssi -96 dBm  snr 15.00 dB  noise -116 dBm  age 0 s  ok 48 crc 4 rej 0 drop 0
+16:18:50.578  RX-RAW  n=81   AA BB 85 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B4 E0 43 18 D6 5A 46 BD 71 32 2B 17 02 0E 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 75 0B 02 00 01 16 00 A0 FF 3C 01 89 FF 30 00 04 00 00 00
+16:18:50.578  RX      seq 133 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 134005 ms  | boat rx seq 22 type 0x00  rssi -96 dBm  snr 15.00 dB  noise -119 dBm  age 1 s  ok 48 crc 4 rej 0 drop 0
+16:18:50.578  TX-RAW  n=5    BB AA 17 01 00
+16:18:50.578  TX      seq 23  hb
+16:18:51.577  RX-RAW  n=81   AA BB 86 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 CE E0 43 18 CD 5A 46 BD 71 32 2B 17 02 0F 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 5C 0F 02 00 01 17 00 A0 FF 3C 00 89 FF 31 00 04 00 00 00
+16:18:51.577  RX      seq 134 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 135004 ms  | boat rx seq 23 type 0x00  rssi -96 dBm  snr 15.00 dB  noise -119 dBm  age 0 s  ok 49 crc 4 rej 0 drop 0
+16:18:51.833  TX-RAW  n=5    BB AA 18 01 00
+16:18:51.833  TX      seq 24  hb
+16:18:52.578  RX-RAW  n=81   AA BB 87 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 9C E0 43 18 CC 5A 46 BD 71 32 2B 17 02 10 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 45 13 02 00 01 18 00 A3 FF 3C 00 8B FF 32 00 04 00 00 00
+16:18:52.578  RX      seq 135 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 136005 ms  | boat rx seq 24 type 0x00  rssi -93 dBm  snr 15.00 dB  noise -117 dBm  age 0 s  ok 50 crc 4 rej 0 drop 0
+16:18:52.834  TX-RAW  n=5    BB AA 19 01 00
+16:18:52.834  TX      seq 25  hb
+16:18:53.575  RX-RAW  n=81   AA BB 88 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 9E E0 43 18 F2 5A 46 BD 71 32 2B 17 02 11 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 2A 17 02 00 01 19 00 A2 FF 3C 00 89 FF 33 00 04 00 00 00
+16:18:53.575  RX      seq 136 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 137002 ms  | boat rx seq 25 type 0x00  rssi -94 dBm  snr 15.00 dB  noise -119 dBm  age 0 s  ok 51 crc 4 rej 0 drop 0
+16:18:54.080  TX-RAW  n=5    BB AA 1A 01 00
+16:18:54.080  TX      seq 26  hb
+16:18:54.578  RX-RAW  n=81   AA BB 89 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A0 E0 43 18 D1 5A 46 BD 71 32 2B 17 02 12 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 15 1B 02 00 01 1A 00 A4 FF 3C 00 88 FF 34 00 04 00 00 00
+16:18:54.578  RX      seq 137 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 138005 ms  | boat rx seq 26 type 0x00  rssi -92 dBm  snr 15.00 dB  noise -120 dBm  age 0 s  ok 52 crc 4 rej 0 drop 0
+16:18:55.087  TX-RAW  n=5    BB AA 1B 01 00
+16:18:55.087  TX      seq 27  hb
+16:18:55.577  RX-RAW  n=81   AA BB 8A 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 CD E0 43 18 EC 5A 46 BD 71 32 2B 17 02 13 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 FC 1E 02 00 01 1B 00 A3 FF 3C 00 8A FF 35 00 04 00 00 00
+16:18:55.577  RX      seq 138 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 139004 ms  | boat rx seq 27 type 0x00  rssi -93 dBm  snr 15.00 dB  noise -118 dBm  age 0 s  ok 53 crc 4 rej 0 drop 0
+16:18:56.579  TX-RAW  n=5    BB AA 1C 01 00
+16:18:56.579  TX      seq 28  hb
+16:18:56.580  RX-RAW  n=81   AA BB 8B 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C1 E0 43 18 E9 5A 46 BD 71 32 2B 17 02 14 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 E1 22 02 00 01 1B 00 A3 FF 3C 01 8E FF 35 00 04 00 00 00
+16:18:56.580  RX      seq 139 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 140001 ms  | boat rx seq 27 type 0x00  rssi -93 dBm  snr 15.00 dB  noise -114 dBm  age 1 s  ok 53 crc 4 rej 0 drop 0
+16:18:57.577  RX-RAW  n=81   AA BB 8C 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B2 E0 43 18 CB 5A 46 BD 71 32 2B 17 02 15 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 CC 26 02 00 01 1C 00 A7 FF 3C 00 88 FF 36 00 04 00 00 00
+16:18:57.577  RX      seq 140 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 141004 ms  | boat rx seq 28 type 0x00  rssi -89 dBm  snr 15.00 dB  noise -120 dBm  age 0 s  ok 54 crc 4 rej 0 drop 0
+16:18:57.830  TX-RAW  n=5    BB AA 1D 01 00
+16:18:57.830  TX      seq 29  hb
+16:18:58.577  RX-RAW  n=81   AA BB 8D 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C2 E0 43 18 E0 5A 46 BD 71 32 2B 17 02 16 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 B4 2A 02 00 01 1C 00 A7 FF 3C 01 8D FF 36 00 05 00 00 00
+16:18:58.577  RX      seq 141 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 142004 ms  | boat rx seq 28 type 0x00  rssi -89 dBm  snr 15.00 dB  noise -115 dBm  age 1 s  ok 54 crc 5 rej 0 drop 0
+16:18:58.833  TX-RAW  n=5    BB AA 1E 01 00
+16:18:58.833  TX      seq 30  hb
+16:18:59.577  RX-RAW  n=81   AA BB 8E 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 CC E0 43 18 D1 5A 46 BD 71 32 2B 17 02 17 03 FF 0C 03 C9 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 9C 2E 02 00 01 1E 00 A5 FF 3C 00 89 FF 37 00 05 00 00 00
+16:18:59.577  RX      seq 142 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 143004 ms  | boat rx seq 30 type 0x00  rssi -91 dBm  snr 15.00 dB  noise -119 dBm  age 0 s  ok 55 crc 5 rej 0 drop 0
+16:19:00.083  TX-RAW  n=5    BB AA 1F 01 00
+16:19:00.084  TX      seq 31  hb
+16:19:00.577  RX-RAW  n=81   AA BB 8F 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 94 E0 43 18 BA 5A 46 BD 71 32 2B 17 02 18 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 84 32 02 00 01 1F 00 A5 FF 3C 00 8A FF 38 00 05 00 00 00
+16:19:00.577  RX      seq 143 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 144004 ms  | boat rx seq 31 type 0x00  rssi -91 dBm  snr 15.00 dB  noise -118 dBm  age 0 s  ok 56 crc 5 rej 0 drop 0
+16:19:01.577  TX-RAW  n=5    BB AA 20 01 00
+16:19:01.577  TX      seq 32  hb
+16:19:01.578  RX-RAW  n=81   AA BB 90 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B2 E0 43 18 DE 5A 46 BD 71 32 2B 17 02 19 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 6C 36 02 00 01 1F 00 A5 FF 3C 01 88 FF 38 00 05 00 00 00
+16:19:01.578  RX      seq 144 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 145004 ms  | boat rx seq 31 type 0x00  rssi -91 dBm  snr 15.00 dB  noise -120 dBm  age 1 s  ok 56 crc 5 rej 0 drop 0
+16:19:02.576  RX-RAW  n=81   AA BB 91 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 CE E0 43 18 F0 5A 46 BD 71 32 2B 17 02 1A 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 53 3A 02 00 01 1F 00 A5 FF 3C 02 8D FF 38 00 05 00 00 00
+16:19:02.576  RX      seq 145 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 146003 ms  | boat rx seq 31 type 0x00  rssi -91 dBm  snr 15.00 dB  noise -115 dBm  age 2 s  ok 56 crc 5 rej 0 drop 0
+16:19:02.832  TX-RAW  n=5    BB AA 21 01 00
+16:19:02.832  TX      seq 33  hb
+16:19:03.577  RX-RAW  n=81   AA BB 92 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B9 E0 43 18 DF 5A 46 BD 71 32 2B 17 02 1B 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 3C 3E 02 00 01 21 00 A4 FF 3C 00 8C FF 39 00 05 00 00 00
+16:19:03.577  RX      seq 146 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 147004 ms  | boat rx seq 33 type 0x00  rssi -92 dBm  snr 15.00 dB  noise -116 dBm  age 0 s  ok 57 crc 5 rej 0 drop 0
+16:19:03.832  TX-RAW  n=5    BB AA 22 01 00
+16:19:03.833  TX      seq 34  hb
+16:19:04.574  RX-RAW  n=81   AA BB 93 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 96 E0 43 18 EA 5A 46 BD 71 32 2B 17 02 1C 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 20 42 02 00 01 22 00 A3 FF 3C 00 88 FF 3A 00 05 00 00 00
+16:19:04.574  RX      seq 147 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 148000 ms  | boat rx seq 34 type 0x00  rssi -93 dBm  snr 15.00 dB  noise -120 dBm  age 0 s  ok 58 crc 5 rej 0 drop 0
+16:19:05.082  TX-RAW  n=5    BB AA 23 01 00
+16:19:05.082  TX      seq 35  hb
+16:19:05.574  RX-RAW  n=81   AA BB 94 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 9F E0 43 18 C3 5A 46 BD 71 32 2B 17 02 1D 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 09 46 02 00 01 23 00 A2 FF 3C 00 88 FF 3B 00 05 00 00 00
+16:19:05.574  RX      seq 148 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 149001 ms  | boat rx seq 35 type 0x00  rssi -94 dBm  snr 15.00 dB  noise -120 dBm  age 0 s  ok 59 crc 5 rej 0 drop 0
+16:19:06.083  TX-RAW  n=5    BB AA 24 01 00
+16:19:06.083  TX      seq 36  hb
+16:19:06.578  RX-RAW  n=81   AA BB 95 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C8 E0 43 18 E1 5A 46 BD 71 32 2B 17 02 1E 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 F5 49 02 00 01 24 00 A1 FF 3C 00 8D FF 3C 00 05 00 00 00
+16:19:06.578  RX      seq 149 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 150005 ms  | boat rx seq 36 type 0x00  rssi -95 dBm  snr 15.00 dB  noise -115 dBm  age 0 s  ok 60 crc 5 rej 0 drop 0
+16:19:07.085  TX-RAW  n=5    BB AA 25 01 00
+16:19:07.085  TX      seq 37  hb
+16:19:07.578  RX-RAW  n=81   AA BB 96 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C4 E0 43 18 C4 5A 46 BD 71 32 2B 17 02 1F 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 DD 4D 02 00 01 25 00 9E FF 3C 00 8E FF 3D 00 05 00 00 00
+16:19:07.578  RX      seq 150 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 151005 ms  | boat rx seq 37 type 0x00  rssi -98 dBm  snr 15.00 dB  noise -114 dBm  age 0 s  ok 61 crc 5 rej 0 drop 0
+16:19:08.088  TX-RAW  n=5    BB AA 26 01 00
+16:19:08.088  TX      seq 38  hb
+16:19:08.578  RX-RAW  n=81   AA BB 97 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 CD E0 43 18 E7 5A 46 BD 71 32 2B 17 02 20 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 C5 51 02 00 01 26 00 9E FF 3C 00 8A FF 3E 00 05 00 00 00
+16:19:08.578  RX      seq 151 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 152005 ms  | boat rx seq 38 type 0x00  rssi -98 dBm  snr 15.00 dB  noise -118 dBm  age 0 s  ok 62 crc 5 rej 0 drop 0
+16:19:09.577  TX-RAW  n=5    BB AA 27 01 00
+16:19:09.577  TX      seq 39  hb
+16:19:09.577  RX-RAW  n=81   AA BB 98 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B6 E0 43 18 DE 5A 46 BD 71 32 2B 17 02 21 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 A8 55 02 00 01 26 00 9E FF 3C 01 8B FF 3E 00 05 00 00 00
+16:19:09.578  RX      seq 152 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 153000 ms  | boat rx seq 38 type 0x00  rssi -98 dBm  snr 15.00 dB  noise -117 dBm  age 1 s  ok 62 crc 5 rej 0 drop 0
+16:19:10.578  RX-RAW  n=81   AA BB 99 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 99 E0 43 18 BA 5A 46 BD 71 32 2B 17 02 22 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 95 59 02 00 01 27 00 9C FF 3C 01 8D FF 3F 00 05 00 00 00
+16:19:10.578  RX      seq 153 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 154005 ms  | boat rx seq 39 type 0x00  rssi -100 dBm  snr 15.00 dB  noise -115 dBm  age 1 s  ok 63 crc 5 rej 0 drop 0
+16:19:10.578  TX-RAW  n=5    BB AA 28 01 00
+16:19:10.578  TX      seq 40  hb
+16:19:11.578  RX-RAW  n=81   AA BB 9A 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 97 E0 43 18 F1 5A 46 BD 71 32 2B 17 02 23 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 7D 5D 02 00 01 27 00 9C FF 3C 02 8C FF 3F 00 05 00 00 00
+16:19:11.578  RX      seq 154 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 155005 ms  | boat rx seq 39 type 0x00  rssi -100 dBm  snr 15.00 dB  noise -116 dBm  age 2 s  ok 63 crc 5 rej 0 drop 0
+16:19:11.578  TX-RAW  n=5    BB AA 29 01 00
+16:19:11.578  TX      seq 41  hb
+16:19:12.578  RX-RAW  n=81   AA BB 9B 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C1 E0 43 18 BF 5A 46 BD 71 32 2B 17 02 24 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 65 61 02 00 01 29 00 97 FF 30 00 88 FF 40 00 05 00 00 00
+16:19:12.578  RX      seq 155 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 156005 ms  | boat rx seq 41 type 0x00  rssi -105 dBm  snr 12.00 dB  noise -120 dBm  age 0 s  ok 64 crc 5 rej 0 drop 0
+16:19:12.829  TX-RAW  n=5    BB AA 2A 01 00
+16:19:12.829  TX      seq 42  hb
+16:19:13.574  RX-RAW  n=81   AA BB 9C 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 9F E0 43 18 E4 5A 46 BD 71 32 2B 17 02 25 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 49 65 02 00 01 2A 00 93 FF 22 00 8D FF 41 00 05 00 00 00
+16:19:13.574  RX      seq 156 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 157001 ms  | boat rx seq 42 type 0x00  rssi -109 dBm  snr 8.50 dB  noise -115 dBm  age 0 s  ok 65 crc 5 rej 0 drop 0
+16:19:14.079  TX-RAW  n=5    BB AA 2B 01 00
+16:19:14.102  TX      seq 43  hb
+16:19:14.577  RX-RAW  n=81   AA BB 9D 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A6 E0 43 18 CE 5A 46 BD 71 32 2B 17 02 26 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 34 69 02 00 01 2B 00 93 FF 22 00 89 FF 42 00 05 00 00 00
+16:19:14.577  RX      seq 157 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 158004 ms  | boat rx seq 43 type 0x00  rssi -109 dBm  snr 8.50 dB  noise -119 dBm  age 0 s  ok 66 crc 5 rej 0 drop 0
+16:19:15.579  TX-RAW  n=5    BB AA 2C 01 00
+16:19:15.579  TX      seq 44  hb
+16:19:15.580  RX-RAW  n=81   AA BB 9E 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B9 E0 43 18 EB 5A 46 BD 71 32 2B 17 02 27 03 FF 0C 03 C4 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 18 6D 02 00 01 2B 00 93 FF 22 01 88 FF 42 00 05 00 00 00
+16:19:15.580  RX      seq 158 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 159000 ms  | boat rx seq 43 type 0x00  rssi -109 dBm  snr 8.50 dB  noise -120 dBm  age 1 s  ok 66 crc 5 rej 0 drop 0
+16:19:16.575  RX-RAW  n=81   AA BB 9F 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C0 E0 43 18 E8 5A 46 BD 71 32 2B 17 02 28 03 FF 0C 03 C3 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 02 71 02 00 01 2C 00 92 FF 1A 00 88 FF 43 00 05 00 00 00
+16:19:16.575  RX      seq 159 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 160002 ms  | boat rx seq 44 type 0x00  rssi -110 dBm  snr 6.50 dB  noise -120 dBm  age 0 s  ok 67 crc 5 rej 0 drop 0
+16:19:16.828  TX-RAW  n=5    BB AA 2D 01 00
+16:19:16.828  TX      seq 45  hb
+16:19:17.578  RX-RAW  n=81   AA BB A0 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C1 E0 43 18 EC 5A 46 BD 71 32 2B 17 02 29 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 ED 74 02 00 01 2D 00 8E FF 0E 00 8B FF 44 00 05 00 00 00
+16:19:17.578  RX      seq 160 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 161005 ms  | boat rx seq 45 type 0x00  rssi -114 dBm  snr 3.50 dB  noise -117 dBm  age 0 s  ok 68 crc 5 rej 0 drop 0
+16:19:17.829  TX-RAW  n=5    BB AA 2E 01 00
+16:19:17.829  TX      seq 46  hb
+16:19:18.576  RX-RAW  n=81   AA BB A1 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 98 E0 43 18 BC 5A 46 BD 71 32 2B 17 02 2A 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 D3 78 02 00 01 2E 00 8E FF 0E 00 8B FF 45 00 05 00 00 00
+16:19:18.576  RX      seq 161 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 162003 ms  | boat rx seq 46 type 0x00  rssi -114 dBm  snr 3.50 dB  noise -117 dBm  age 0 s  ok 69 crc 5 rej 0 drop 0
+16:19:18.831  TX-RAW  n=5    BB AA 2F 01 00
+16:19:18.831  TX      seq 47  hb
+16:19:19.578  RX-RAW  n=81   AA BB A2 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C5 E0 43 18 B8 5A 46 BD 71 32 2B 17 02 2B 03 FF 0C 03 C4 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 BD 7C 02 00 01 2F 00 8C FF 05 00 8A FF 46 00 05 00 00 00
+16:19:19.578  RX      seq 162 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 163005 ms  | boat rx seq 47 type 0x00  rssi -116 dBm  snr 1.25 dB  noise -118 dBm  age 0 s  ok 70 crc 5 rej 0 drop 0
+16:19:20.080  TX-RAW  n=5    BB AA 30 01 00
+16:19:20.080  TX      seq 48  hb
+16:19:20.575  RX-RAW  n=81   AA BB A3 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A3 E0 43 18 F2 5A 46 BD 71 32 2B 17 02 2C 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 A2 80 02 00 01 30 00 89 FF F7 00 8B FF 47 00 05 00 00 00
+16:19:20.575  RX      seq 163 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 164002 ms  | boat rx seq 48 type 0x00  rssi -119 dBm  snr -2.25 dB  noise -117 dBm  age 0 s  ok 71 crc 5 rej 0 drop 0
+16:19:21.084  TX-RAW  n=5    BB AA 31 01 00
+16:19:21.084  TX      seq 49  hb
+16:19:21.578  RX-RAW  n=81   AA BB A4 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B3 E0 43 18 DC 5A 46 BD 71 32 2B 17 02 2D 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 8D 84 02 00 01 31 00 89 FF F7 00 8B FF 48 00 05 00 00 00
+16:19:21.578  RX      seq 164 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 165005 ms  | boat rx seq 49 type 0x00  rssi -119 dBm  snr -2.25 dB  noise -117 dBm  age 0 s  ok 72 crc 5 rej 0 drop 0
+16:19:22.580  TX-RAW  n=5    BB AA 32 01 00
+16:19:22.580  TX      seq 50  hb
+16:19:22.581  RX-RAW  n=81   AA BB A5 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B1 E0 43 18 DA 5A 46 BD 71 32 2B 17 02 2E 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 71 88 02 00 01 31 00 89 FF F7 01 89 FF 48 00 05 00 00 00
+16:19:22.581  RX      seq 165 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 166001 ms  | boat rx seq 49 type 0x00  rssi -119 dBm  snr -2.25 dB  noise -119 dBm  age 1 s  ok 72 crc 5 rej 0 drop 0
+16:19:23.573  RX-RAW  n=81   AA BB A6 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B4 E0 43 18 D5 5A 46 BD 71 32 2B 17 02 2F 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 58 8C 02 00 01 32 00 86 FF EB 00 94 FF 49 00 05 00 00 00
+16:19:23.573  RX      seq 166 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 167000 ms  | boat rx seq 50 type 0x00  rssi -122 dBm  snr -5.25 dB  noise -108 dBm  age 0 s  ok 73 crc 5 rej 0 drop 0
+16:19:23.825  TX-RAW  n=5    BB AA 33 01 00
+16:19:23.825  TX      seq 51  hb
+16:19:24.576  RX-RAW  n=81   AA BB A7 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 AD E0 43 18 C5 5A 46 BD 71 32 2B 17 02 30 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 42 90 02 00 01 32 00 86 FF EB 01 93 FF 49 00 05 00 00 00
+16:19:24.576  RX      seq 167 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 168002 ms  | boat rx seq 50 type 0x00  rssi -122 dBm  snr -5.25 dB  noise -109 dBm  age 1 s  ok 73 crc 5 rej 0 drop 0
+16:19:24.830  TX-RAW  n=5    BB AA 34 01 00
+16:19:24.830  TX      seq 52  hb
+16:19:25.575  RX-RAW  n=81   AA BB A8 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B5 E0 43 18 EA 5A 46 BD 71 32 2B 17 02 31 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 2A 94 02 00 01 32 00 86 FF EB 02 93 FF 49 00 05 00 00 00
+16:19:25.575  RX      seq 168 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 169002 ms  | boat rx seq 50 type 0x00  rssi -122 dBm  snr -5.25 dB  noise -109 dBm  age 2 s  ok 73 crc 5 rej 0 drop 0
+16:19:26.080  TX-RAW  n=5    BB AA 35 01 00
+16:19:26.080  TX      seq 53  hb
+16:19:26.576  RX-RAW  n=81   AA BB A9 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 99 E0 43 18 BD 5A 46 BD 71 32 2B 17 02 32 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 13 98 02 00 01 35 00 82 FF DD 00 89 FF 4A 00 05 00 00 00
+16:19:26.576  RX      seq 169 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 170003 ms  | boat rx seq 53 type 0x00  rssi -126 dBm  snr -8.75 dB  noise -119 dBm  age 0 s  ok 74 crc 5 rej 0 drop 0
+16:19:27.082  TX-RAW  n=5    BB AA 36 01 00
+16:19:27.082  TX      seq 54  hb
+16:19:27.575  RX-RAW  n=81   AA BB AA 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A7 E0 43 18 BF 5A 46 BD 71 32 2B 17 02 33 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 FA 9B 02 00 01 36 00 83 FF DF 00 8A FF 4B 00 05 00 00 00
+16:19:27.575  RX      seq 170 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 171002 ms  | boat rx seq 54 type 0x00  rssi -125 dBm  snr -8.25 dB  noise -118 dBm  age 0 s  ok 75 crc 5 rej 0 drop 0
+16:19:28.085  TX-RAW  n=5    BB AA 37 01 00
+16:19:28.085  TX      seq 55  hb
+16:19:28.578  RX-RAW  n=81   AA BB AB 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 95 E0 43 18 CA 5A 46 BD 71 32 2B 17 02 34 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 E5 9F 02 00 01 37 00 85 FF E8 00 89 FF 4C 00 05 00 00 00
+16:19:28.578  RX      seq 171 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 172005 ms  | boat rx seq 55 type 0x00  rssi -123 dBm  snr -6.00 dB  noise -119 dBm  age 0 s  ok 76 crc 5 rej 0 drop 0
+16:19:29.088  TX-RAW  n=5    BB AA 38 01 00
+16:19:29.088  TX      seq 56  hb
+16:19:29.573  RX-RAW  n=81   AA BB AC 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C5 E0 43 18 F1 5A 46 BD 71 32 2B 17 02 35 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 C8 A3 02 00 01 38 00 85 FF E7 00 8E FF 4D 00 05 00 00 00
+16:19:29.573  RX      seq 172 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 173000 ms  | boat rx seq 56 type 0x00  rssi -123 dBm  snr -6.25 dB  noise -114 dBm  age 0 s  ok 77 crc 5 rej 0 drop 0
+16:19:30.572  TX-RAW  n=5    BB AA 39 01 00
+16:19:30.572  TX      seq 57  hb
+16:19:30.573  RX-RAW  n=81   AA BB AD 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 97 E0 43 18 DA 5A 46 BD 71 32 2B 17 02 36 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 B0 A7 02 00 01 39 00 83 FF E2 00 8A FF 4E 00 05 00 00 00
+16:19:30.573  RX      seq 173 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 174000 ms  | boat rx seq 57 type 0x00  rssi -125 dBm  snr -7.50 dB  noise -118 dBm  age 0 s  ok 78 crc 5 rej 0 drop 0
+16:19:31.577  RX-RAW  n=81   AA BB AE 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C2 E0 43 18 C6 5A 46 BD 71 32 2B 17 02 37 03 FF 0C 03 C4 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 9C AB 02 00 01 39 00 83 FF E2 01 90 FF 4E 00 05 00 00 00
+16:19:31.577  RX      seq 174 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 175004 ms  | boat rx seq 57 type 0x00  rssi -125 dBm  snr -7.50 dB  noise -112 dBm  age 1 s  ok 78 crc 5 rej 0 drop 0
+16:19:31.577  TX-RAW  n=5    BB AA 3A 01 00
+16:19:31.577  TX      seq 58  hb
+16:19:32.574  RX-RAW  n=81   AA BB AF 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C4 E0 43 18 C8 5A 46 BD 71 32 2B 17 02 38 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 81 AF 02 00 01 3A 00 82 FF DA 00 8B FF 4F 00 05 00 00 00
+16:19:32.574  RX      seq 175 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 176001 ms  | boat rx seq 58 type 0x00  rssi -126 dBm  snr -9.50 dB  noise -117 dBm  age 0 s  ok 79 crc 5 rej 0 drop 0
+16:19:32.827  TX-RAW  n=5    BB AA 3B 01 00
+16:19:32.827  TX      seq 59  hb
+16:19:33.577  RX-RAW  n=81   AA BB B0 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 CF E0 43 18 C2 5A 46 BD 71 32 2B 17 02 39 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 6C B3 02 00 01 3B 00 85 FF E6 00 8A FF 50 00 05 00 00 00
+16:19:33.577  RX      seq 176 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 177004 ms  | boat rx seq 59 type 0x00  rssi -123 dBm  snr -6.50 dB  noise -118 dBm  age 0 s  ok 80 crc 5 rej 0 drop 0
+16:19:33.832  TX-RAW  n=5    BB AA 3C 01 00
+16:19:33.833  TX      seq 60  hb
+16:19:34.577  RX-RAW  n=81   AA BB B1 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 97 E0 43 18 C9 5A 46 BD 71 32 2B 17 02 3A 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 54 B7 02 00 01 3C 00 85 FF E9 00 8B FF 51 00 05 00 00 00
+16:19:34.586  RX      seq 177 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 178004 ms  | boat rx seq 60 type 0x00  rssi -123 dBm  snr -5.75 dB  noise -117 dBm  age 0 s  ok 81 crc 5 rej 0 drop 0
+16:19:34.838  TX-RAW  n=5    BB AA 3D 01 00
+16:19:34.838  TX      seq 61  hb
+16:19:35.578  RX-RAW  n=81   AA BB B2 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 AB E0 43 18 C8 5A 46 BD 71 32 2B 17 02 3B 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 3D BB 02 00 01 3D 00 87 FF F0 00 89 FF 52 00 05 00 00 00
+16:19:35.578  RX      seq 178 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 179005 ms  | boat rx seq 61 type 0x00  rssi -121 dBm  snr -4.00 dB  noise -119 dBm  age 0 s  ok 82 crc 5 rej 0 drop 0
+16:19:36.089  TX-RAW  n=5    BB AA 3E 01 00
+16:19:36.089  TX      seq 62  hb
+16:19:36.578  RX-RAW  n=81   AA BB B3 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 9A E0 43 18 EB 5A 46 BD 71 32 2B 17 02 00 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 25 BF 02 00 01 3E 00 88 FF F4 00 8B FF 53 00 05 00 00 00
+16:19:36.578  RX      seq 179 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 180005 ms  | boat rx seq 62 type 0x00  rssi -120 dBm  snr -3.00 dB  noise -117 dBm  age 0 s  ok 83 crc 5 rej 0 drop 0
+16:19:37.580  TX-RAW  n=5    BB AA 3F 01 00
+16:19:37.580  TX      seq 63  hb
+16:19:37.581  RX-RAW  n=81   AA BB B4 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 BD E0 43 18 E0 5A 46 BD 71 32 2B 17 02 01 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 0C C3 02 00 01 3E 00 88 FF F4 01 89 FF 53 00 05 00 00 00
+16:19:37.581  RX      seq 180 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 181004 ms  | boat rx seq 62 type 0x00  rssi -120 dBm  snr -3.00 dB  noise -119 dBm  age 1 s  ok 83 crc 5 rej 0 drop 0
+16:19:38.576  RX-RAW  n=81   AA BB B5 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 BC E0 43 18 D2 5A 46 BD 71 32 2B 17 02 02 03 FF 0C 03 C4 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 F3 C6 02 00 01 3F 00 8A FF FC 00 88 FF 54 00 05 00 00 00
+16:19:38.576  RX      seq 181 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 182003 ms  | boat rx seq 63 type 0x00  rssi -118 dBm  snr -1.00 dB  noise -120 dBm  age 0 s  ok 84 crc 5 rej 0 drop 0
+16:19:38.828  TX-RAW  n=5    BB AA 40 01 00
+16:19:38.828  TX      seq 64  hb
+16:19:39.578  RX-RAW  n=81   AA BB B6 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 9C E0 43 18 D3 5A 46 BD 71 32 2B 17 02 03 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 DD CA 02 00 01 40 00 89 FF F9 00 8B FF 55 00 05 00 00 00
+16:19:39.578  RX      seq 182 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 183005 ms  | boat rx seq 64 type 0x00  rssi -119 dBm  snr -1.75 dB  noise -117 dBm  age 0 s  ok 85 crc 5 rej 0 drop 0
+16:19:39.829  TX-RAW  n=5    BB AA 41 01 00
+16:19:39.829  TX      seq 65  hb
+16:19:40.575  RX-RAW  n=81   AA BB B7 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 CA E0 43 18 F2 5A 46 BD 71 32 2B 17 02 04 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 C2 CE 02 00 01 41 00 8D FF 09 00 8C FF 56 00 05 00 00 00
+16:19:40.575  RX      seq 183 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 184002 ms  | boat rx seq 65 type 0x00  rssi -115 dBm  snr 2.25 dB  noise -116 dBm  age 0 s  ok 86 crc 5 rej 0 drop 0
+16:19:40.831  TX-RAW  n=5    BB AA 42 01 00
+16:19:40.831  TX      seq 66  hb
+16:19:41.578  RX-RAW  n=81   AA BB B8 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 95 E0 43 18 C3 5A 46 BD 71 32 2B 17 02 05 03 FF 0C 03 C9 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 AD D2 02 00 01 42 00 8D FF 07 00 8D FF 57 00 05 00 00 00
+16:19:41.578  RX      seq 184 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 185005 ms  | boat rx seq 66 type 0x00  rssi -115 dBm  snr 1.75 dB  noise -115 dBm  age 0 s  ok 87 crc 5 rej 0 drop 0
+16:19:42.084  TX-RAW  n=5    BB AA 43 01 00
+16:19:42.084  TX      seq 67  hb
+16:19:42.573  RX-RAW  n=81   AA BB B9 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 AF E0 43 18 D8 5A 46 BD 71 32 2B 17 02 06 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 90 D6 02 00 01 43 00 90 FF 12 00 8D FF 58 00 05 00 00 00
+16:19:42.573  RX      seq 185 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 186000 ms  | boat rx seq 67 type 0x00  rssi -112 dBm  snr 4.50 dB  noise -115 dBm  age 0 s  ok 88 crc 5 rej 0 drop 0
+16:19:43.572  TX-RAW  n=5    BB AA 44 01 00
+16:19:43.572  TX      seq 68  hb
+16:19:43.573  RX-RAW  n=81   AA BB BA 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 BC E0 43 18 C9 5A 46 BD 71 32 2B 17 02 07 03 FF 0C 03 CA 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 78 DA 02 00 01 44 00 90 FF 14 00 8A FF 59 00 05 00 00 00
+16:19:43.573  RX      seq 186 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 187000 ms  | boat rx seq 68 type 0x00  rssi -112 dBm  snr 5.00 dB  noise -118 dBm  age 0 s  ok 89 crc 5 rej 0 drop 0
+16:19:44.578  RX-RAW  n=81   AA BB BB 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 94 E0 43 18 D4 5A 46 BD 71 32 2B 17 02 08 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 65 DE 02 00 01 44 00 90 FF 14 01 8A FF 59 00 05 00 00 00
+16:19:44.578  RX      seq 187 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 188005 ms  | boat rx seq 68 type 0x00  rssi -112 dBm  snr 5.00 dB  noise -118 dBm  age 1 s  ok 89 crc 5 rej 0 drop 0
+16:19:44.578  TX-RAW  n=5    BB AA 45 01 00
+16:19:44.578  TX      seq 69  hb
+16:19:45.575  RX-RAW  n=81   AA BB BC 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C1 E0 43 18 DC 5A 46 BD 71 32 2B 17 02 09 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 4A E2 02 00 01 45 00 92 FF 1B 00 8D FF 5A 00 05 00 00 00
+16:19:45.575  RX      seq 188 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 189002 ms  | boat rx seq 69 type 0x00  rssi -110 dBm  snr 6.75 dB  noise -115 dBm  age 0 s  ok 90 crc 5 rej 0 drop 0
+16:19:45.830  TX-RAW  n=5    BB AA 46 01 00
+16:19:45.830  TX      seq 70  hb
+16:19:46.577  RX-RAW  n=81   AA BB BD 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A6 E0 43 18 BC 5A 46 BD 71 32 2B 17 02 0A 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 34 E6 02 00 01 46 00 95 FF 29 00 8E FF 5B 00 05 00 00 00
+16:19:46.577  RX      seq 189 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 190004 ms  | boat rx seq 70 type 0x00  rssi -107 dBm  snr 10.25 dB  noise -114 dBm  age 0 s  ok 91 crc 5 rej 0 drop 0
+16:19:47.082  TX-RAW  n=5    BB AA 47 01 00
+16:19:47.082  TX      seq 71  hb
+16:19:47.577  RX-RAW  n=81   AA BB BE 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 9D E0 43 18 C8 5A 46 BD 71 32 2B 17 02 0B 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 1C EA 02 00 01 47 00 96 FF 2C 00 8B FF 5C 00 05 00 00 00
+16:19:47.577  RX      seq 190 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 191004 ms  | boat rx seq 71 type 0x00  rssi -106 dBm  snr 11.00 dB  noise -117 dBm  age 0 s  ok 92 crc 5 rej 0 drop 0
+16:19:48.083  TX-RAW  n=5    BB AA 48 01 00
+16:19:48.084  TX      seq 72  hb
+16:19:48.577  RX-RAW  n=81   AA BB BF 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C3 E0 43 18 F0 5A 46 BD 71 32 2B 17 02 0C 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 04 EE 02 00 01 48 00 97 FF 32 00 8B FF 5D 00 05 00 00 00
+16:19:48.578  RX      seq 191 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 192004 ms  | boat rx seq 72 type 0x00  rssi -105 dBm  snr 12.50 dB  noise -117 dBm  age 0 s  ok 93 crc 5 rej 0 drop 0
+16:19:49.576  TX-RAW  n=5    BB AA 49 01 00
+16:19:49.576  TX      seq 73  hb
+16:19:49.577  RX-RAW  n=81   AA BB C0 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 96 E0 43 18 E1 5A 46 BD 71 32 2B 17 02 0D 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 EB F1 02 00 01 48 00 97 FF 32 01 8C FF 5D 00 05 00 00 00
+16:19:49.577  RX      seq 192 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 193003 ms  | boat rx seq 72 type 0x00  rssi -105 dBm  snr 12.50 dB  noise -116 dBm  age 1 s  ok 93 crc 5 rej 0 drop 0
+16:19:50.573  RX-RAW  n=81   AA BB C1 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 94 E0 43 18 B6 5A 46 BD 71 32 2B 17 02 0E 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 D0 F5 02 00 01 49 00 9A FF 3A 00 88 FF 5E 00 05 00 00 00
+16:19:50.573  RX      seq 193 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 194000 ms  | boat rx seq 73 type 0x00  rssi -102 dBm  snr 14.50 dB  noise -120 dBm  age 0 s  ok 94 crc 5 rej 0 drop 0
+16:19:50.828  TX-RAW  n=5    BB AA 4A 01 00
+16:19:50.828  TX      seq 74  hb
+16:19:51.573  RX-RAW  n=81   AA BB C2 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 CA E0 43 18 BF 5A 46 BD 71 32 2B 17 02 0F 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 B8 F9 02 00 01 4A 00 9D FF 3C 00 8D FF 5F 00 05 00 00 00
+16:19:51.594  RX      seq 194 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 195000 ms  | boat rx seq 74 type 0x00  rssi -99 dBm  snr 15.00 dB  noise -115 dBm  age 0 s  ok 95 crc 5 rej 0 drop 0
+16:19:51.847  TX-RAW  n=5    BB AA 4B 01 00
+16:19:51.848  TX      seq 75  hb
+16:19:52.573  RX-RAW  n=81   AA BB C3 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 CB E0 43 18 C8 5A 46 BD 71 32 2B 17 02 10 03 FF 0C 03 C4 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 A0 FD 02 00 01 4B 00 9D FF 3C 00 91 FF 60 00 05 00 00 00
+16:19:52.574  RX      seq 195 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 196000 ms  | boat rx seq 75 type 0x00  rssi -99 dBm  snr 15.00 dB  noise -111 dBm  age 0 s  ok 96 crc 5 rej 0 drop 0
+16:19:53.078  TX-RAW  n=5    BB AA 4C 01 00
+16:19:53.078  TX      seq 76  hb
+16:19:53.573  RX-RAW  n=81   AA BB C4 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A4 E0 43 18 F0 5A 46 BD 71 32 2B 17 02 11 03 FF 0C 03 C3 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 88 01 03 00 01 4C 00 A1 FF 3C 00 8E FF 61 00 05 00 00 00
+16:19:53.573  RX      seq 196 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 197000 ms  | boat rx seq 76 type 0x00  rssi -95 dBm  snr 15.00 dB  noise -114 dBm  age 0 s  ok 97 crc 5 rej 0 drop 0
+16:19:54.084  TX-RAW  n=5    BB AA 4D 01 00
+16:19:54.084  TX      seq 77  hb
+16:19:54.578  RX-RAW  n=81   AA BB C5 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 BF E0 43 18 D6 5A 46 BD 71 32 2B 17 02 12 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 75 05 03 00 01 4D 00 A1 FF 3C 00 8B FF 62 00 05 00 00 00
+16:19:54.578  RX      seq 197 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 198005 ms  | boat rx seq 77 type 0x00  rssi -95 dBm  snr 15.00 dB  noise -117 dBm  age 0 s  ok 98 crc 5 rej 0 drop 0
+16:19:55.085  TX-RAW  n=5    BB AA 4E 01 00
+16:19:55.085  TX      seq 78  hb
+16:19:55.575  RX-RAW  n=81   AA BB C6 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 9A E0 43 18 B8 5A 46 BD 71 32 2B 17 02 13 03 FF 0C 03 C4 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 5A 09 03 00 01 4E 00 A4 FF 3C 00 88 FF 63 00 05 00 00 00
+16:19:55.575  RX      seq 198 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 199002 ms  | boat rx seq 78 type 0x00  rssi -92 dBm  snr 15.00 dB  noise -120 dBm  age 0 s  ok 99 crc 5 rej 0 drop 0
+16:19:56.576  TX-RAW  n=5    BB AA 4F 01 00
+16:19:56.576  TX      seq 79  hb
+16:19:56.576  RX-RAW  n=81   AA BB C7 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 94 E0 43 18 F2 5A 46 BD 71 32 2B 17 02 14 03 FF 0C 03 C4 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 43 0D 03 00 01 4F 00 A4 FF 3C 00 89 FF 64 00 05 00 00 00
+16:19:56.576  RX      seq 199 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 200003 ms  | boat rx seq 79 type 0x00  rssi -92 dBm  snr 15.00 dB  noise -119 dBm  age 0 s  ok 100 crc 5 rej 0 drop 0
+16:19:57.578  RX-RAW  n=81   AA BB C8 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 94 E0 43 18 EF 5A 46 BD 71 32 2B 17 02 15 03 FF 0C 03 C4 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 2D 11 03 00 01 4F 00 A4 FF 3C 01 8D FF 64 00 05 00 00 00
+16:19:57.578  RX      seq 200 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 201005 ms  | boat rx seq 79 type 0x00  rssi -92 dBm  snr 15.00 dB  noise -115 dBm  age 1 s  ok 100 crc 5 rej 0 drop 0
+16:19:57.578  TX-RAW  n=5    BB AA 50 01 00
+16:19:57.578  TX      seq 80  hb
+16:19:58.578  RX-RAW  n=81   AA BB C9 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B6 E0 43 18 CF 5A 46 BD 71 32 2B 17 02 16 03 FF 0C 03 C4 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 15 15 03 00 01 50 00 A6 FF 3C 00 8A FF 65 00 05 00 00 00
+16:19:58.578  RX      seq 201 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 202005 ms  | boat rx seq 80 type 0x00  rssi -90 dBm  snr 15.00 dB  noise -118 dBm  age 0 s  ok 101 crc 5 rej 0 drop 0
+16:19:58.830  TX-RAW  n=5    BB AA 51 01 00
+16:19:58.830  TX      seq 81  hb
+16:19:59.574  RX-RAW  n=81   AA BB CA 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B9 E0 43 18 BC 5A 46 BD 71 32 2B 17 02 17 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 F9 18 03 00 01 50 00 A6 FF 3C 01 88 FF 65 00 05 00 00 00
+16:19:59.574  RX      seq 202 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 203001 ms  | boat rx seq 80 type 0x00  rssi -90 dBm  snr 15.00 dB  noise -120 dBm  age 1 s  ok 101 crc 5 rej 0 drop 0
+16:20:00.082  TX-RAW  n=5    BB AA 52 01 00
+16:20:00.082  TX      seq 82  hb
+16:20:00.577  RX-RAW  n=81   AA BB CB 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 98 E0 43 18 D8 5A 46 BD 71 32 2B 17 02 18 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 E4 1C 03 00 01 52 00 A5 FF 3C 00 8E FF 66 00 05 00 00 00
+16:20:00.577  RX      seq 203 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 204004 ms  | boat rx seq 82 type 0x00  rssi -91 dBm  snr 15.00 dB  noise -114 dBm  age 0 s  ok 102 crc 5 rej 0 drop 0
+16:20:01.087  TX-RAW  n=5    BB AA 53 01 00
+16:20:01.087  TX      seq 83  hb
+16:20:01.577  RX-RAW  n=81   AA BB CC 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B2 E0 43 18 CC 5A 46 BD 71 32 2B 17 02 19 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 CC 20 03 00 01 53 00 A5 FF 3C 00 91 FF 67 00 05 00 00 00
+16:20:01.577  RX      seq 204 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 205004 ms  | boat rx seq 83 type 0x00  rssi -91 dBm  snr 15.00 dB  noise -111 dBm  age 0 s  ok 103 crc 5 rej 0 drop 0
+16:20:02.578  TX-RAW  n=5    BB AA 54 01 00
+16:20:02.578  TX      seq 84  hb
+16:20:02.579  RX-RAW  n=81   AA BB CD 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 BF E0 43 18 D7 5A 46 BD 71 32 2B 17 02 1A 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 B4 24 03 00 01 53 00 A5 FF 3C 01 8E FF 67 00 05 00 00 00
+16:20:02.579  RX      seq 205 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 206004 ms  | boat rx seq 83 type 0x00  rssi -91 dBm  snr 15.00 dB  noise -114 dBm  age 1 s  ok 103 crc 5 rej 0 drop 0
+16:20:03.578  RX-RAW  n=81   AA BB CE 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 CB E0 43 18 E6 5A 46 BD 71 32 2B 17 02 1B 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 9D 28 03 00 01 54 00 A5 FF 3C 00 88 FF 68 00 05 00 00 00
+16:20:03.578  RX      seq 206 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 207005 ms  | boat rx seq 84 type 0x00  rssi -91 dBm  snr 15.00 dB  noise -120 dBm  age 0 s  ok 104 crc 5 rej 0 drop 0
+16:20:03.834  TX-RAW  n=5    BB AA 55 01 00
+16:20:03.834  TX      seq 85  hb
+16:20:04.578  RX-RAW  n=81   AA BB CF 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A2 E0 43 18 D7 5A 46 BD 71 32 2B 17 02 1C 03 FF 0C 03 C9 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 85 2C 03 00 01 55 00 A3 FF 3C 00 8B FF 69 00 05 00 00 00
+16:20:04.578  RX      seq 207 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 208005 ms  | boat rx seq 85 type 0x00  rssi -93 dBm  snr 15.00 dB  noise -117 dBm  age 0 s  ok 105 crc 5 rej 0 drop 0
+16:20:05.089  TX-RAW  n=5    BB AA 56 01 00
+16:20:05.089  TX      seq 86  hb
+16:20:05.578  RX-RAW  n=81   AA BB D0 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 CA E0 43 18 D3 5A 46 BD 71 32 2B 17 02 1D 03 FF 0C 03 CA 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 6D 30 03 00 01 56 00 A4 FF 3C 00 8C FF 6A 00 05 00 00 00
+16:20:05.578  RX      seq 208 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 209005 ms  | boat rx seq 86 type 0x00  rssi -92 dBm  snr 15.00 dB  noise -116 dBm  age 0 s  ok 106 crc 5 rej 0 drop 0
+16:20:06.576  TX-RAW  n=5    BB AA 57 01 00
+16:20:06.576  TX      seq 87  hb
+16:20:06.576  RX-RAW  n=81   AA BB D1 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B4 E0 43 18 DD 5A 46 BD 71 32 2B 17 02 1E 03 FF 0C 03 CB 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 53 34 03 00 01 57 00 A4 FF 3C 00 8E FF 6B 00 05 00 00 00
+16:20:06.576  RX      seq 209 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 210003 ms  | boat rx seq 87 type 0x00  rssi -92 dBm  snr 15.00 dB  noise -114 dBm  age 0 s  ok 107 crc 5 rej 0 drop 0
+16:20:07.578  RX-RAW  n=81   AA BB D2 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 9F E0 43 18 D8 5A 46 BD 71 32 2B 17 02 1F 03 FF 0C 03 C9 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 3D 38 03 00 01 57 00 A4 FF 3C 01 88 FF 6B 00 05 00 00 00
+16:20:07.578  RX      seq 210 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 211005 ms  | boat rx seq 87 type 0x00  rssi -92 dBm  snr 15.00 dB  noise -120 dBm  age 1 s  ok 107 crc 5 rej 0 drop 0
+16:20:07.578  TX-RAW  n=5    BB AA 58 01 00
+16:20:07.578  TX      seq 88  hb
+16:20:08.575  RX-RAW  n=81   AA BB D3 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 9A E0 43 18 B8 5A 46 BD 71 32 2B 17 02 20 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 22 3C 03 00 01 58 00 A2 FF 3C 00 8A FF 6C 00 05 00 00 00
+16:20:08.576  RX      seq 211 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 212002 ms  | boat rx seq 88 type 0x00  rssi -94 dBm  snr 15.00 dB  noise -118 dBm  age 0 s  ok 108 crc 5 rej 0 drop 0
+16:20:08.827  TX-RAW  n=5    BB AA 59 01 00
+16:20:08.827  TX      seq 89  hb
+16:20:09.577  RX-RAW  n=81   AA BB D4 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A5 E0 43 18 BD 5A 46 BD 71 32 2B 17 02 21 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 0C 40 03 00 01 59 00 A0 FF 3C 00 8C FF 6D 00 05 00 00 00
+16:20:09.577  RX      seq 212 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 213004 ms  | boat rx seq 89 type 0x00  rssi -96 dBm  snr 15.00 dB  noise -116 dBm  age 0 s  ok 109 crc 5 rej 0 drop 0
+16:20:09.830  TX-RAW  n=5    BB AA 5A 01 00
+16:20:09.830  TX      seq 90  hb
+16:20:10.578  RX-RAW  n=81   AA BB D5 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A8 E0 43 18 BD 5A 46 BD 71 32 2B 17 02 22 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 F5 43 03 00 01 5A 00 9F FF 3C 00 8B FF 6E 00 05 00 00 00
+16:20:10.578  RX      seq 213 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 214005 ms  | boat rx seq 90 type 0x00  rssi -97 dBm  snr 15.00 dB  noise -117 dBm  age 0 s  ok 110 crc 5 rej 0 drop 0
+16:20:10.831  TX-RAW  n=5    BB AA 5B 01 00
+16:20:10.831  TX      seq 91  hb
+16:20:11.578  RX-RAW  n=81   AA BB D6 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 BA E0 43 18 BF 5A 46 BD 71 32 2B 17 02 23 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 DD 47 03 00 01 5B 00 9E FF 3C 00 8B FF 6F 00 05 00 00 00
+16:20:11.578  RX      seq 214 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 215005 ms  | boat rx seq 91 type 0x00  rssi -98 dBm  snr 15.00 dB  noise -117 dBm  age 0 s  ok 111 crc 5 rej 0 drop 0
+16:20:11.834  TX-RAW  n=5    BB AA 5C 01 00
+16:20:11.834  TX      seq 92  hb
+16:20:12.577  RX-RAW  n=81   AA BB D7 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 95 E0 43 18 EC 5A 46 BD 71 32 2B 17 02 24 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 C4 4B 03 00 01 5C 00 9B FF 3C 00 88 FF 70 00 05 00 00 00
+16:20:12.577  RX      seq 215 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 216004 ms  | boat rx seq 92 type 0x00  rssi -101 dBm  snr 15.00 dB  noise -120 dBm  age 0 s  ok 112 crc 5 rej 0 drop 0
+16:20:13.085  TX-RAW  n=5    BB AA 5D 01 00
+16:20:13.085  TX      seq 93  hb
+16:20:13.577  RX-RAW  n=81   AA BB D8 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 BA E0 43 18 D1 5A 46 BD 71 32 2B 17 02 25 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 AC 4F 03 00 01 5D 00 9B FF 3C 00 8C FF 71 00 05 00 00 00
+16:20:13.577  RX      seq 216 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 217004 ms  | boat rx seq 93 type 0x00  rssi -101 dBm  snr 15.00 dB  noise -116 dBm  age 0 s  ok 113 crc 5 rej 0 drop 0
+16:20:14.578  TX-RAW  n=5    BB AA 5E 01 00
+16:20:14.578  TX      seq 94  hb
+16:20:14.578  RX-RAW  n=81   AA BB D9 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A5 E0 43 18 D6 5A 46 BD 71 32 2B 17 02 26 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 94 53 03 00 01 5E 00 97 FF 30 00 89 FF 72 00 05 00 00 00
+16:20:14.578  RX      seq 217 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 218004 ms  | boat rx seq 94 type 0x00  rssi -105 dBm  snr 12.00 dB  noise -119 dBm  age 0 s  ok 114 crc 5 rej 0 drop 0
+16:20:15.579  RX-RAW  n=81   AA BB DA 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 98 E0 43 18 CC 5A 46 BD 71 32 2B 17 02 27 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 7C 57 03 00 01 5E 00 97 FF 30 00 8E FF 72 00 05 00 00 00
+16:20:15.579  RX      seq 218 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 219004 ms  | boat rx seq 94 type 0x00  rssi -105 dBm  snr 12.00 dB  noise -114 dBm  age 0 s  ok 114 crc 5 rej 0 drop 0
+16:20:15.579  TX-RAW  n=5    BB AA 5F 01 00
+16:20:15.579  TX      seq 95  hb
+16:20:16.580  RX-RAW  n=81   AA BB DB 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 CE E0 43 18 DD 5A 46 BD 71 32 2B 17 02 28 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 64 5B 03 00 01 5F 00 96 FF 2D 00 8E FF 73 00 05 00 00 00
+16:20:16.580  RX      seq 219 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 220004 ms  | boat rx seq 95 type 0x00  rssi -106 dBm  snr 11.25 dB  noise -114 dBm  age 0 s  ok 115 crc 5 rej 0 drop 0
+16:20:16.580  TX-RAW  n=5    BB AA 60 01 00
+16:20:16.580  TX      seq 96  hb
+16:20:17.582  RX-RAW  n=81   AA BB DC 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 BD E0 43 18 B7 5A 46 BD 71 32 2B 17 02 29 03 FF 0C 03 C9 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 4D 5F 03 00 01 60 00 96 FF 2B 01 95 FF 74 00 05 00 00 00
+16:20:17.582  RX      seq 220 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 221005 ms  | boat rx seq 96 type 0x00  rssi -106 dBm  snr 10.75 dB  noise -107 dBm  age 1 s  ok 116 crc 5 rej 0 drop 0
+16:20:17.582  TX-RAW  n=5    BB AA 61 01 00
+16:20:17.582  TX      seq 97  hb
+16:20:18.581  RX-RAW  n=81   AA BB DD 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 AF E0 43 18 D6 5A 46 BD 71 32 2B 17 02 2A 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 33 63 03 00 01 61 00 94 FF 22 00 8C FF 75 00 05 00 00 00
+16:20:18.581  RX      seq 221 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 222003 ms  | boat rx seq 97 type 0x00  rssi -108 dBm  snr 8.50 dB  noise -116 dBm  age 0 s  ok 117 crc 5 rej 0 drop 0
+16:20:18.836  TX-RAW  n=5    BB AA 62 01 00
+16:20:18.836  TX      seq 98  hb
+16:20:19.583  RX-RAW  n=81   AA BB DE 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C2 E0 43 18 DA 5A 46 BD 71 32 2B 17 02 2B 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 1D 67 03 00 01 62 00 92 FF 1C 00 88 FF 76 00 05 00 00 00
+16:20:19.584  RX      seq 222 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 223005 ms  | boat rx seq 98 type 0x00  rssi -110 dBm  snr 7.00 dB  noise -120 dBm  age 0 s  ok 118 crc 5 rej 0 drop 0
+16:20:19.840  TX-RAW  n=5    BB AA 63 01 00
+16:20:19.840  TX      seq 99  hb
+16:20:20.584  RX-RAW  n=81   AA BB DF 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C8 E0 43 18 BA 5A 46 BD 71 32 2B 17 02 2C 03 FF 0C 03 C4 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 05 6B 03 00 01 62 00 92 FF 1C 01 8B FF 76 00 06 00 00 00
+16:20:20.584  RX      seq 223 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 224005 ms  | boat rx seq 98 type 0x00  rssi -110 dBm  snr 7.00 dB  noise -117 dBm  age 1 s  ok 118 crc 6 rej 0 drop 0
+16:20:21.092  TX-RAW  n=5    BB AA 64 01 00
+16:20:21.092  TX      seq 100 hb
+16:20:21.584  RX-RAW  n=81   AA BB E0 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 97 E0 43 18 B7 5A 46 BD 71 32 2B 17 02 2D 03 FF 0C 03 C3 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 EC 6E 03 00 01 64 00 8D FF 07 00 94 FF 77 00 06 00 00 00
+16:20:21.584  RX      seq 224 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 225004 ms  | boat rx seq 100 type 0x00  rssi -115 dBm  snr 1.75 dB  noise -108 dBm  age 0 s  ok 119 crc 6 rej 0 drop 0
+16:20:22.096  TX-RAW  n=5    BB AA 65 01 00
+16:20:22.096  TX      seq 101 hb
+16:20:22.586  RX-RAW  n=81   AA BB E1 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 CB E0 43 18 E4 5A 46 BD 71 32 2B 17 02 2E 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 D5 72 03 00 01 64 00 8D FF 07 01 8A FF 77 00 06 00 00 00
+16:20:22.586  RX      seq 225 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 226005 ms  | boat rx seq 100 type 0x00  rssi -115 dBm  snr 1.75 dB  noise -118 dBm  age 1 s  ok 119 crc 6 rej 0 drop 0
+16:20:23.588  TX-RAW  n=5    BB AA 66 01 00
+16:20:23.588  TX      seq 102 hb
+16:20:23.588  RX-RAW  n=81   AA BB E2 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C6 E0 43 18 EC 5A 46 BD 71 32 2B 17 02 2F 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 BC 76 03 00 01 64 00 8D FF 07 02 93 FF 77 00 06 00 00 00
+16:20:23.588  RX      seq 226 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 227004 ms  | boat rx seq 100 type 0x00  rssi -115 dBm  snr 1.75 dB  noise -109 dBm  age 2 s  ok 119 crc 6 rej 0 drop 0
+16:20:24.587  RX-RAW  n=81   AA BB E3 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 D0 E0 43 18 E0 5A 46 BD 71 32 2B 17 02 30 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 A5 7A 03 00 01 66 00 88 FF F6 00 8C FF 78 00 06 00 00 00
+16:20:24.587  RX      seq 227 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 228005 ms  | boat rx seq 102 type 0x00  rssi -120 dBm  snr -2.50 dB  noise -116 dBm  age 0 s  ok 120 crc 6 rej 0 drop 0
+16:20:24.843  TX-RAW  n=5    BB AA 67 01 00
+16:20:24.843  TX      seq 103 hb
+16:20:25.587  RX-RAW  n=81   AA BB E4 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 BF E0 43 18 B6 5A 46 BD 71 32 2B 17 02 31 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 8D 7E 03 00 01 67 00 85 FF EA 00 8D FF 79 00 06 00 00 00
+16:20:25.588  RX      seq 228 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 229005 ms  | boat rx seq 103 type 0x00  rssi -123 dBm  snr -5.50 dB  noise -115 dBm  age 0 s  ok 121 crc 6 rej 0 drop 0
+16:20:25.843  TX-RAW  n=5    BB AA 68 01 00
+16:20:25.843  TX      seq 104 hb
+16:20:26.588  RX-RAW  n=81   AA BB E5 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A1 E0 43 18 D7 5A 46 BD 71 32 2B 17 02 32 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 75 82 03 00 01 68 00 88 FF F2 00 8C FF 7A 00 06 00 00 00
+16:20:26.588  RX      seq 229 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 230005 ms  | boat rx seq 104 type 0x00  rssi -120 dBm  snr -3.50 dB  noise -116 dBm  age 0 s  ok 122 crc 6 rej 0 drop 0
+16:20:26.844  TX-RAW  n=5    BB AA 69 01 00
+16:20:26.844  TX      seq 105 hb
+16:20:27.588  RX-RAW  n=81   AA BB E6 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A0 E0 43 18 C8 5A 46 BD 71 32 2B 17 02 33 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 5D 86 03 00 01 69 00 85 FF E7 00 8C FF 7B 00 06 00 00 00
+16:20:27.589  RX      seq 230 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 231005 ms  | boat rx seq 105 type 0x00  rssi -123 dBm  snr -6.25 dB  noise -116 dBm  age 0 s  ok 123 crc 6 rej 0 drop 0
+16:20:27.844  TX-RAW  n=5    BB AA 6A 01 00
+16:20:27.845  TX      seq 106 hb
+16:20:28.588  RX-RAW  n=81   AA BB E7 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 98 E0 43 18 D1 5A 46 BD 71 32 2B 17 02 34 03 FF 0C 03 C4 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 44 8A 03 00 01 6A 00 84 FF E2 00 8E FF 7C 00 06 00 00 00
+16:20:28.588  RX      seq 231 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 232004 ms  | boat rx seq 106 type 0x00  rssi -124 dBm  snr -7.50 dB  noise -114 dBm  age 0 s  ok 124 crc 6 rej 0 drop 0
+16:20:29.094  TX-RAW  n=5    BB AA 6B 01 00
+16:20:29.094  TX      seq 107 hb
+16:20:29.589  RX-RAW  n=81   AA BB E8 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 94 E0 43 18 DB 5A 46 BD 71 32 2B 17 02 35 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 2D 8E 03 00 01 6B 00 83 FF E0 00 8E FF 7D 00 06 00 00 00
+16:20:29.589  RX      seq 232 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 233005 ms  | boat rx seq 107 type 0x00  rssi -125 dBm  snr -8.00 dB  noise -114 dBm  age 0 s  ok 125 crc 6 rej 0 drop 0
+16:20:30.589  TX-RAW  n=5    BB AA 6C 01 00
+16:20:30.589  TX      seq 108 hb
+16:20:30.590  RX-RAW  n=81   AA BB E9 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C5 E0 43 18 BD 5A 46 BD 71 32 2B 17 02 36 03 FF 0C 03 C4 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 14 92 03 00 01 6B 00 83 FF E0 01 8B FF 7D 00 06 00 00 00
+16:20:30.590  RX      seq 233 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 234004 ms  | boat rx seq 107 type 0x00  rssi -125 dBm  snr -8.00 dB  noise -117 dBm  age 1 s  ok 125 crc 6 rej 0 drop 0
+16:20:31.590  RX-RAW  n=81   AA BB EA 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A5 E0 43 18 E5 5A 46 BD 71 32 2B 17 02 37 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 FD 95 03 00 01 6B 00 83 FF E0 02 88 FF 7D 00 06 00 00 00
+16:20:31.590  RX      seq 234 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 235005 ms  | boat rx seq 107 type 0x00  rssi -125 dBm  snr -8.00 dB  noise -120 dBm  age 2 s  ok 125 crc 6 rej 0 drop 0
+16:20:31.590  TX-RAW  n=5    BB AA 6D 01 00
+16:20:31.590  TX      seq 109 hb
+16:20:32.589  RX-RAW  n=81   AA BB EB 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 9A E0 43 18 DD 5A 46 BD 71 32 2B 17 02 38 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 E4 99 03 00 01 6D 00 83 FF DE 00 8E FF 7E 00 06 00 00 00
+16:20:32.590  RX      seq 235 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 236004 ms  | boat rx seq 109 type 0x00  rssi -125 dBm  snr -8.50 dB  noise -114 dBm  age 0 s  ok 126 crc 6 rej 0 drop 0
+16:20:32.845  TX-RAW  n=5    BB AA 6E 01 00
+16:20:32.845  TX      seq 110 hb
+16:20:33.591  RX-RAW  n=81   AA BB EC 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 BB E0 43 18 C5 5A 46 BD 71 32 2B 17 02 39 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 CD 9D 03 00 01 6E 00 84 FF E5 00 8B FF 7F 00 06 00 00 00
+16:20:33.591  RX      seq 236 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 237005 ms  | boat rx seq 110 type 0x00  rssi -124 dBm  snr -6.75 dB  noise -117 dBm  age 0 s  ok 127 crc 6 rej 0 drop 0
+16:20:33.847  TX-RAW  n=5    BB AA 6F 01 00
+16:20:33.847  TX      seq 111 hb
+16:20:34.591  RX-RAW  n=81   AA BB ED 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B5 E0 43 18 CF 5A 46 BD 71 32 2B 17 02 3A 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 B5 A1 03 00 01 6E 00 84 FF E5 01 8C FF 7F 00 06 00 00 00
+16:20:34.591  RX      seq 237 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 238005 ms  | boat rx seq 110 type 0x00  rssi -124 dBm  snr -6.75 dB  noise -116 dBm  age 1 s  ok 127 crc 6 rej 0 drop 0
+16:20:35.101  TX-RAW  n=5    BB AA 70 01 00
+16:20:35.101  TX      seq 112 hb
+16:20:35.591  RX-RAW  n=81   AA BB EE 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 AF E0 43 18 F2 5A 46 BD 71 32 2B 17 02 3B 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 9D A5 03 00 01 70 00 83 FF E1 00 89 FF 80 00 06 00 00 00
+16:20:35.592  RX      seq 238 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 239005 ms  | boat rx seq 112 type 0x00  rssi -125 dBm  snr -7.75 dB  noise -119 dBm  age 0 s  ok 128 crc 6 rej 0 drop 0
+16:20:36.101  TX-RAW  n=5    BB AA 71 01 00
+16:20:36.101  TX      seq 113 hb
+16:20:36.588  RX-RAW  n=81   AA BB EF 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C8 E0 43 18 E6 5A 46 BD 71 32 2B 17 02 00 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 81 A9 03 00 01 70 00 83 FF E1 01 8E FF 80 00 07 00 00 00
+16:20:36.588  RX      seq 239 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 240001 ms  | boat rx seq 112 type 0x00  rssi -125 dBm  snr -7.75 dB  noise -114 dBm  age 1 s  ok 128 crc 7 rej 0 drop 0
+16:20:37.589  TX-RAW  n=5    BB AA 72 01 00
+16:20:37.589  TX      seq 114 hb
+16:20:37.589  RX-RAW  n=81   AA BB F0 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B9 E0 43 18 CB 5A 46 BD 71 32 2B 17 02 01 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 6A AD 03 00 01 70 00 83 FF E1 02 8D FF 80 00 07 00 00 00
+16:20:37.589  RX      seq 240 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 241002 ms  | boat rx seq 112 type 0x00  rssi -125 dBm  snr -7.75 dB  noise -115 dBm  age 2 s  ok 128 crc 7 rej 0 drop 0
+16:20:38.592  RX-RAW  n=81   AA BB F1 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C8 E0 43 18 B9 5A 46 BD 71 32 2B 17 02 02 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 55 B1 03 00 01 72 00 84 FF E3 01 8B FF 81 00 07 00 00 00
+16:20:38.592  RX      seq 241 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 242005 ms  | boat rx seq 114 type 0x00  rssi -124 dBm  snr -7.25 dB  noise -117 dBm  age 1 s  ok 129 crc 7 rej 0 drop 0
+16:20:38.592  TX-RAW  n=5    BB AA 73 01 00
+16:20:38.592  TX      seq 115 hb
+16:20:39.592  RX-RAW  n=81   AA BB F2 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C0 E0 43 18 BA 5A 46 BD 71 32 2B 17 02 03 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 3D B5 03 00 01 73 00 88 FF F3 00 8B FF 82 00 07 00 00 00
+16:20:39.593  RX      seq 242 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 243005 ms  | boat rx seq 115 type 0x00  rssi -120 dBm  snr -3.25 dB  noise -117 dBm  age 0 s  ok 130 crc 7 rej 0 drop 0
+16:20:39.593  TX-RAW  n=5    BB AA 74 01 00
+16:20:39.593  TX      seq 116 hb
+16:20:40.592  RX-RAW  n=81   AA BB F3 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A8 E0 43 18 DA 5A 46 BD 71 32 2B 17 02 04 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 24 B9 03 00 01 74 00 89 FF F6 00 8D FF 83 00 07 00 00 00
+16:20:40.592  RX      seq 243 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 244004 ms  | boat rx seq 116 type 0x00  rssi -119 dBm  snr -2.50 dB  noise -115 dBm  age 0 s  ok 131 crc 7 rej 0 drop 0
+16:20:40.847  TX-RAW  n=5    BB AA 75 01 00
+16:20:40.848  TX      seq 117 hb
+16:20:41.593  RX-RAW  n=81   AA BB F4 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A8 E0 43 18 D0 5A 46 BD 71 32 2B 17 02 05 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 0D BD 03 00 01 75 00 8B FF 00 00 90 FF 84 00 07 00 00 00
+16:20:41.593  RX      seq 244 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 245005 ms  | boat rx seq 117 type 0x00  rssi -117 dBm  snr 0.00 dB  noise -112 dBm  age 0 s  ok 132 crc 7 rej 0 drop 0
+16:20:42.101  TX-RAW  n=5    BB AA 76 01 00
+16:20:42.101  TX      seq 118 hb
+16:20:42.591  RX-RAW  n=81   AA BB F5 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C3 E0 43 18 E0 5A 46 BD 71 32 2B 17 02 06 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 F2 C0 03 00 01 76 00 89 FF F9 00 89 FF 85 00 07 00 00 00
+16:20:42.591  RX      seq 245 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 246002 ms  | boat rx seq 118 type 0x00  rssi -119 dBm  snr -1.75 dB  noise -119 dBm  age 0 s  ok 133 crc 7 rej 0 drop 0
+16:20:43.593  TX-RAW  n=5    BB AA 77 01 00
+16:20:43.593  TX      seq 119 hb
+16:20:43.594  RX-RAW  n=81   AA BB F6 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C6 E0 43 18 BD 5A 46 BD 71 32 2B 17 02 07 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 DD C4 03 00 01 76 00 89 FF F9 01 8D FF 85 00 07 00 00 00
+16:20:43.594  RX      seq 246 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 247005 ms  | boat rx seq 118 type 0x00  rssi -119 dBm  snr -1.75 dB  noise -115 dBm  age 1 s  ok 133 crc 7 rej 0 drop 0
+16:20:44.590  RX-RAW  n=81   AA BB F7 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C1 E0 43 18 C2 5A 46 BD 71 32 2B 17 02 08 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 C1 C8 03 00 01 77 00 8E FF 0B 00 8D FF 86 00 07 00 00 00
+16:20:44.590  RX      seq 247 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 248001 ms  | boat rx seq 119 type 0x00  rssi -114 dBm  snr 2.75 dB  noise -115 dBm  age 0 s  ok 134 crc 7 rej 0 drop 0
+16:20:44.842  TX-RAW  n=5    BB AA 78 01 00
+16:20:44.842  TX      seq 120 hb
+16:20:45.592  RX-RAW  n=81   AA BB F8 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 BB E0 43 18 EC 5A 46 BD 71 32 2B 17 02 09 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 AC CC 03 00 01 78 00 8F FF 11 00 8C FF 87 00 07 00 00 00
+16:20:45.593  RX      seq 248 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 249004 ms  | boat rx seq 120 type 0x00  rssi -113 dBm  snr 4.25 dB  noise -116 dBm  age 0 s  ok 135 crc 7 rej 0 drop 0
+16:20:45.844  TX-RAW  n=5    BB AA 79 01 00
+16:20:45.844  TX      seq 121 hb
+16:20:46.592  RX-RAW  n=81   AA BB F9 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 AA E0 43 18 C7 5A 46 BD 71 32 2B 17 02 0A 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 94 D0 03 00 01 79 00 90 FF 13 00 8A FF 88 00 07 00 00 00
+16:20:46.592  RX      seq 249 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 250004 ms  | boat rx seq 121 type 0x00  rssi -112 dBm  snr 4.75 dB  noise -118 dBm  age 0 s  ok 136 crc 7 rej 0 drop 0
+16:20:46.847  TX-RAW  n=5    BB AA 7A 01 00
+16:20:46.847  TX      seq 122 hb
+16:20:47.594  RX-RAW  n=81   AA BB FA 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 AC E0 43 18 D8 5A 46 BD 71 32 2B 17 02 0B 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 7D D4 03 00 01 7A 00 91 FF 19 00 8D FF 89 00 07 00 00 00
+16:20:47.594  RX      seq 250 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 251005 ms  | boat rx seq 122 type 0x00  rssi -111 dBm  snr 6.25 dB  noise -115 dBm  age 0 s  ok 137 crc 7 rej 0 drop 0
+16:20:47.849  TX-RAW  n=5    BB AA 7B 01 00
+16:20:47.849  TX      seq 123 hb
+16:20:48.594  RX-RAW  n=81   AA BB FB 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 AF E0 43 18 ED 5A 46 BD 71 32 2B 17 02 0C 03 FF 0C 03 C4 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 65 D8 03 00 01 7A 00 91 FF 19 01 8D FF 89 00 07 00 00 00
+16:20:48.594  RX      seq 251 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 252005 ms  | boat rx seq 122 type 0x00  rssi -111 dBm  snr 6.25 dB  noise -115 dBm  age 1 s  ok 137 crc 7 rej 0 drop 0
+16:20:48.850  TX-RAW  n=5    BB AA 7C 01 00
+16:20:48.850  TX      seq 124 hb
+16:20:49.594  RX-RAW  n=81   AA BB FC 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 AF E0 43 18 BA 5A 46 BD 71 32 2B 17 02 0D 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 4D DC 03 00 01 7C 00 95 FF 28 00 8A FF 8A 00 07 00 00 00
+16:20:49.594  RX      seq 252 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 253005 ms  | boat rx seq 124 type 0x00  rssi -107 dBm  snr 10.00 dB  noise -118 dBm  age 0 s  ok 138 crc 7 rej 0 drop 0
+16:20:50.100  TX-RAW  n=5    BB AA 7D 01 00
+16:20:50.101  TX      seq 125 hb
+16:20:50.594  RX-RAW  n=81   AA BB FD 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 9E E0 43 18 F0 5A 46 BD 71 32 2B 17 02 0E 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 35 E0 03 00 01 7D 00 96 FF 2D 00 8A FF 8B 00 07 00 00 00
+16:20:50.594  RX      seq 253 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 254005 ms  | boat rx seq 125 type 0x00  rssi -106 dBm  snr 11.25 dB  noise -118 dBm  age 0 s  ok 139 crc 7 rej 0 drop 0
+16:20:51.102  TX-RAW  n=5    BB AA 7E 01 00
+16:20:51.102  TX      seq 126 hb
+16:20:51.594  RX-RAW  n=81   AA BB FE 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 97 E0 43 18 BE 5A 46 BD 71 32 2B 17 02 0F 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 1D E4 03 00 01 7E 00 98 FF 34 00 88 FF 8C 00 07 00 00 00
+16:20:51.594  RX      seq 254 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 255005 ms  | boat rx seq 126 type 0x00  rssi -104 dBm  snr 13.00 dB  noise -120 dBm  age 0 s  ok 140 crc 7 rej 0 drop 0
+16:20:52.105  TX-RAW  n=5    BB AA 7F 01 00
+16:20:52.106  TX      seq 127 hb
+16:20:52.593  RX-RAW  n=81   AA BB FF 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B8 E0 43 18 CF 5A 46 BD 71 32 2B 17 02 10 03 FF 0C 03 C4 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 04 E8 03 00 01 7F 00 9B FF 3C 00 8E FF 8D 00 07 00 00 00
+16:20:52.593  RX      seq 255 lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 256004 ms  | boat rx seq 127 type 0x00  rssi -101 dBm  snr 15.00 dB  noise -114 dBm  age 0 s  ok 141 crc 7 rej 0 drop 0
+16:20:53.591  TX-RAW  n=5    BB AA 80 01 00
+16:20:53.591  TX      seq 128 hb
+16:20:53.591  RX-RAW  n=81   AA BB 00 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A1 E0 43 18 DB 5A 46 BD 71 32 2B 17 02 11 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 E8 EB 03 00 01 7F 00 9B FF 3C 01 89 FF 8D 00 07 00 00 00
+16:20:53.591  RX      seq 0   lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 257000 ms  | boat rx seq 127 type 0x00  rssi -101 dBm  snr 15.00 dB  noise -119 dBm  age 1 s  ok 141 crc 7 rej 0 drop 0
+16:20:54.593  RX-RAW  n=81   AA BB 01 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 BA E0 43 18 D1 5A 46 BD 71 32 2B 17 02 12 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 D4 EF 03 00 01 80 00 9E FF 3C 01 8E FF 8E 00 07 00 00 00
+16:20:54.594  RX      seq 1   lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 258004 ms  | boat rx seq 128 type 0x00  rssi -98 dBm  snr 15.00 dB  noise -114 dBm  age 1 s  ok 142 crc 7 rej 0 drop 0
+16:20:54.594  TX-RAW  n=5    BB AA 81 01 00
+16:20:54.594  TX      seq 129 hb
+16:20:55.595  RX-RAW  n=81   AA BB 02 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 99 E0 43 18 DB 5A 46 BD 71 32 2B 17 02 13 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 BD F3 03 00 01 81 00 9F FF 3C 01 8B FF 8F 00 07 00 00 00
+16:20:55.595  RX      seq 2   lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 259005 ms  | boat rx seq 129 type 0x00  rssi -97 dBm  snr 15.00 dB  noise -117 dBm  age 1 s  ok 143 crc 7 rej 0 drop 0
+16:20:55.595  TX-RAW  n=5    BB AA 82 01 00
+16:20:55.595  TX      seq 130 hb
+16:20:56.595  RX-RAW  n=81   AA BB 03 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 AC E0 43 18 E0 5A 46 BD 71 32 2B 17 02 14 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 A5 F7 03 00 01 82 00 A0 FF 3C 00 8C FF 90 00 07 00 00 00
+16:20:56.595  RX      seq 3   lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 260005 ms  | boat rx seq 130 type 0x00  rssi -96 dBm  snr 15.00 dB  noise -116 dBm  age 0 s  ok 144 crc 7 rej 0 drop 0
+16:20:56.595  TX-RAW  n=5    BB AA 83 01 00
+16:20:56.595  TX      seq 131 hb
+16:20:57.595  RX-RAW  n=81   AA BB 04 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A3 E0 43 18 EC 5A 46 BD 71 32 2B 17 02 15 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 8D FB 03 00 01 83 00 A0 FF 3C 00 8A FF 91 00 07 00 00 00
+16:20:57.595  RX      seq 4   lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 261005 ms  | boat rx seq 131 type 0x00  rssi -96 dBm  snr 15.00 dB  noise -118 dBm  age 0 s  ok 145 crc 7 rej 0 drop 0
+16:20:57.850  TX-RAW  n=5    BB AA 84 01 00
+16:20:57.851  TX      seq 132 hb
+16:20:58.594  RX-RAW  n=81   AA BB 05 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B0 E0 43 18 EC 5A 46 BD 71 32 2B 17 02 16 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 74 FF 03 00 01 84 00 A3 FF 3C 00 8D FF 92 00 07 00 00 00
+16:20:58.594  RX      seq 5   lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 262004 ms  | boat rx seq 132 type 0x00  rssi -93 dBm  snr 15.00 dB  noise -115 dBm  age 0 s  ok 146 crc 7 rej 0 drop 0
+16:20:59.105  TX-RAW  n=5    BB AA 85 01 00
+16:20:59.105  TX      seq 133 hb
+16:20:59.591  RX-RAW  n=81   AA BB 06 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 CA E0 43 18 B9 5A 46 BD 71 32 2B 17 02 17 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 59 03 04 00 01 85 00 A3 FF 3C 00 89 FF 93 00 07 00 00 00
+16:20:59.591  RX      seq 6   lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 263001 ms  | boat rx seq 133 type 0x00  rssi -93 dBm  snr 15.00 dB  noise -119 dBm  age 0 s  ok 147 crc 7 rej 0 drop 0
+16:21:00.594  TX-RAW  n=5    BB AA 86 01 00
+16:21:00.594  TX      seq 134 hb
+16:21:00.594  RX-RAW  n=81   AA BB 07 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A2 E0 43 18 EB 5A 46 BD 71 32 2B 17 02 18 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 44 07 04 00 01 86 00 A4 FF 3C 00 8C FF 94 00 07 00 00 00
+16:21:00.594  RX      seq 7   lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 264004 ms  | boat rx seq 134 type 0x00  rssi -92 dBm  snr 15.00 dB  noise -116 dBm  age 0 s  ok 148 crc 7 rej 0 drop 0
+16:21:01.595  RX-RAW  n=81   AA BB 08 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 CE E0 43 18 BC 5A 46 BD 71 32 2B 17 02 19 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 2D 0B 04 00 01 86 00 A4 FF 3C 01 8C FF 94 00 07 00 00 00
+16:21:01.595  RX      seq 8   lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 265005 ms  | boat rx seq 134 type 0x00  rssi -92 dBm  snr 15.00 dB  noise -116 dBm  age 1 s  ok 148 crc 7 rej 0 drop 0
+16:21:01.595  TX-RAW  n=5    BB AA 87 01 00
+16:21:01.595  TX      seq 135 hb
+16:21:02.593  RX-RAW  n=81   AA BB 09 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 95 E0 43 18 B7 5A 46 BD 71 32 2B 17 02 1A 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 12 0F 04 00 01 87 00 A3 FF 3C 00 8D FF 95 00 07 00 00 00
+16:21:02.593  RX      seq 9   lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 266002 ms  | boat rx seq 135 type 0x00  rssi -93 dBm  snr 15.00 dB  noise -115 dBm  age 0 s  ok 149 crc 7 rej 0 drop 0
+16:21:02.848  TX-RAW  n=5    BB AA 88 01 00
+16:21:02.849  TX      seq 136 hb
+16:21:03.594  RX-RAW  n=81   AA BB 0A 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C5 E0 43 18 CC 5A 46 BD 71 32 2B 17 02 1B 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 FC 12 04 00 01 88 00 A6 FF 3C 00 8A FF 96 00 07 00 00 00
+16:21:03.594  RX      seq 10  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 267004 ms  | boat rx seq 136 type 0x00  rssi -90 dBm  snr 15.00 dB  noise -118 dBm  age 0 s  ok 150 crc 7 rej 0 drop 0
+16:21:03.850  TX-RAW  n=5    BB AA 89 01 00
+16:21:03.850  TX      seq 137 hb
+16:21:04.594  RX-RAW  n=81   AA BB 0B 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 9A E0 43 18 C5 5A 46 BD 71 32 2B 17 02 1C 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 E4 16 04 00 01 89 00 A5 FF 3C 00 8C FF 97 00 07 00 00 00
+16:21:04.594  RX      seq 11  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 268004 ms  | boat rx seq 137 type 0x00  rssi -91 dBm  snr 15.00 dB  noise -116 dBm  age 0 s  ok 151 crc 7 rej 0 drop 0
+16:21:05.102  TX-RAW  n=5    BB AA 8A 01 00
+16:21:05.102  TX      seq 138 hb
+16:21:05.594  RX-RAW  n=81   AA BB 0C 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A4 E0 43 18 E6 5A 46 BD 71 32 2B 17 02 1D 03 FF 0C 03 C4 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 CC 1A 04 00 01 8A 00 A4 FF 3C 00 8D FF 98 00 07 00 00 00
+16:21:05.594  RX      seq 12  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 269004 ms  | boat rx seq 138 type 0x00  rssi -92 dBm  snr 15.00 dB  noise -115 dBm  age 0 s  ok 152 crc 7 rej 0 drop 0
+16:21:06.596  TX-RAW  n=5    BB AA 8B 01 00
+16:21:06.597  TX      seq 139 hb
+16:21:06.597  RX-RAW  n=81   AA BB 0D 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 BE E0 43 18 CE 5A 46 BD 71 32 2B 17 02 1E 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 B5 1E 04 00 01 8A 00 A4 FF 3C 01 8B FF 98 00 07 00 00 00
+16:21:06.597  RX      seq 13  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 270005 ms  | boat rx seq 138 type 0x00  rssi -92 dBm  snr 15.00 dB  noise -117 dBm  age 1 s  ok 152 crc 7 rej 0 drop 0
+16:21:07.594  RX-RAW  n=81   AA BB 0E 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 BE E0 43 18 C0 5A 46 BD 71 32 2B 17 02 1F 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 9C 22 04 00 01 8B 00 A4 FF 3C 00 8E FF 99 00 07 00 00 00
+16:21:07.595  RX      seq 14  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 271004 ms  | boat rx seq 139 type 0x00  rssi -92 dBm  snr 15.00 dB  noise -114 dBm  age 0 s  ok 153 crc 7 rej 0 drop 0
+16:21:07.850  TX-RAW  n=5    BB AA 8C 01 00
+16:21:07.851  TX      seq 140 hb
+16:21:08.595  RX-RAW  n=81   AA BB 0F 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C2 E0 43 18 EE 5A 46 BD 71 32 2B 17 02 20 03 FF 0C 03 C4 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 85 26 04 00 01 8C 00 A4 FF 3C 00 8E FF 9A 00 07 00 00 00
+16:21:08.595  RX      seq 15  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 272005 ms  | boat rx seq 140 type 0x00  rssi -92 dBm  snr 15.00 dB  noise -114 dBm  age 0 s  ok 154 crc 7 rej 0 drop 0
+16:21:08.851  TX-RAW  n=5    BB AA 8D 01 00
+16:21:08.851  TX      seq 141 hb
+16:21:09.598  RX-RAW  n=81   AA BB 10 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A3 E0 43 18 DE 5A 46 BD 71 32 2B 17 02 21 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 6F 2A 04 00 01 8D 00 A3 FF 3C 00 8B FF 9B 00 07 00 00 00
+16:21:09.598  RX      seq 16  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 273007 ms  | boat rx seq 141 type 0x00  rssi -93 dBm  snr 15.00 dB  noise -117 dBm  age 0 s  ok 155 crc 7 rej 0 drop 0
+16:21:09.867  TX-RAW  n=5    BB AA 8E 01 00
+16:21:09.877  TX      seq 142 hb
+16:21:10.595  RX-RAW  n=81   AA BB 11 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A2 E0 43 18 BD 5A 46 BD 71 32 2B 17 02 22 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 55 2E 04 00 01 8E 00 A2 FF 3C 00 8D FF 9C 00 07 00 00 00
+16:21:10.595  RX      seq 17  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 274005 ms  | boat rx seq 142 type 0x00  rssi -94 dBm  snr 15.00 dB  noise -115 dBm  age 0 s  ok 156 crc 7 rej 0 drop 0
+16:21:11.103  TX-RAW  n=5    BB AA 8F 01 00
+16:21:11.103  TX      seq 143 hb
+16:21:11.591  RX-RAW  n=81   AA BB 12 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 BD E0 43 18 EB 5A 46 BD 71 32 2B 17 02 23 03 FF 0C 03 C4 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 38 32 04 00 01 8F 00 A1 FF 3C 00 88 FF 9D 00 07 00 00 00
+16:21:11.591  RX      seq 18  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 275000 ms  | boat rx seq 143 type 0x00  rssi -95 dBm  snr 15.00 dB  noise -120 dBm  age 0 s  ok 157 crc 7 rej 0 drop 0
+16:21:12.591  TX-RAW  n=5    BB AA 90 01 00
+16:21:12.591  TX      seq 144 hb
+16:21:12.591  RX-RAW  n=81   AA BB 13 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A9 E0 43 18 EC 5A 46 BD 71 32 2B 17 02 24 03 FF 0C 03 C3 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 20 36 04 00 01 90 00 9F FF 3C 00 8B FF 9E 00 07 00 00 00
+16:21:12.592  RX      seq 19  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 276000 ms  | boat rx seq 144 type 0x00  rssi -97 dBm  snr 15.00 dB  noise -117 dBm  age 0 s  ok 158 crc 7 rej 0 drop 0
+16:21:13.592  RX-RAW  n=81   AA BB 14 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 9A E0 43 18 EF 5A 46 BD 71 32 2B 17 02 25 03 FF 0C 03 C5 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 0A 3A 04 00 01 90 00 9F FF 3C 01 8A FF 9E 00 07 00 00 00
+16:21:13.593  RX      seq 20  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 277002 ms  | boat rx seq 144 type 0x00  rssi -97 dBm  snr 15.00 dB  noise -118 dBm  age 1 s  ok 158 crc 7 rej 0 drop 0
+16:21:13.593  TX-RAW  n=5    BB AA 91 01 00
+16:21:13.593  TX      seq 145 hb
+16:21:14.595  RX-RAW  n=81   AA BB 15 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 AA E0 43 18 EE 5A 46 BD 71 32 2B 17 02 26 03 FF 0C 03 C4 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 F5 3D 04 00 01 91 00 9C FF 3C 01 90 FF 9F 00 07 00 00 00
+16:21:14.596  RX      seq 21  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 278005 ms  | boat rx seq 145 type 0x00  rssi -100 dBm  snr 15.00 dB  noise -112 dBm  age 1 s  ok 159 crc 7 rej 0 drop 0
+16:21:14.596  TX-RAW  n=5    BB AA 92 01 00
+16:21:14.596  TX      seq 146 hb
+16:21:15.595  RX-RAW  n=81   AA BB 16 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 AF E0 43 18 BC 5A 46 BD 71 32 2B 17 02 27 03 FF 0C 03 C3 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 DC 41 04 00 01 92 00 9E FF 3C 00 8D FF A0 00 07 00 00 00
+16:21:15.595  RX      seq 22  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 279004 ms  | boat rx seq 146 type 0x00  rssi -98 dBm  snr 15.00 dB  noise -115 dBm  age 0 s  ok 160 crc 7 rej 0 drop 0
+16:21:15.847  TX-RAW  n=5    BB AA 93 01 00
+16:21:15.847  TX      seq 147 hb
+16:21:16.592  RX-RAW  n=81   AA BB 17 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B2 E0 43 18 EB 5A 46 BD 71 32 2B 17 02 28 03 FF 0C 03 C2 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 C1 45 04 00 01 93 00 98 FF 35 00 8E FF A1 00 07 00 00 00
+16:21:16.592  RX      seq 23  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 280001 ms  | boat rx seq 147 type 0x00  rssi -104 dBm  snr 13.25 dB  noise -114 dBm  age 0 s  ok 161 crc 7 rej 0 drop 0
+16:21:17.094  TX-RAW  n=5    BB AA 94 01 00
+16:21:17.094  TX      seq 148 hb
+16:21:17.595  RX-RAW  n=81   AA BB 18 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 CC E0 43 18 CB 5A 46 BD 71 32 2B 17 02 29 03 FF 0C 03 C4 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 AC 49 04 00 01 94 00 97 FF 30 00 8B FF A2 00 07 00 00 00
+16:21:17.596  RX      seq 24  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 281004 ms  | boat rx seq 148 type 0x00  rssi -105 dBm  snr 12.00 dB  noise -117 dBm  age 0 s  ok 162 crc 7 rej 0 drop 0
+16:21:18.100  TX-RAW  n=5    BB AA 95 01 00
+16:21:18.100  TX      seq 149 hb
+16:21:18.596  RX-RAW  n=81   AA BB 19 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B2 E0 43 18 F1 5A 46 BD 71 32 2B 17 02 2A 03 FF 0C 03 C6 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 95 4D 04 00 01 95 00 94 FF 25 00 88 FF A3 00 07 00 00 00
+16:21:18.596  RX      seq 25  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 282005 ms  | boat rx seq 149 type 0x00  rssi -108 dBm  snr 9.25 dB  noise -120 dBm  age 0 s  ok 163 crc 7 rej 0 drop 0
+16:21:19.103  TX-RAW  n=5    BB AA 96 01 00
+16:21:19.103  TX      seq 150 hb
+16:21:19.596  RX-RAW  n=81   AA BB 1A 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 AD E0 43 18 C1 5A 46 BD 71 32 2B 17 02 2B 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 7D 51 04 00 01 96 00 93 FF 1F 00 8A FF A4 00 07 00 00 00
+16:21:19.596  RX      seq 26  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 283005 ms  | boat rx seq 150 type 0x00  rssi -109 dBm  snr 7.75 dB  noise -118 dBm  age 0 s  ok 164 crc 7 rej 0 drop 0
+16:21:20.594  TX-RAW  n=5    BB AA 97 01 00
+16:21:20.594  TX      seq 151 hb
+16:21:20.595  RX-RAW  n=81   AA BB 1B 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 AE E0 43 18 D9 5A 46 BD 71 32 2B 17 02 2C 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 64 55 04 00 01 97 00 94 FF 23 00 8E FF A5 00 07 00 00 00
+16:21:20.595  RX      seq 27  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 284004 ms  | boat rx seq 151 type 0x00  rssi -108 dBm  snr 8.75 dB  noise -114 dBm  age 0 s  ok 165 crc 7 rej 0 drop 0
+16:21:21.596  RX-RAW  n=81   AA BB 1C 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A9 E0 43 18 D5 5A 46 BD 71 32 2B 17 02 2D 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 4D 59 04 00 01 97 00 94 FF 23 01 8D FF A5 00 07 00 00 00
+16:21:21.596  RX      seq 28  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 285005 ms  | boat rx seq 151 type 0x00  rssi -108 dBm  snr 8.75 dB  noise -115 dBm  age 1 s  ok 165 crc 7 rej 0 drop 0
+16:21:21.597  TX-RAW  n=5    BB AA 98 01 00
+16:21:21.597  TX      seq 152 hb
+16:21:22.592  RX-RAW  n=81   AA BB 1D 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 9F E0 43 18 E3 5A 46 BD 71 32 2B 17 02 2E 03 FF 0C 03 CA 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 31 5D 04 00 01 98 00 91 FF 17 00 8D FF A6 00 07 00 00 00
+16:21:22.592  RX      seq 29  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 286001 ms  | boat rx seq 152 type 0x00  rssi -111 dBm  snr 5.75 dB  noise -115 dBm  age 0 s  ok 166 crc 7 rej 0 drop 0
+16:21:22.845  TX-RAW  n=5    BB AA 99 01 00
+16:21:22.845  TX      seq 153 hb
+16:21:23.595  RX-RAW  n=81   AA BB 1E 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 BA E0 43 18 E6 5A 46 BD 71 32 2B 17 02 2F 03 FF 0C 03 C9 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 1C 61 04 00 01 99 00 8D FF 0A 00 88 FF A7 00 07 00 00 00
+16:21:23.596  RX      seq 30  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 287004 ms  | boat rx seq 153 type 0x00  rssi -115 dBm  snr 2.50 dB  noise -120 dBm  age 0 s  ok 167 crc 7 rej 0 drop 0
+16:21:23.847  TX-RAW  n=5    BB AA 9A 01 00
+16:21:23.847  TX      seq 154 hb
+16:21:24.596  RX-RAW  n=81   AA BB 1F 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C4 E0 43 18 E6 5A 46 BD 71 32 2B 17 02 30 03 FF 0C 03 C9 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 05 65 04 00 01 9A 00 8D FF 06 00 94 FF A8 00 07 00 00 00
+16:21:24.596  RX      seq 31  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 288005 ms  | boat rx seq 154 type 0x00  rssi -115 dBm  snr 1.50 dB  noise -108 dBm  age 0 s  ok 168 crc 7 rej 0 drop 0
+16:21:24.851  TX-RAW  n=5    BB AA 9B 01 00
+16:21:24.851  TX      seq 155 hb
+16:21:25.595  RX-RAW  n=81   AA BB 20 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 B8 E0 43 18 C5 5A 46 BD 71 32 2B 17 02 31 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 EC 68 04 00 01 9B 00 8C FF 04 00 8B FF A9 00 07 00 00 00
+16:21:25.596  RX      seq 32  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 289004 ms  | boat rx seq 155 type 0x00  rssi -116 dBm  snr 1.00 dB  noise -117 dBm  age 0 s  ok 169 crc 7 rej 0 drop 0
+16:21:26.102  TX-RAW  n=5    BB AA 9C 01 00
+16:21:26.102  TX      seq 156 hb
+16:21:26.594  RX-RAW  n=81   AA BB 21 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 AC E0 43 18 E3 5A 46 BD 71 32 2B 17 02 32 03 FF 0C 03 C9 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 D3 6C 04 00 01 9C 00 8B FF FF 00 88 FF AA 00 07 00 00 00
+16:21:26.595  RX      seq 33  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 290003 ms  | boat rx seq 156 type 0x00  rssi -117 dBm  snr -0.25 dB  noise -120 dBm  age 0 s  ok 170 crc 7 rej 0 drop 0
+16:21:27.105  TX-RAW  n=5    BB AA 9D 01 00
+16:21:27.105  TX      seq 157 hb
+16:21:27.593  RX-RAW  n=81   AA BB 22 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C8 E0 43 18 BB 5A 46 BD 71 32 2B 17 02 33 03 FF 0C 03 C9 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 BA 70 04 00 01 9D 00 89 FF FA 00 8B FF AB 00 07 00 00 00
+16:21:27.593  RX      seq 34  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 291002 ms  | boat rx seq 157 type 0x00  rssi -119 dBm  snr -1.50 dB  noise -117 dBm  age 0 s  ok 171 crc 7 rej 0 drop 0
+16:21:28.595  TX-RAW  n=5    BB AA 9E 01 00
+16:21:28.595  TX      seq 158 hb
+16:21:28.596  RX-RAW  n=81   AA BB 23 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 A4 E0 43 18 D5 5A 46 BD 71 32 2B 17 02 34 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 A4 74 04 00 01 9D 00 89 FF FA 01 8B FF AB 00 07 00 00 00
+16:21:28.596  RX      seq 35  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 292004 ms  | boat rx seq 157 type 0x00  rssi -119 dBm  snr -1.50 dB  noise -117 dBm  age 1 s  ok 171 crc 7 rej 0 drop 0
+16:21:29.593  RX-RAW  n=81   AA BB 24 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 C1 E0 43 18 C9 5A 46 BD 71 32 2B 17 02 35 03 FF 0C 03 C9 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 89 78 04 00 01 9E 00 85 FF EA 00 8D FF AC 00 07 00 00 00
+16:21:29.594  RX      seq 36  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 293001 ms  | boat rx seq 158 type 0x00  rssi -123 dBm  snr -5.50 dB  noise -115 dBm  age 0 s  ok 172 crc 7 rej 0 drop 0
+16:21:29.844  TX-RAW  n=5    BB AA 9F 01 00
+16:21:29.844  TX      seq 159 hb
+16:21:30.595  RX-RAW  n=81   AA BB 25 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 AA E0 43 18 C3 5A 46 BD 71 32 2B 17 02 36 03 FF 0C 03 C8 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 74 7C 04 00 01 9F 00 84 FF E4 00 89 FF AD 00 07 00 00 00
+16:21:30.595  RX      seq 37  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 294004 ms  | boat rx seq 159 type 0x00  rssi -124 dBm  snr -7.00 dB  noise -119 dBm  age 0 s  ok 173 crc 7 rej 0 drop 0
+16:21:30.850  TX-RAW  n=5    BB AA A0 01 00
+16:21:30.850  TX      seq 160 hb
+16:21:31.592  RX-RAW  n=81   AA BB 26 4D 00 1C 3E 82 0F 82 0F 82 0F 96 0F 03 EC FF FC 03 30 03 2D 00 03 BB E0 43 18 EB 5A 46 BD 71 32 2B 17 02 37 03 FF 0C 03 C7 00 FB FF 02 00 03 00 00 00 00 06 C8 00 00 00 00 08 00 59 80 04 00 01 9F 00 84 FF E4 01 8A FF AD 00 08 00 00 00
+16:21:31.592  RX      seq 38  lost 0   flags 0x00  mode 6  last_cmd 8 -> OK  uptime 295001 ms  | boat rx seq 159 type 0x00  rssi -124 dBm  snr -7.00 dB  noise -118 dBm  age 1 s  ok 173 crc 8 rej 0 drop 0
+16:21:32.103  TX-RAW  n=5    BB AA A1 01 00
+16:21:32.103  TX      seq 161 hb
+16:21:32.108  CLOSE   quit

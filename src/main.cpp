@@ -26,10 +26,11 @@ void setup() {
     while (1);
   }
 
-  // Sane defaults for short-range use
-  LoRa.setSpreadingFactor(8);      // SF7 = fastest, lowest range
-  LoRa.setSignalBandwidth(125E3);  // 125 kHz bandwidth
+  // Must match the boat's radio (CM4 LoRa_init): SF8, 250 kHz, CR 4/5, CRC on
+  LoRa.setSpreadingFactor(8);      // SF8 (SF7 = fastest, lowest range)
+  LoRa.setSignalBandwidth(250E3);  // 250 kHz bandwidth
   LoRa.setCodingRate4(5);          // 4/5 coding rate
+  LoRa.enableCrc();                // boat checks the payload CRC, so a corrupted command is dropped, not run
   LoRa.setTxPower(17);             // dBm, 2–20 valid
 }
 
