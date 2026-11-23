@@ -82,6 +82,29 @@ typedef struct {
     uint16_t reserved;         // 0
 } ipc_cmd_route_commit_t;
 
+// COMMAND_STATE: the ground station's whole desired state, sent at least once a second and right away on
+// every change, so a lost packet is replaced by the next one. The CM7 applies only the setpoints the
+// current mode uses (manual: the servo angles, semi: the PID targets) and skips anything already in
+// place, so resending the same state changes nothing. KEEP leaves a field as the boat has it.
+//
+// The mode is applied once per mode request number (flags bits 4-7), not on every packet, so a mode the
+// boat chose itself (LTP asks for SAFE at the end of a route) is not undone by the next resend. The ground
+// station bumps the number on every operator mode command, even a repeat of the same mode. A packet with
+// mode KEEP makes the boat forget the last number, so the next request applies whatever its number is.
+typedef struct {
+    uint8_t flags;             // bit 0 IPC_STATE_FLAG_POLL, bits 4-7 mode request number (IPC_STATE_MODE_GEN)
+    uint8_t mode;              // system_mode_t to switch to, IPC_STATE_MODE_KEEP = no mode request
+    int16_t rudder_deg;        // rudder servo angle while the rudder is manual, + = starboard
+    int16_t sail_deg;          // tail servo angle while the sail is manual, + = starboard
+    int16_t heading;           // heading PID target while the rudder is semi, 0..359
+    int16_t sail_target;       // main sail PID target while the sail is semi, -180..180
+} ipc_cmd_state_t;
+
+#define IPC_STATE_FLAG_POLL        (0x01U)   // read by the CM4: reply with telemetry right away
+#define IPC_STATE_MODE_GEN(flags)  ((uint8_t)(((flags) >> 4) & 0x0FU))
+#define IPC_STATE_MODE_KEEP        (0xFFU)
+#define IPC_STATE_KEEP             (0x7FFF)  // any int16 field: leave it as it is
+
 // Free-running slot counts: used = head - tail, index = count & IPC_CMD_RING_MASK
 typedef struct {
     volatile uint32_t head;         // Written by CM4 only (num of commands written)
@@ -105,6 +128,7 @@ _Static_assert((IPC_CMD_RING_SLOTS & IPC_CMD_RING_MASK) == 0, "IPC_CMD_RING_SLOT
 _Static_assert(sizeof(ipc_cmd_t) == 2U + IPC_CMD_DATA_SIZE, "ipc_cmd_t must have no padding");
 _Static_assert(sizeof(ipc_cmd_waypoint_t)     <= IPC_CMD_DATA_SIZE, "waypoint payload must fit in ipc_cmd_t.raw");
 _Static_assert(sizeof(ipc_cmd_route_commit_t) <= IPC_CMD_DATA_SIZE, "route commit payload must fit in ipc_cmd_t.raw");
+_Static_assert(sizeof(ipc_cmd_state_t) == 10U, "state payload is 10 bytes on the wire, the ground station packs the same layout");
 _Static_assert(sizeof(ipc_shared_t) <= IPC_SHARED_SIZE, "ipc_shared_t does not fit in SRAM4");
 
 /**
