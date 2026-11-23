@@ -265,8 +265,6 @@
 #define REG_PKT_RSSI_VALUE       0x1A   /* RSSI of last packet, dBm = RSSI_OFFSET_HF + value */
 #define REG_RSSI_VALUE           0x1B   /* current channel RSSI, dBm = RSSI_OFFSET_HF + value */
 #define REG_DIO_MAPPING_1        0x40   /* DIO0 mapping: 0x00=RxDone, 0x40=TxDone */
-#define REG_HOP_CHANNEL          0x1C   /* bit 6 CrcOnPayload: the last received header said a CRC follows */
-#define HOP_CHANNEL_CRC_ON       0x40
 
 #define RSSI_OFFSET_HF           (-157) /* RSSI register offset on the 862-1020 MHz port (SX1276 datasheet 5.5.5) */
 
@@ -529,14 +527,6 @@ void LoRa_ProcessDIO0(void)
    The chip writes each packet at a variable offset, RegFifoRxCurrentAddr says where. */
 static void read_rx_packet(void)
 {
-    // In explicit header mode the radio only checks a CRC the sender included, so a packet sent
-    // without one reaches here unchecked and any bit error in it would run as a command.
-    // The ground station must send with CRC on (LoRa.enableCrc() on the bridge).
-    if (!(SPI_rx_byte(REG_HOP_CHANNEL) & HOP_CHANNEL_CRC_ON)) {
-        s_rx_stats.no_crc++;
-        return;
-    }
-
     uint8_t pkt_addr = SPI_rx_byte(REG_FIFO_RX_CURRENT_ADDR);
     uint8_t pkt_len  = SPI_rx_byte(REG_RX_NB_BYTES);
     if (pkt_len > sizeof(s_rx_buf)) pkt_len = sizeof(s_rx_buf);

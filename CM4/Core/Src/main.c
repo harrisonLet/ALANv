@@ -345,7 +345,6 @@ static void fill_rx_stats(LoRaTelemetry_t *telem)
     telem->rx_crc_err   = radio.crc_err;
     telem->rx_rejected  = rx_rejected;
     telem->rx_dropped   = rx_dropped;
-    telem->rx_no_crc    = radio.no_crc;
 }
 
 static void MX_SPI1_Init(void)

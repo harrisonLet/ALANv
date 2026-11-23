@@ -13,7 +13,7 @@ typedef enum {
 
 /*
  * Telemetry record sent from the boat to the ground station over LoRa.
- * Packed so the layout on the wire matches the struct exactly (81 bytes).
+ * Packed so the layout on the wire matches the struct exactly (80 bytes).
  */
 typedef struct __attribute__((packed)) {
 
@@ -81,12 +81,11 @@ typedef struct __attribute__((packed)) {
     uint16_t rx_crc_err;             /* packets received with a bad CRC, wraps */
     uint8_t  rx_rejected;            /* good CRC but failed the header/address/length check, wraps */
     uint8_t  rx_dropped;             /* valid command that could not be queued for the CM7, wraps */
-    uint8_t  rx_no_crc;              /* packets sent without a CRC, dropped unread (bridge not sending CRC), wraps */
 
 } LoRaTelemetry_t;
 
 /* The ground station decodes this exact layout, so a size change has to go out on both sides */
-_Static_assert(sizeof(LoRaTelemetry_t) == 81, "LoRaTelemetry_t must be 81 bytes, update the ground station with it");
+_Static_assert(sizeof(LoRaTelemetry_t) == 80, "LoRaTelemetry_t must be 80 bytes, update the ground station with it");
 
 /* LoRa receive stats encoding */
 #define LORA_RX_SNR_SCALE  4.0          /* rx_last_snr: dB * 4, as the radio reports it */
