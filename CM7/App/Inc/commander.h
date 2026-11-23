@@ -15,9 +15,10 @@
 #define commander_printf(...) ((void)0)
 #endif
 
-// Mode the boat starts in. Keep AUTO while commands can't get past the CM4, otherwise the
-// sail chain never runs on the bench. Change to SYSTEM_MODE_SAFE once the radio path works.
-#define COMMANDER_BOOT_MODE SYSTEM_MODE_AUTO
+// Mode the boat starts in. STANDBY centers both servos and runs no PID or planner, so the boat
+// does nothing until the ground station picks a mode (AUTO used to hold the boot heading and sail off).
+// NAV_TEST_ROUTE loads its box at the first fix but still needs AUTO to sail it.
+#define COMMANDER_BOOT_MODE SYSTEM_MODE_STANDBY
 
 #ifdef COMMANDER_SELFTEST
 #ifndef CM7_COMMANDER_DEBUG

@@ -147,6 +147,30 @@ static void route_commit(void)
 
 
 
+// LTP holding the route lock: the commit says NONE and keeps the upload, so resending the commit alone works
+extern bool nav_test_route_busy;
+static void route_commitBusy(void)
+{
+    ipc_cmd_waypoint_t wps[3];
+    for (uint16_t i = 0; i < 3; i++) { wps[i] = route_wp(i); }
+    ipc_cmd_route_commit_t c3 = route_commitFor(wps, 3);
+
+    route_clear();
+    uint32_t v = navigationRoute_version();
+    route_send(wps, 3);
+    nav_test_route_busy = true;
+    CHECK(navigationRoute_commit(&c3) == CMD_RESULT_NONE);
+    CHECK(navigationRoute_commit(&c3) == CMD_RESULT_NONE);
+    nav_test_route_busy = false;
+    CHECK(navigationRoute_version() == v);
+    CHECK(navigationRoute_commit(&c3) == CMD_RESULT_OK);
+    CHECK(navigationRoute_version() == v + 1);
+    // and that commit cleared the upload as usual
+    CHECK(navigationRoute_commit(&c3) == CMD_RESULT_INCOMPLETE);
+}
+
+
+
 // Must run before any good commit, while there is still no route
 static void route_copyEmpty(void)
 {
@@ -242,4 +266,5 @@ void test_route(void)
     route_addWaypoint();
     route_commit();
     route_copy();
+    route_commitBusy();
 }

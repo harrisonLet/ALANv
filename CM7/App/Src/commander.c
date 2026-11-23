@@ -19,11 +19,24 @@ typedef struct {
     TickType_t last_cmd_tick;
     TickType_t result_tick;            // when a real command last set prev_cmd_result
     bool result_held;                  // prev_cmd_result is a real command's, heartbeats leave it alone for COMMANDER_RESULT_HOLD_MS
+    ipc_cmd_t last_real_cmd;           // last non-heartbeat command executed, to spot a resend of it
+    cmd_result_t last_real_result;     // what it returned
+    bool have_real_cmd;
 } commander_state_t;
+
 
 TaskHandle_t commander_task = NULL;
 
 static commander_state_t state;
+
+// The ground station resends a command with the same seq until telemetry reports it. If the first copy
+// was executed but its report was lost, the resend must not run again: a second route commit would find
+// the upload already cleared and report INCOMPLETE. Seq, type and payload must all match, so a new
+// ground station session that happens to reuse the seq still gets its command executed.
+static bool is_resend(const ipc_cmd_t *cmd) {
+    return state.have_real_cmd && cmd->type != COMMAND_NONE &&
+           memcmp(cmd, &state.last_real_cmd, sizeof(ipc_cmd_t)) == 0;
+}
 
 static volatile bool safe_requested; // set by commander_requestSafe from another task, cleared by the Commander
 
@@ -96,18 +109,26 @@ void commander_handler(void *argument) {
             TickType_t now = xTaskGetTickCount();
             state.last_cmd_tick = now;
 
+            // A resend: report the first copy's result again instead of running it twice
+            bool resend = is_resend(&state.current_cmd);
+
             // check for dropped commands (seq is uint8_t and wraps 255 -> 0)
             uint8_t expected_seq = (uint8_t)(state.prev_cmd_seq + 1U);
-            if (state.current_cmd.seq != expected_seq) {
+            if (!resend && state.current_cmd.seq != expected_seq) {
                 commander_printf("WARN: command dropped | expected seq %u, popped %u",
                     expected_seq, state.current_cmd.seq);
             }
 
-            cmd_result_t result = execute_cmd(&state.current_cmd);
-            commander_printf("seq %u type 0x%02X -> result %u, mode %u",
+            cmd_result_t result = resend ? state.last_real_result : execute_cmd(&state.current_cmd);
+            commander_printf("seq %u type 0x%02X -> result %u, mode %u%s",
                 (unsigned)state.current_cmd.seq, (unsigned)state.current_cmd.type,
-                (unsigned)result, (unsigned)state.mode);
+                (unsigned)result, (unsigned)state.mode, resend ? " (resend, not run again)" : "");
             state.prev_cmd_seq = state.current_cmd.seq;
+            if (state.current_cmd.type != COMMAND_NONE && !resend) {
+                state.last_real_cmd = state.current_cmd;
+                state.last_real_result = result;
+                state.have_real_cmd = true;
+            }
 
             if (state.current_cmd.type != COMMAND_NONE) {
                 state.prev_cmd_result = result;
