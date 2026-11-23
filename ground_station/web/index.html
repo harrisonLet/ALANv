@@ -107,6 +107,43 @@ canvas { width: 100%; display: block; }
 .raw { font-family: var(--mono); font-size: 12px; color: var(--dim); word-break: break-all; }
 
 body.stale main .live { opacity: .45; filter: grayscale(.6); }
+
+/* map and route planner */
+.mapwrap { display: grid; grid-template-columns: minmax(0, 1fr) 370px; gap: 12px; }
+#map { height: 640px; border-radius: 8px; background: var(--water); touch-action: none; outline: none; }
+#map:focus-visible { box-shadow: 0 0 0 2px var(--desired); }
+.mapside { display: flex; flex-direction: column; gap: 10px; max-height: 640px; overflow: auto; }
+.mapside .block { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; }
+.mapside h3 { margin: 0 0 6px; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--dim);
+  display: flex; justify-content: space-between; gap: 8px; }
+.mapside h3 span { text-transform: none; letter-spacing: 0; font-weight: 400; }
+.maptools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; text-transform: none; letter-spacing: 0;
+  font-weight: 400; font-size: 12px; color: var(--text); }
+.maptools label { display: flex; gap: 4px; align-items: center; cursor: pointer; }
+.row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 6px; }
+.row label { display: flex; gap: 4px; align-items: center; font-size: 12px; color: var(--dim); }
+input[type=number] { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 5px;
+  padding: 3px 5px; width: 58px; font: 12px var(--mono); }
+button.primary { background: #2d1f4d; border-color: var(--desired); }
+#md-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
+#md-btns button { padding: 6px 2px; font-size: 12px; }
+#md-btns button[data-mode=SAFE] { border-color: var(--fail); }
+#rt-list { display: flex; flex-direction: column; gap: 3px; max-height: 210px; overflow: auto; }
+#rt-list .wp { display: grid; grid-template-columns: 22px 1fr auto auto; gap: 6px; align-items: center; font-size: 12px;
+  padding: 2px 4px; border-radius: 5px; cursor: pointer; }
+#rt-list .wp.sel { background: rgba(188,140,255,.15); }
+#rt-list .wp .n { font-weight: 700; color: var(--desired); text-align: center; }
+#rt-list .wp label { font-size: 12px; color: var(--dim); }
+#rt-list .wp button { padding: 1px 6px; font-size: 11px; }
+#rt-upload .bar { height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; margin: 6px 0 3px; }
+#rt-upload .bar i { display: block; height: 100%; background: var(--desired); }
+#rt-upload span { font-size: 12px; color: var(--dim); }
+#q-list { font-family: var(--mono); font-size: 11px; max-height: 190px; overflow: auto; }
+#q-list div { padding: 1px 0; }
+.dim { color: var(--dim); } .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--fail); }
+#bt-mode { font-weight: 700; }
+#bt-mode.mode-auto { color: var(--ok); } #bt-mode.mode-safe { color: var(--fail); } #bt-mode.mode-standby { color: var(--dim); }
+@media (max-width: 1100px) { .mapwrap { grid-template-columns: 1fr; } #map { height: 460px; } .mapside { max-height: none; } }
 </style>
 </head>
 <body>
@@ -131,6 +168,68 @@ body.stale main .live { opacity: .45; filter: grayscale(.6); }
 </header>
 
 <main>
+  <!-- Map and route planner -->
+  <section class="card span12">
+    <h2>Map &amp; route
+      <span class="maptools">
+        <label title="Click on the map to append a waypoint"><input type="checkbox" id="map-add" checked> click adds waypoints</label>
+        <label><input type="checkbox" id="map-follow"> follow boat</label>
+        <button id="map-center">Center on boat</button>
+        <button id="map-fit">Fit route</button>
+        <button id="map-locate" title="Center on this computer's location">My location</button>
+      </span>
+    </h2>
+    <div class="mapwrap">
+      <canvas id="map" tabindex="0"></canvas>
+      <aside class="mapside">
+        <div class="block">
+          <h3>Boat</h3>
+          <div class="kv">
+            <span>mode</span><span id="bt-mode">–</span>
+            <span>heading / target</span><span><span id="bt-hdg">–</span> / <span id="bt-dhdg">–</span></span>
+            <span>leg</span><span id="bt-leg">–</span>
+            <span>off the line</span><span id="bt-drift">–</span>
+            <span>to next waypoint</span><span id="bt-dist">–</span>
+            <span>last command</span><span id="bt-last">–</span>
+            <span>boat heard us</span><span id="bt-rx">–</span>
+          </div>
+        </div>
+        <div class="block">
+          <h3>Mode</h3>
+          <div id="md-btns"></div>
+          <div class="row"><label>heading <input type="number" id="hd-input" min="0" max="359" value="0">°</label>
+            <button id="hd-send">Set heading</button></div>
+        </div>
+        <div class="block">
+          <h3>Route plan <span id="rt-state"></span></h3>
+          <div id="rt-list"></div>
+          <div class="row dim" id="rt-total" style="font-size:12px"></div>
+          <div class="row">
+            <label title="Corridor half-width for new waypoints">margin <input type="number" id="rt-margin" min="1" max="255"> m</label>
+            <button id="rt-margin-all">Apply to all</button>
+          </div>
+          <div class="row">
+            <label title="Waypoint reached within this distance">arrive <input type="number" id="rt-arrive" min="1" max="255"> m</label>
+            <label title="Extra room past the margin before the boat gives up and goes to SAFE">warning <input type="number" id="rt-warning" min="0" max="255"> m</label>
+          </div>
+          <div class="row">
+            <button id="rt-send-auto" class="primary">Send route + AUTO</button>
+            <button id="rt-send">Send only</button>
+            <button id="rt-load" title="Copy the boat's route into the plan">Load boat's</button>
+            <button id="rt-clear">Clear</button>
+          </div>
+          <div id="rt-upload"></div>
+          <div class="row" style="font-size:12px"><span id="rt-msg" class="dim"></span></div>
+        </div>
+        <div class="block">
+          <h3>Commands <span><span id="q-count" class="warn"></span>
+            <label class="dim" title="Send a heartbeat every second when idle"><input type="checkbox" id="q-hb"> heartbeat</label>
+            <button id="q-cancel">Cancel queued</button></span></h3>
+          <div id="q-list"></div>
+        </div>
+      </aside>
+    </div>
+  </section>
   <!-- Wind / sail dial -->
   <section class="card span5 live">
     <h2>Wind &amp; Sail <span class="mono" id="pos-name" style="color:var(--text)">–</span></h2>
@@ -320,6 +419,7 @@ body.stale main .live { opacity: .45; filter: grayscale(.6); }
   </section>
 </main>
 
+<script src="/map.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const NO_SIGNAL_MS = 3000;
@@ -327,7 +427,7 @@ const CHART_SPAN_S = 300;
 const POINTS_OF_SAIL = [[30, 'IN IRONS'], [50, 'CLOSE HAULED'], [75, 'CLOSE REACH'], [105, 'BEAM REACH'],
                         [130, 'BROAD REACH'], [150, 'TRAINING RUN'], [181, 'RUNNING']];
 
-let VALIDITY = {}, telem = null, link = null, history = [], cmdLog = [];
+let VALIDITY = {}, telem = null, link = null, history = [], cmds = null;
 
 // ── helpers ────────────────────────────────────────────────────────────────
 const sgn = v => (v > 0 ? '+' : '') + v;
@@ -493,6 +593,7 @@ function render() {
   const t = telem;
   if (!t) return;
 
+  const noTarget = t.desired_heading === 0xFFFF;   // no heading target on the boat
   // dial
   $('wind').setAttribute('transform', `rotate(${t.ang_wind})`);
   $('sail').setAttribute('transform', `translate(0,-14) rotate(${t.sail_ang_forward})`);
@@ -501,7 +602,8 @@ function render() {
   $('d-sail').textContent = deg(t.sail_ang_forward);
   const dhdgRel = wrap180(t.desired_heading - t.heading);
   $('dhdg').setAttribute('transform', `rotate(${dhdgRel})`);
-  $('d-dhdg').textContent = `${t.desired_heading}° (${deg(dhdgRel)})`;
+  $('dhdg').style.opacity = noTarget ? 0 : 1;
+  $('d-dhdg').textContent = noTarget ? 'none' : `${t.desired_heading}° (${deg(dhdgRel)})`;
   const pos = pointOfSail(t.ang_wind);
   $('pos-name').textContent = pos;
   $('pos-name').style.color = pos === 'IN IRONS' ? 'var(--fail)' : 'var(--text)';
@@ -509,16 +611,17 @@ function render() {
   // compass + attitude
   $('rose').setAttribute('transform', `rotate(${-t.heading})`);
   $('bug').setAttribute('transform', `rotate(${t.desired_heading - t.heading})`);
+  $('bug').style.opacity = noTarget ? 0 : 1;
   $('hdg-text').textContent = String(t.heading).padStart(3, '0') + '°';
   $('hull-x').setAttribute('transform', `rotate(${t.roll})`);
   $('o-hdg').textContent = t.heading + '°';
-  $('o-dhdg').textContent = t.desired_heading + '°';
+  $('o-dhdg').textContent = noTarget ? 'none' : t.desired_heading + '°';
   $('o-roll').textContent = deg(t.roll) + ' ' + side(t.roll, 'stbd', 'port', '');
   $('o-pitch').textContent = deg(t.pitch);
 
   // control
-  $('c-mode').textContent = t.mode;
-  $('c-dhdg').textContent = t.desired_heading + '°';
+  $('c-mode').textContent = t.mode_name;
+  $('c-dhdg').textContent = noTarget ? 'none' : t.desired_heading + '°';
   $('c-seg').textContent = t.route_segment;
   $('c-drift').textContent = sgn(t.drift_distance) + ' m';
   $('c-drift2').textContent = sgn(t.drift_distance) + ' m ' + side(t.drift_distance, 'stbd', 'port', '');
@@ -580,7 +683,7 @@ function render() {
   setServo('sv-sail-fill', 'sv-sail', t.sail_servo_angle);
 
   // chart headers
-  $('ch-hdg').textContent = `${t.heading}° / ${t.desired_heading}°`;
+  $('ch-hdg').textContent = `${t.heading}° / ${noTarget ? 'none' : t.desired_heading + '°'}`;
   $('ch-wind').textContent = deg(t.ang_wind);
   $('ch-roll').textContent = deg(t.roll);
   $('ch-bat').textContent = (t.battery_voltage / 1000).toFixed(2) + ' V';
@@ -589,7 +692,7 @@ function render() {
 }
 
 function renderCharts() {
-  drawChart('c-hdg', [{ get: p => p.desired_heading, color: '#bc8cff', wrap: 180 },
+  drawChart('c-hdg', [{ get: p => p.desired_heading === 0xFFFF ? p.heading : p.desired_heading, color: '#bc8cff', wrap: 180 },
                       { get: p => p.heading, color: '#e3b341', wrap: 180 }], [0, 360]);
   drawChart('c-wind', [{ get: p => p.ang_wind, color: '#39c5cf', wrap: 180 }], [-180, 180]);
   drawChart('c-roll', [{ get: p => p.roll, color: '#e3b341' }], null, 'deg');
@@ -656,22 +759,20 @@ document.addEventListener('keydown', ev => {
 });
 
 function renderAck() {
-  const sent = link ? link.cmds_sent : 0;
-  $('ack-sent').textContent = sent;
+  $('ack-sent').textContent = link ? link.cmds_sent : 0;
   if (!telem) return;
-  const recv = telem.last_cmd_seq;
-  $('ack-recv').textContent = recv;
-  // the boat counts every command since it booted, so only a growing gap in this session means losses
-  const missing = (sent - recv) & 0xFFFF;
-  $('ack-recv').className = sent && missing && missing < 1000 ? 'bad' : '';
-  $('ack-note').textContent = sent && missing && missing < 1000 ? `${missing} not confirmed yet` : '';
+  $('ack-recv').textContent = `#${telem.last_cmd_seq & 0xFF} ${telem.last_cmd_result_name}`;
+  $('ack-recv').className = telem.last_cmd_result_name === 'OK' || telem.last_cmd_result_name === 'NONE' ? '' : 'bad';
+  $('ack-note').textContent = cmds && cmds.queued ? `${cmds.queued} waiting for the boat` : '';
 }
 
 function renderLog() {
-  $('cmd-log').innerHTML = cmdLog.map(c => {
+  // servo commands only: the map panel lists everything
+  const servo = cmds ? cmds.log.filter(c => /^(rudder|sail) /.test(c.label)) : [];
+  $('cmd-log').innerHTML = servo.map(c => {
     const d = new Date(c.t * 1000);
-    return `<div>#${c.n}  ${d.toLocaleTimeString([], { hour12: false })}  '${c.key}'  ${c.desc}</div>`;
-  }).join('') || '<div>no commands sent</div>';
+    return `<div>${d.toLocaleTimeString([], { hour12: false })}  ${c.label}  ${c.seq === null ? '' : '#' + c.seq}  ${c.result && c.status !== 'ok' ? c.result : c.status}</div>`;
+  }).join('') || '<div>no servo commands sent. The rudder needs a manual rudder mode, the sail a manual sail mode</div>';
 }
 
 // ── connection ─────────────────────────────────────────────────────────────
@@ -694,9 +795,10 @@ async function toggleConnect() {
 const es = new EventSource('/events');
 es.addEventListener('snapshot', e => {
   const d = JSON.parse(e.data);
-  VALIDITY = d.validity; link = d.link; telem = d.telem; history = d.history; cmdLog = d.cmd_log;
+  VALIDITY = d.validity; link = d.link; telem = d.telem; history = d.history.slice(); cmds = d.cmds;
   $('raw').textContent = d.raw || '–';
   renderLink(); render(); renderCharts(); renderLog(); loadPorts();
+  MAP.snapshot(d);
 });
 es.addEventListener('telem', e => {
   const d = JSON.parse(e.data);
@@ -705,12 +807,14 @@ es.addEventListener('telem', e => {
   if (history.length > 600) history.shift();
   $('raw').textContent = d.raw;
   renderLink(); render(); renderCharts();
+  MAP.telem(d.telem, d.sample);
 });
 es.addEventListener('link', e => { link = JSON.parse(e.data); renderLink(); loadPorts(); });
 es.addEventListener('cmd', e => {
   const d = JSON.parse(e.data);
-  link = d.link; cmdLog.unshift(d.entry); cmdLog.length = Math.min(cmdLog.length, 50);
-  renderLog(); renderAck();
+  link = d.link; cmds = d.cmds;
+  renderLog(); renderAck(); renderLink();
+  MAP.cmds(d.cmds);
 });
 es.onerror = () => { const p = $('link-pill'); p.className = 'pill fail'; p.textContent = 'SERVER LOST'; };
 

@@ -30,6 +30,11 @@ enum {
     COMMAND_RUDDER_SERVO               = 0x22, /* rudder servo angle, rudder must be manual */
     COMMAND_SAIL_PID                   = 0x23, /* main sail angle for the sail PID, sail must be semi */
     COMMAND_RUDDER_PID                 = 0x24, /* heading for the heading PID, rudder must be semi */
+
+    /* Route upload (ltp). Accepted in any mode, sailed by LTP in AUTO */
+    COMMAND_NVS_LOAD_START             = 0x31, /* no payload */
+    COMMAND_NVS_LOAD                   = 0x32, /* ipc_cmd_waypoint_t: u16 index, u16 margin_m, i32 lat_e7, i32 lon_e7 */
+    COMMAND_NVS_LOAD_STOP              = 0x33, /* ipc_cmd_route_commit_t: u16 count, u16 crc16, u8 arrive_m, u8 warning_m, u16 0 */
 };
 
 /* system_mode_t, reported in telemetry (mode) */
