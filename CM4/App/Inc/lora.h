@@ -2,6 +2,7 @@
 #define LORA_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #define ADDR_SAMD21  0xAA            // ground station radio
 #define ADDR_STM32   0xBB            // this boat
@@ -23,6 +24,7 @@ void    LoRa_StartRX(void);
 void    LoRa_ProcessDIO0(void);
 uint8_t LoRa_GetCmd(uint8_t *buf);
 void    LoRa_GetRxStats(LoRaRxStats_t *stats);
+bool    LoRa_TxBusy(void);
 
 
 #endif
