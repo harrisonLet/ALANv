@@ -458,6 +458,7 @@
   $('q-hb').onchange = () => post('/heartbeat', { on: $('q-hb').checked });
 
   // ── status panel ────────────────────────────────────────────────────────
+  let lastNav = null;
   function renderBoat() {
     const t = telem;
     if (!t) return;
@@ -478,6 +479,16 @@
       $('bt-dist').textContent = '–';
     }
     $('bt-dhdg').textContent = t.desired_heading === 0xFFFF ? 'none' : t.desired_heading + '°';
+    if (t.nav_state_name !== undefined) {
+      // LTP goes IDLE once the boat leaves AUTO, so keep the last state it had in AUTO: that is why it stopped
+      if (t.mode_name === 'AUTO' && t.nav_state !== 0) lastNav = t.nav_state_name;
+      let s = t.nav_state_name;
+      if (t.nav_corridor) s += ', left the corridor';
+      if (t.nav_tack_slow) s += ', slow tack';
+      if (t.mode_name !== 'AUTO' && lastNav) s += ` (last in AUTO: ${lastNav})`;
+      $('bt-nav').textContent = s;
+      $('bt-nav').className = (t.nav_corridor || t.nav_state === 6) ? 'bad' : t.nav_tack_slow ? 'warn' : '';
+    }
     $('bt-hdg').textContent = t.heading + '°';
     $('bt-last').textContent = `seq ${t.last_cmd_seq & 0xFF}: ${t.last_cmd_result_name}`;
     if ('rx_age_s' in t) {

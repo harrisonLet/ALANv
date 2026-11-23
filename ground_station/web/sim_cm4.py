@@ -60,6 +60,7 @@ class Boat:
         self.ltp_version = 0            # route version LTP has picked up
         self.leg, self.leg_start, self.tack_side, self.drift = 0, None, 0, 0
         self.ltp_target = None
+        self.corridor = False
         self.t0 = time.time()
         self.rx = dict(seq=0, type=0, t=None, ok=0, rejected=0)
 
@@ -164,11 +165,20 @@ class Boat:
         """Local east/north metres of (lat, lon) from the boat."""
         return ((lon - self.lon) * 111320 * math.cos(math.radians(self.lat)), (lat - self.lat) * 111320)
 
+    def nav_info(self):
+        """LoRaTelemetry_t nav_info: NavState_e in the low bits, bit 7 = left the corridor."""
+        if self.mode != M['AUTO'] or not self.route or self.corridor:
+            state = 0x06 if (self.corridor and self.mode == M['AUTO']) else 0x00
+        else:
+            state = {0: 0x01, 1: 0x02, -1: 0x03}[self.tack_side]   # +1 heads wind + no-go: UPWIND_PORT
+        return state | (0x80 if self.corridor else 0)
+
     def ltp(self):
         if self.mode != M['AUTO'] or not self.route:
             return None
         if self.ltp_version != self.route_version:
             self.ltp_version, self.leg, self.tack_side = self.route_version, 0, 0
+            self.corridor = False
             self.leg_start = (self.lat, self.lon)
         wps = self.route['wps']
         wp = wps[self.leg]
@@ -189,6 +199,7 @@ class Boat:
         self.drift = ((-se) * ln - (-sn) * le) / length
         if abs(self.drift) > wp['margin'] + self.route['warning']:
             print('outside the corridor, requesting SAFE', flush=True)
+            self.corridor = True
             self.mode = M['SAFE']
             return None
         bearing = math.degrees(math.atan2(e, n)) % 360
@@ -247,7 +258,7 @@ class Boat:
                  rudder_servo_angle=self.rudder, sail_servo_angle=self.sail,
                  mode=self.mode, desired_heading=0xFFFF if target is None else int(target) % 360,
                  route_segment=self.leg, drift_distance=int(round(self.drift)) if self.route else 0,
-                 last_cmd_seq=self.last_seq, uptime_ms=int(t * 1000) & 0xFFFFFFFF, last_cmd_result=self.last_result,
+                 last_cmd_seq=self.last_seq, nav_info=self.nav_info(), uptime_ms=int(t * 1000) & 0xFFFFFFFF, last_cmd_result=self.last_result,
                  rx_last_seq=self.rx['seq'], rx_last_type=self.rx['type'], rx_last_rssi=-70, rx_last_snr=36,
                  rx_age_s=age, rx_noise=-110, rx_ok=self.rx['ok'] & 0xFFFF, rx_crc_err=0,
                  rx_rejected=self.rx['rejected'] & 0xFF, rx_dropped=0)

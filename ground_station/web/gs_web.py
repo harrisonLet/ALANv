@@ -113,6 +113,9 @@ GPS_DEG_SCALE = header_number(HEADER, 'LORA_GPS_DEG_SCALE', 1e7)
 GPS_ALT_SCALE = header_number(HEADER, 'LORA_GPS_ALT_SCALE', 10.0)
 RX_SNR_SCALE = header_number(HEADER, 'LORA_RX_SNR_SCALE', 4.0)
 NO_HEADING = 0xFFFF
+# NavState_e (sharedNavigation.h), from the low bits of nav_info
+NAV_STATES = {0: 'IDLE', 1: 'DIRECT', 2: 'UPWIND PORT', 3: 'UPWIND STBD', 4: 'TACKING', 5: 'ARRIVED', 6: 'FAULT',
+              0x0F: 'NO LTP'}
 
 
 def unpack(payload):
@@ -132,6 +135,12 @@ def unpack(payload):
         out['fix_valid'] = out['sats_fix'] >> 5
     if 'rx_last_snr' in out:
         out['rx_last_snr'] /= RX_SNR_SCALE
+    if 'nav_info' in out:
+        info = out['nav_info']
+        out['nav_state'] = info & 0x0F
+        out['nav_state_name'] = NAV_STATES.get(info & 0x0F, f'state {info & 0x0F}')
+        out['nav_corridor'] = bool(info & 0x80)
+        out['nav_tack_slow'] = bool(info & 0x40)
     out['mode_name'] = BL.MODE_NAMES.get(out.get('mode'), f"mode {out.get('mode')}")
     out['last_cmd_result_name'] = BL.RESULTS.get(out.get('last_cmd_result'), str(out.get('last_cmd_result')))
     return out

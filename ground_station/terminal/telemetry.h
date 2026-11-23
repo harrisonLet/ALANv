@@ -56,7 +56,8 @@ typedef struct __attribute__((packed)) {
     uint16_t desired_heading;        /* 0..359 deg, heading PID target (LTP later), 0xFFFF = no target */
     uint8_t  route_segment;          /* index of the active nautical vector */
     int16_t  drift_distance;         /* cross-track distance from the segment, m, + = starboard of path */
-    uint16_t last_cmd_seq;           /* seq of the last non-heartbeat command the boat executed */
+    uint8_t  last_cmd_seq;           /* seq of the last non-heartbeat command the boat executed */
+    uint8_t  nav_info;               /* LTP: bits 0-3 NavState_e (0x0F = no LTP), bit 6 tack slow, bit 7 left the corridor */
     uint32_t uptime_ms;              /* board uptime */
     uint8_t  last_cmd_result;        /* cmd_result_t of the command in last_cmd_seq */
 
@@ -75,6 +76,12 @@ typedef struct __attribute__((packed)) {
 } LoRaTelemetry_t;
 
 /* GPS field encoding */
+/* nav_info encoding (loraTelemetry.h on the boat) */
+#define LORA_NAV_NONE          0x0FU
+#define LORA_NAV_STATE(info)   ((uint8_t)((info) & 0x0FU))
+#define LORA_NAV_TACK_SLOW     0x40U
+#define LORA_NAV_CORRIDOR      0x80U
+
 #define LORA_GPS_DEG_SCALE 10000000.0   /* latitude/longitude: degrees * 1e7, about 1 cm */
 #define LORA_GPS_ALT_SCALE 10.0         /* altitude: metres * 10 */
 #define LORA_GPS_SATS_FIX(sats, fix) ((uint8_t)((((fix) > 7U ? 7U : (fix)) << 5) | ((sats) > 31U ? 31U : (sats))))
