@@ -28,7 +28,8 @@
 
 // Modes with a manual or semi-auto part fall back to SAFE after this long with no command, including COMMAND_NONE heartbeats.
 // Only used with COMMANDER_LINK_TIMEOUT_ENABLE (shared_configuration.h)
-#define COMMANDER_LINK_TIMEOUT_MS 5000U
+// 10 s: the ground station sends something every telemetry cycle (about 1 s), so this rides out several lost packets
+#define COMMANDER_LINK_TIMEOUT_MS 10000U
 
 // The commander sleeps until the CM4's HSEM doorbell wakes it. It also wakes this often without a doorbell,
 // to pick up a command whose doorbell was missed and to run the link timeout check.

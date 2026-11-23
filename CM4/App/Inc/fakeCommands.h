@@ -12,7 +12,7 @@
 
 #include <stdint.h>
 
-// Seconds between fake commands. Keep it under the CM7's COMMANDER_LINK_TIMEOUT_MS (5 s),
+// Seconds between fake commands. Keep it under the CM7's COMMANDER_LINK_TIMEOUT_MS (10 s),
 // or manual and semi-auto modes drop to SAFE between commands.
 #define CM4_FAKE_CMD_PERIOD_S (3U)
 

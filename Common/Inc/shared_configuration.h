@@ -70,7 +70,11 @@
 
 #ifdef CM7_COMMANDER_ENABLE
 #define CM7_COMMANDER_DEBUG
-// #define COMMANDER_LINK_TIMEOUT_ENABLE // Manual/semi modes drop to SAFE after COMMANDER_LINK_TIMEOUT_MS with no command (heartbeats count). Off: the boat keeps its last command forever if the link is lost. Bench use only
+// Manual/semi modes drop to SAFE after COMMANDER_LINK_TIMEOUT_MS with no command (heartbeats count). Off: the boat keeps its
+// last command forever if the link is lost. Off in the Renode sim, whose dashboard sends no heartbeats
+#ifndef RENODE_SIM
+#define COMMANDER_LINK_TIMEOUT_ENABLE
+#endif
 // #define COMMANDER_SELFTEST // Bench test: runs a scripted command list at boot. Needs CM7_COMMANDER_DEBUG to print. Leave CM7_CONSOLE_ENABLE off
 #endif
 

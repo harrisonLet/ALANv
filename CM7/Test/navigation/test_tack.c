@@ -95,6 +95,11 @@ static void tack_inputsOk(void)
     in.imu_timestamp = NOW;
     in.gps_timestamp = NOW - NAV_GPS_STALE_MS;          CHECK(inputs_ok(&in));
     in.gps_timestamp = NOW - NAV_GPS_STALE_MS - 1u;     CHECK(!inputs_ok(&in));
+    in.gps_timestamp = NOW;
+
+    // Fusion's 0, 0 before its first position is not a position, even with the GPS valid
+    in.lat = 0.0; in.lon = 0.0;                         CHECK(!inputs_ok(&in));
+    in.lat = 0.0; in.lon = lon_of(0.0);                 CHECK(inputs_ok(&in));
 
     // The tick counter wrapped between the sample and now
     in = input(5u, 0, 0, 0, 90, NULL);
@@ -680,6 +685,7 @@ static void tack_faults(void)
     CHECK(out.desired_heading == NAV_HEADING_NONE);
     CHECK(out.drift_distance == 36);
     CHECK(s.corridor_fault);
+    CHECK(out.flags & NAV_FLAG_CORRIDOR);
 
     // It holds after the boat is back on the line
     in = input(NOW + 500u, 60, 0, 0, 90, &r);
@@ -691,6 +697,7 @@ static void tack_faults(void)
     navTack_step(&in, &s, &out);
     CHECK(out.nav_state == NAV_STATE_DIRECT);
     CHECK(!s.corridor_fault);
+    CHECK(!(out.flags & NAV_FLAG_CORRIDOR));
     CHECK(s.leg_start_lat == in.lat);
 
     // Stale GPS: FAULT, and planning resumes when it is fresh again
