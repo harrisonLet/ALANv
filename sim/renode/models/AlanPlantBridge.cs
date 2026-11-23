@@ -6,6 +6,11 @@
 //   3. writes the plant's sensor values into the BNO055, AS5600, wind vane and GPS models
 //
 // If no plant is running, the board keeps running with the sensors' last values and retries once per virtual second.
+//
+// The plant can also send ground-station commands. The CM4 and its radio are not emulated, so the bridge does the
+// CM4's job: it pushes each command into the IPC command ring in SRAM4, where the CM7's Commander pops it.
+//   ipc_ring=BASE,HEAD,TAIL,SLOTS,SLOT_SIZE,COUNT   ring layout (BASE absolute, the rest offsets), from ipc.h
+//   ipc=HEX                                          one ipc_cmd_t, SLOT_SIZE bytes, as hex
 // Monitor: plant Connected | plant Port 5555 | plant Enabled false
 using System;
 using System.Diagnostics;
@@ -113,6 +118,16 @@ namespace Antmicro.Renode.Peripherals.Sensors
                 {
                     continue;
                 }
+                if(kv[0] == "ipc_ring")
+                {
+                    SetRing(kv[1]);
+                    continue;
+                }
+                if(kv[0] == "ipc")
+                {
+                    PushCommand(kv[1]);
+                    continue;
+                }
                 double v;
                 if(!double.TryParse(kv[1], NumberStyles.Float, CultureInfo.InvariantCulture, out v))
                 {
@@ -131,6 +146,50 @@ namespace Antmicro.Renode.Peripherals.Sensors
                     case "gps_ok":   Set(gps, "Enabled", v != 0); break;
                 }
             }
+        }
+
+        private void SetRing(string spec)
+        {
+            var f = spec.Split(',');
+            if(f.Length != 6)
+            {
+                return;
+            }
+            ringBase = Convert.ToUInt64(f[0], 16);
+            ringHead = ringBase + ulong.Parse(f[1], CultureInfo.InvariantCulture);
+            ringTail = ringBase + ulong.Parse(f[2], CultureInfo.InvariantCulture);
+            ringSlots = ringBase + ulong.Parse(f[3], CultureInfo.InvariantCulture);
+            ringSlotSize = int.Parse(f[4], CultureInfo.InvariantCulture);
+            ringCount = uint.Parse(f[5], CultureInfo.InvariantCulture);
+        }
+
+        // Same steps as ipc_cmd_push() on the CM4: refuse when full, write the slot, then publish it by moving head
+        private void PushCommand(string hex)
+        {
+            if(ringCount == 0 || hex.Length != ringSlotSize * 2)
+            {
+                this.Log(LogLevel.Warning, "Command dropped: no ring layout, or {0} hex digits instead of {1}", hex.Length, ringSlotSize * 2);
+                return;
+            }
+            var bus = machine.GetSystemBus(this);
+            if(bus.ReadDoubleWord(ringBase) != IpcMagic)
+            {
+                this.Log(LogLevel.Warning, "Command dropped: the firmware has not set up its IPC memory yet");
+                return;
+            }
+            var head = bus.ReadDoubleWord(ringHead);
+            var tail = bus.ReadDoubleWord(ringTail);
+            if(head - tail >= ringCount)
+            {
+                this.Log(LogLevel.Warning, "Command dropped: the command ring is full");
+                return;
+            }
+            var slot = ringSlots + (ulong)(head % ringCount) * (ulong)ringSlotSize;
+            for(var i = 0; i < ringSlotSize; i++)
+            {
+                bus.WriteByte(slot + (ulong)i, Convert.ToByte(hex.Substring(2 * i, 2), 16));
+            }
+            bus.WriteDoubleWord(ringHead, head + 1);
         }
 
         // The sensor models are compiled separately, so their properties are set by name.
@@ -178,6 +237,10 @@ namespace Antmicro.Renode.Peripherals.Sensors
         }
 
         private const int PeriodMs = 50;
+        private const uint IpcMagic = 0x414C414E; // IPC_MAGIC, "ALAN": set by the CM7 once SRAM4 is ready
+        private ulong ringBase, ringHead, ringTail, ringSlots;
+        private int ringSlotSize;
+        private uint ringCount;
         private const long Tim1Ccr1 = 0x40010034;
         private const long Tim1Ccr2 = 0x40010038;
 

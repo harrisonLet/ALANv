@@ -26,7 +26,9 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 
 #include "sensorEncoder.h"
-#include "objRing.h"
+#include "main.h"
+#include "projdefs.h"
+#include "stm32h7xx_hal_gpio.h"
 #include "telemetry.h"
 
 #include "queue.h"
@@ -94,18 +96,10 @@ static I2C_HandleTypeDef i2c_handler;
 
 static QueueHandle_t metadata_queue;
 
-static int32_t ang_unwrapped;
-static int32_t ang_unwrapped_storage[SENSOR_ENCODER_WINDOW];
-static Ring_o  ang_unwrapped_ring;
-static int32_t ang_unwrapped_sum;
-
-static uint16_t metadata_angle_prev;
-
 static uint8_t metadata_sequence;
 static uint16_t metadata_magnitude_cache;
 static uint8_t metadata_agc_cache;
-
-static int16_t telemetry_angle_offset;
+static uint16_t metadata_angle_offset;
 
 static HAL_StatusTypeDef AS5600_readRegs(uint8_t reg, uint8_t *buf, uint16_t len);
 static HAL_StatusTypeDef AS5600_writeReg(uint8_t reg, uint8_t value) __attribute__((unused)); // it is possible we will need to write offsets to the sensor in the future
@@ -127,7 +121,7 @@ HardwareInit_e sensorEncoder_hardwareInit(void)
     GPIO_InitTypeDef GPIO_InitStruct = {0};
     GPIO_InitStruct.Pin = GPIO_PIN_7 | GPIO_PIN_6;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD; // Open Drain - OD
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
@@ -198,13 +192,9 @@ RtosInit_e sensorEncoder_rtosInit(void)
         return RTOS_INIT_FAIL;
     }
 
-    // Initialize the windows used to integrate data
-    sensorEncoder_printf("    - init ring buffer for windowed sensor reading");
-    objRing_init(&ang_unwrapped_ring, ang_unwrapped_storage, sizeof(int32_t), SENSOR_ENCODER_WINDOW);
-    ang_unwrapped_sum = 0;
-    ang_unwrapped = 0;
-    metadata_angle_prev = ENCODER_FORWARD;
-    telemetry_angle_offset = 0;
+    // Initialize the data vars
+    sensorEncoder_printf("    - init data vars");
+    metadata_angle_offset = 0;
 
     sensorEncoder_printf("sensorEncoder_rtosInit complete");
     return RTOS_INIT_SUCCESS;
@@ -215,13 +205,28 @@ RtosInit_e sensorEncoder_rtosInit(void)
 void sensorEncoder_handler(void *argument)
 {
     sensorEncoder_printf("sensorEncoder_handler start. Poll: %u ms", 1000 / SENSOR_ENCODER_FREQUENCY);
+    
+    sensorEncoder_printf("    - init telemetry offset");
+    uint8_t buf[3];
+    for (uint8_t i = 0; i < 10; i++)
+    {
+        sensorEncoder_printf("        - attempt %u", i+1);
+        if (AS5600_readRegs(AS5600_STATUS, buf, 3) != HAL_OK) 
+        { 
+            sensorEncoder_printf("WARNING: Failed to read raw angle for start offset, will use 0 instead"); 
+            break;
+        } else {
+            if (buf[0] & AS5600_STATUS_MD) { metadata_angle_offset = ((buf[1] << 8) | buf[2]) & AS5600_12BIT_MASK; break; }
+            else { sensorEncoder_printf("WARNING: Magnet was not detected, trying again."); vTaskDelay(pdMS_TO_TICKS(50)); }
+        }
+    }
+    sensorEncoder_printf("    - telemetry offset: %u", metadata_angle_offset);
+    
     TickType_t lastWake = xTaskGetTickCount();
     for(;;)
     {
         // Read Frequency
-        if (!xTaskDelayUntil(&lastWake, configTICK_RATE_HZ / SENSOR_ENCODER_FREQUENCY)) {
-            continue;
-        }
+        if (xTaskDelayUntil(&lastWake, configTICK_RATE_HZ / SENSOR_ENCODER_FREQUENCY) != pdTRUE) { sensorEncoder_printf("WARNING: This task was not delayed, this may cause starvation in other tasks."); }
 
         // Metdata
         MetadataEncoder_t metadata = {0};
@@ -237,31 +242,14 @@ void sensorEncoder_handler(void *argument)
         }
         else
         {
+            // Weak magnet (ML) is only untrusted when the field is too low to read reliably
             if      (metadata.status & AS5600_STATUS_MH)                { metadata.valid = VALIDITY_UNTRUSTED_OVER_SATURATION; }
             else if ((metadata.status & AS5600_STATUS_MD) == 0)         { metadata.valid = VALIDITY_UNTRUSTED; }
             else if (metadata.raw_angle >= ENCODER_COUNTS)              { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
             else if (metadata.angle >= ENCODER_COUNTS)                  { metadata.valid = VALIDITY_UNTRUSTED_VALUE_OUT_OF_RANGE; }
             else if ((metadata.status & AS5600_STATUS_ML) &&
                     metadata.magnitude < ENCODER_MIN_MAGNITUDE)        { metadata.valid = VALIDITY_UNTRUSTED_UNDER_SATURATION; }
-            else                                                        { metadata.valid = VALIDITY_VALID; }                                            { metadata.valid = VALIDITY_VALID; }
-            
-            // A weak or strong magnet still gives a usable angle, so use it and let the validity flag report the problem
-            if (metadata.valid == VALIDITY_VALID ||
-                metadata.valid == VALIDITY_UNTRUSTED_OVER_SATURATION ||
-                metadata.valid == VALIDITY_UNTRUSTED_UNDER_SATURATION) {
-                int32_t delta = (int32_t)metadata.angle - metadata_angle_prev;
-                if (delta >  ENCODER_HALF_TURN) { delta -= ENCODER_COUNTS; }
-                if (delta < -ENCODER_HALF_TURN) { delta += ENCODER_COUNTS; }
-                ang_unwrapped += delta;
-                metadata_angle_prev = metadata.angle;
-
-                int32_t ang_unwrapped_old;
-                ang_unwrapped_sum += ang_unwrapped;
-                if (objRing_push(&ang_unwrapped_ring, &ang_unwrapped, &ang_unwrapped_old)) {
-                    ang_unwrapped_sum -= ang_unwrapped_old;
-                }
-            }
-            else { }
+            else                                                        { metadata.valid = VALIDITY_VALID; }
         }
         #ifdef CM7_SENSOR_ENCODER_DEBUG
         char metadata_str[METADATA_ENCODER_STR_SIZE];
@@ -271,22 +259,17 @@ void sensorEncoder_handler(void *argument)
 
         // Telemetry
         #ifdef CM7_TELEMETRY_ENABLE
-        if (ang_unwrapped_ring.count == 0) { continue; }
+        // A weak or strong magnet still gives a usable angle, so use it and let the validity flag report the problem
+        if (metadata.valid != VALIDITY_VALID &&
+            metadata.valid != VALIDITY_UNTRUSTED_OVER_SATURATION &&
+            metadata.valid != VALIDITY_UNTRUSTED_UNDER_SATURATION) { continue; }
         TelemetryMainSail_t telemetry = {0};
-        int32_t degrees = ((ang_unwrapped_sum / (int32_t)ang_unwrapped_ring.count) * 360) / ENCODER_COUNTS;
-        telemetry.ang_forward = ANG_WRAP_180(degrees - telemetry_angle_offset) * -1;
-        if (ang_unwrapped_ring.count == SENSOR_ENCODER_WINDOW-1) { telemetry_angle_offset = degrees; }
-        else if (ang_unwrapped_ring.count < SENSOR_ENCODER_WINDOW)
-        {
-            telemetry.ang_starboard = 0;
-            telemetry.ang_port = 0;
-        }
-        else 
-        {
-            if      (degrees > 0) { telemetry.ang_starboard = degrees; telemetry.ang_port = 0; }
-            else if (degrees < 0) { telemetry.ang_starboard = 0;       telemetry.ang_port = -degrees; }
-            else                  { telemetry.ang_starboard = 0;       telemetry.ang_port = 0; }
-        }
+        int32_t degrees = ((metadata.raw_angle - metadata_angle_offset) * 360) / ENCODER_COUNTS;
+        telemetry.ang_forward = ANG_WRAP_180(degrees) * -1;
+        
+        if      (telemetry.ang_forward > 0) { telemetry.ang_starboard = telemetry.ang_forward; telemetry.ang_port = 0; }
+        else if (telemetry.ang_forward < 0) { telemetry.ang_port = -telemetry.ang_forward;     telemetry.ang_starboard = 0; }
+
         telemetry_setMainSail(&telemetry);
         #endif
     }

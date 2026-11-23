@@ -6,6 +6,9 @@
 #define DUAL_CORE_BOOT_SYNC_SEQUENCE
 #define IPC_ENABLE // Inter-Processor Communication (CM7 <-> CM4)
 
+#ifdef IPC_ENABLE
+#define IPC_DEBUG
+#endif
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // CM4 Configuration
@@ -33,20 +36,26 @@
 #define CM7_LIVE_ENABLE
 #define CM7_COMMANDER_ENABLE
 #define CM7_TELEMETRY_ENABLE
+
 #define CM7_SENSOR_BATTERY_ENABLE
 #define CM7_SENSOR_ENCODER_ENABLE
 #define CM7_SENSOR_GPS_ENABLE
 #define CM7_SENSOR_IMU_ENABLE
 #define CM7_SENSOR_WIND_ENABLE
 #define CM7_FUSION_ORIENTATION_ENABLE // This module requires data from the SENSOR_GPS and SENSOR_IMU tasks, it will not run if they are not also enabled
+
 #define CM7_SERVO_RUDDER_ENABLE
 #define CM7_ARBITER_RUDDER_ENABLE
 #define CM7_PID_HEADING_ENABLE
+
 #define CM7_SERVO_SAIL_ENABLE
 #define CM7_ARBITER_TAIL_ENABLE
 #define CM7_PID_SAIL_ENABLE
 #define CM7_PROCESS_LSP_ENABLE
-// #define CM7_CONSOLE_ENABLE
+#define CM7_NAVIGATION_ENABLE // Live Tack Planning. Needs CM7_PID_HEADING_ENABLE, it will not run without it
+
+#define CM7_CONSOLE_ENABLE
+
 
 
 #ifdef CM7_ENABLE
@@ -56,6 +65,7 @@
 #ifdef CM7_LIVE_ENABLE
 // #define CM7_LIVE_DEBUG
 // #define CM7_LIVE_DEBUG_STACK // CM7_LIVE_DEBUG must be enabled
+// #define CM7_LIVE_DEBUG_CPU // CM7_LIVE_DEBUG must be enabled. Prints idle % and each task's share of CPU every second
 #endif
 
 #ifdef CM7_COMMANDER_ENABLE
@@ -68,12 +78,14 @@
 // #define CM7_TELEMETRY_DEBUG
 #endif
 
+
+
 #ifdef CM7_SENSOR_BATTERY_ENABLE
 // #define CM7_SENSOR_BATTERY_DEBUG
 #endif
 
 #ifdef CM7_SENSOR_ENCODER_ENABLE
-// #define CM7_SENSOR_ENCODER_DEBUG
+#define CM7_SENSOR_ENCODER_DEBUG
 #endif
 
 #ifdef CM7_SENSOR_GPS_ENABLE
@@ -94,16 +106,24 @@
 // #define CM7_FUSION_ORIENTATION_DEBUG
 #endif
 
+
+
+#ifdef CM7_SERVO_RUDDER_ENABLE
+// #define CM7_SERVO_RUDDER_DEBUG
+#endif
+
 #ifdef CM7_ARBITER_RUDDER_ENABLE
 // #define CM7_ARBITER_RUDDER_DEBUG
 #endif
 
-#ifdef CM7_SERVO_RUDDER_ENABLE
-// #define CM7_SERVO_RUDDER_DEBUG // prints every servo step
+#ifdef CM7_PID_HEADING_ENABLE
+// #define CM7_PID_HEADING_DEBUG
 #endif
 
-#ifdef CM7_PID_HEADING_ENABLE
-#define CM7_PID_HEADING_DEBUG
+
+
+#ifdef CM7_SERVO_SAIL_ENABLE
+// #define CM7_SERVO_SAIL_DEBUG
 #endif
 
 #ifdef CM7_ARBITER_TAIL_ENABLE
@@ -116,4 +136,13 @@
 
 #ifdef CM7_PROCESS_LSP_ENABLE
 // #define CM7_PROCESS_LSP_DEBUG
+#endif
+
+#ifdef CM7_NAVIGATION_ENABLE
+// #define CM7_NAVIGATION_DEBUG
+// #define NAV_TEST_ROUTE // Sim and parking lot only: loads an 80 m x 60 m box route around the first GPS fix. Keep off in lake builds
+#endif
+
+#ifdef CM7_CONSOLE_ENABLE
+// #define CM7_CONSOLE_DEBUG
 #endif

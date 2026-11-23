@@ -32,6 +32,7 @@
   <section class="left">
     <nav class="viewtabs">
       <button data-view="live" class="active">Live</button>
+      <button data-view="fwroute">Firmware route</button>
       <button data-view="stability">Stability</button>
       <button data-view="bench">Bench</button>
       <button data-view="route">Route</button>
@@ -172,6 +173,38 @@
           <h3>Changing wind</h3>
           <p class="hint">Gusts and shifts come from the Wind sliders (right). Shift it now to see the autopilot cope, then re-plan.</p>
           <div class="row"><button id="route-shift-l">Shift wind −20°</button><button id="route-shift-r">Shift wind +20°</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-fwroute" class="viewpane route" hidden>
+      <canvas id="fwr-map"></canvas>
+      <div class="bench-side">
+        <div class="card">
+          <h3>Waypoints <span id="fwr-count" class="hint"></span></h3>
+          <p class="hint">These go to <b>your firmware</b>: Commander, the Route Manager, then LTP, the same commands the ground
+            station will send. Each margin is for the leg that ends at that waypoint. Leg 0 starts where the boat is when
+            LTP takes the route.</p>
+          <div class="ctl"><span>Margin ±</span><input type="range" id="fwr-margin" min="3" max="60" value="15"><output id="fwr-margin-v">15 m</output></div>
+          <div class="ctl"><span>Arrive within</span><input type="range" id="fwr-arrive" min="2" max="30" value="8"><output id="fwr-arrive-v">8 m</output></div>
+          <div class="ctl"><span>Warning zone</span><input type="range" id="fwr-warn" min="0" max="40" value="10"><output id="fwr-warn-v">10 m</output></div>
+          <div class="row"><button id="fwr-margin-all">Margin to all</button><button id="fwr-box">Test box 80 × 60 m</button><button id="fwr-clear">Clear</button>
+            <label class="inline"><input type="checkbox" id="fwr-follow" checked> follow boat</label></div>
+          <div id="fwr-list" class="fwr-list"></div>
+        </div>
+        <div class="card">
+          <h3>Send to the firmware</h3>
+          <div class="row"><button id="fwr-send-auto" class="primary">Send route + AUTO</button><button id="fwr-send">Send route only</button></div>
+          <div class="row"><button id="fwr-auto">AUTO</button><button id="fwr-safe">SAFE</button></div>
+          <p id="fwr-msg" class="hint"></p>
+          <div id="fwr-results" class="fwr-results"></div>
+        </div>
+        <div class="card">
+          <h3>What LTP is doing</h3>
+          <div id="fwr-status" class="grid"></div>
+          <p class="hint">Blue band: the corridor (± margin). Yellow dotted: the tack lines at 0.8 × margin. Red dashed: margin +
+            warning; past it LTP latches a fault and asks for SAFE. Dashed circles: arrival radius. Purple: LTP's target
+            heading. Red wedge: the no-go zone around the wind the firmware estimates.</p>
         </div>
       </div>
     </div>

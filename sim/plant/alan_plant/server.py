@@ -101,6 +101,15 @@ class Simulation:
 
     # ---- stepping ----------------------------------------------------------------------------
 
+    def pin_wing(self, seconds):
+        """Hold the wing on the centreline for `seconds`, as a person does while the board powers up.
+
+        sensorEncoder.c takes whatever angle the wing has at boot as zero, so a firmware that boots with the
+        wing swung out reads every sail angle offset by that much for the whole run.
+        """
+        self.boat.wing_pinned = True
+        self._unpin_at = self.t + seconds
+
     def advance_to(self, t_target):
         while self.t < t_target - 1e-9:
             dt = min(PHYSICS_DT, t_target - self.t)
@@ -109,6 +118,9 @@ class Simulation:
                 self.autopilot.update(self.boat, self.wind, dt)
             self.boat.step(dt, self.wind, self.current.velocity_ne())
             self.t += dt
+            if self.boat.wing_pinned and self.t >= getattr(self, "_unpin_at", 0.0):
+                self.boat.wing_pinned = False
+                print(f"[plant t={self.t:7.2f}] wing released: the firmware has zeroed its encoder")
             while self.events and self.events[0]["t"] <= self.t:
                 ev = self.events.pop(0)
                 print(f"[plant t={self.t:7.2f}] event: {ev['cmd']}")
@@ -274,6 +286,7 @@ def serve(sim: Simulation, host="127.0.0.1", port=5555, status_every=5.0):
         except socket.timeout:
             continue
         print(f"Renode connected from {addr[0]}:{addr[1]}")
+        sim.pin_wing(12.0)   # the firmware zeroes its encoder about 7 s after boot
         conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         f = conn.makefile("rw", newline="\n")
         try:

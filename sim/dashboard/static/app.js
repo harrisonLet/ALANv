@@ -11,6 +11,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { initStability, initPointsOfSail } from "/static/panels.js";
 import { initBench } from "/static/bench.js";
 import { initRoute } from "/static/route.js";
+import { initFwRoute } from "/static/fwroute.js";
 import * as X from "/static/scene_extras.js";
 
 const $ = (id) => document.getElementById(id);
@@ -213,6 +214,49 @@ function maybeRebuildTrack(now) {
   if (trackDirty && now - lastTrackBuild > 1000) { trackDirty = false; lastTrackBuild = now; rebuildTrack(); }
 }
 function clearTrack() { track = []; rebuildTrack(); }
+
+// The route the firmware is sailing (Firmware route tab), drawn on the water: leg lines, the corridor (blue),
+// margin + warning (red), arrival rings and a buoy at each waypoint. Rebuilt when the route or the leg changes.
+const fwRouteGroup = new THREE.Group();
+fwRouteGroup.renderOrder = 9;
+scene.add(fwRouteGroup);
+let fwRouteKey = null;
+function fwLine(points, color, opacity, dashed) {
+  const g = new THREE.BufferGeometry().setFromPoints(points.map(([e, n]) => new THREE.Vector3(e, 0.05, -n)));
+  const m = dashed ? new THREE.LineDashedMaterial({ color, transparent: true, opacity, dashSize: 1.2, gapSize: 0.8, depthTest: false })
+                   : new THREE.LineBasicMaterial({ color, transparent: true, opacity, depthTest: false });
+  const l = new THREE.Line(g, m);
+  if (dashed) l.computeLineDistances();
+  l.renderOrder = 9;
+  return l;
+}
+function updateFwRoute3D(fw) {
+  const r = fw && fw.route, start = r && (r.leg0_start || r.sent_from), leg = fw && fw.ltp ? fw.ltp.leg : -1;
+  const key = r ? `${r.id}|${start.n},${start.e}|${leg}` : null;
+  if (key === fwRouteKey) return;
+  fwRouteKey = key;
+  for (const c of [...fwRouteGroup.children]) { fwRouteGroup.remove(c); c.geometry?.dispose(); c.material?.dispose(); }
+  if (!r) return;
+  const off = (a, b, d) => {      // the leg a->b shifted d metres to its right (starboard)
+    const dn = b.n - a.n, de = b.e - a.e, L = Math.hypot(dn, de) || 1, rn = -de / L, re = dn / L;
+    return [[a.e + re * d, a.n + rn * d], [b.e + re * d, b.n + rn * d]];
+  };
+  r.waypoints.forEach((wp, i) => {
+    const a = i === 0 ? start : r.waypoints[i - 1], cur = i === leg;
+    fwRouteGroup.add(fwLine([[a.e, a.n], [wp.e, wp.n]], 0xe0f2fe, cur ? 0.9 : 0.45, false));
+    for (const sgn of [1, -1]) {
+      fwRouteGroup.add(fwLine(off(a, wp, sgn * wp.margin), 0x38bdf8, cur ? 0.95 : 0.5, false));
+      fwRouteGroup.add(fwLine(off(a, wp, sgn * (wp.margin + r.warning_m)), 0xef4444, cur ? 0.9 : 0.45, true));
+    }
+    const ring = [];
+    for (let k = 0; k <= 48; k++) { const t = (k / 48) * Math.PI * 2; ring.push([wp.e + Math.sin(t) * r.arrive_m, wp.n + Math.cos(t) * r.arrive_m]); }
+    fwRouteGroup.add(fwLine(ring, 0xffffff, 0.5, true));
+    const buoy = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, 0.7, 16),
+      new THREE.MeshStandardMaterial({ color: i < leg ? 0x64748b : cur ? 0xfde047 : 0xfb923c, roughness: 0.5 }));
+    buoy.position.set(wp.e, 0.3, -wp.n);
+    fwRouteGroup.add(buoy);
+  });
+}
 $("clear-track").onclick = clearTrack;
 
 // CAD boat (sim/dashboard/models/boat.json, made by sim/tools/prepare_cad.py). Every STL is in the same assembly
@@ -662,6 +706,8 @@ function updatePanels(s) {
     ["heading", fmt(s.heading, 0, "°")], ["speed", fmt(s.sog, 2, " m/s")],
     ["apparent wind", `${fmt(s.awa, 0, "°")} @ ${fmt(s.aws, 1)}`], ["wing AoA", fmt(s.aoa, 1, "°")],
     ["tail / rudder", `${fmt(s.tail, 0, "°")} / ${fmt(s.rudder, 0, "°")}`], ["heel", fmt(s.heel, 0, "°")],
+    ...(s.fw && s.fw.ltp && s.fw.route ? [["LTP", `${s.fw.ltp.state_name} · leg ${s.fw.ltp.leg} · xte ${s.fw.ltp.xte} m`],
+      ["LTP target", s.fw.ltp.target == null ? "none" : `${s.fw.ltp.target}°`]] : []),
   ].map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join("");
 
   const fwPulse = (u) => (u == null ? "–" : u > 2600 || u < 400 ? `${u} (no pulse)` : `${u} µs`);
@@ -788,12 +834,14 @@ const benchTab = initBench({
   },
 });
 const routeTab = initRoute({ cmd });
+const fwRouteTab = initFwRoute({ post });
 document.querySelectorAll("[data-view]").forEach((b) => {
   b.onclick = () => {
     document.querySelectorAll("[data-view]").forEach((x) => x.classList.toggle("active", x === b));
-    for (const v of ["live", "bench", "route", "stability", "pos", "help"]) $(`view-${v}`).hidden = v !== b.dataset.view;
+    for (const v of ["live", "fwroute", "bench", "route", "stability", "pos", "help"]) $(`view-${v}`).hidden = v !== b.dataset.view;
     if (b.dataset.view !== "bench") benchTab.hide();
     if (b.dataset.view === "route") routeTab.show(); else routeTab.hide();
+    if (b.dataset.view === "fwroute") fwRouteTab.show(); else fwRouteTab.hide();
     if (b.dataset.view === "bench") benchTab.show();
     if (b.dataset.view === "live") resize();
     if (b.dataset.view === "stability") stability.show();
@@ -855,6 +903,8 @@ function connect() {
     updatePanels(S);
     benchTab.update(S);
     routeTab.update(S);
+    fwRouteTab.update(S);
+    updateFwRoute3D(S.fw);
     if (S.t !== lastChartT) {
       lastChartT = S.t;
       charts[0].push(S.t, [S.heading, S.cog]);

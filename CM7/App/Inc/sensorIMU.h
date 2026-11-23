@@ -8,16 +8,16 @@
 #define SENSOR_IMU_TASK_PRIORITY osPriorityNormal
 
 #ifdef CM7_SENSOR_IMU_DEBUG
-#define SENSOR_IMU_TASK_HEAP 280 // ~64B of extra
+#define SENSOR_IMU_TASK_HEAP (RTOS_MIN_STACK+256)
 #define sensorIMU_printf(fmt, ...) DEBUG_PRINTF(SENSOR_IMU_TASK, fmt, ##__VA_ARGS__)
 #else
-#define SENSOR_IMU_TASK_HEAP 170 // ~64B of extra
+#define SENSOR_IMU_TASK_HEAP (RTOS_MIN_STACK+64)
 #define sensorIMU_printf(...) ((void)0)
 #endif
 
-#define SENSOR_IMU_FREQUENCY 100U // Hz, this value is maxed at 100Hz because of limitations in the BNO055 chip (see data sheet pg 33)
+#define SENSOR_IMU_FREQUENCY 50U // Hz, this value is maxed at 100Hz because of limitations in the BNO055 chip (see data sheet pg 33)
 #define SENSOR_IMU_WINDOW 10u // num readings
-#define SENSOR_IMU_STALE 100u // ms before data is considered stale
+#define SENSOR_IMU_STALE 200u // ms before data is considered stale
 _Static_assert(SENSOR_IMU_FREQUENCY > 0u && SENSOR_IMU_FREQUENCY <= 100u, "SENSOR_IMU_FREQUENCY must be 1-100Hz");
 #if (SYSTEM_TICK_RATE_HZ % SENSOR_IMU_FREQUENCY) != 0u
 #warning "SENSOR_IMU_FREQUENCY does not divide the tick rate, the period will be rounded down"

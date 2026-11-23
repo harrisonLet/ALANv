@@ -21,6 +21,7 @@
 #include "loraTelemetry.h"
 #include "commander.h"
 #include "pidHeading.h"
+#include "navigationTask.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -111,7 +112,6 @@ void telemetry_handler(void *argument)
         else { telemetry_printf("IPC write failed for a weird reason. %02X", ipc_status); }
 
         #ifdef CM7_TELEMETRY_DEBUG
-        telemetry_printf("\x1b[2J\x1b[H");
         #ifdef CM7_SENSOR_BATTERY_ENABLE
         {
             char telemetryStr[TELEMETRY_BATTERY_STR_SIZE];
@@ -224,6 +224,7 @@ static bool telemetry_pack(
         telemetry->pitch     = telemetry_boatGlobal->angP_pitch;
         telemetry->imu_valid |= LORA_TELEMETRY_TELEMETRY_VALID;
         telemetry->orientation_valid |= LORA_TELEMETRY_TELEMETRY_VALID;
+        telemetry->gps_valid |= LORA_TELEMETRY_TELEMETRY_VALID;
     }
     // Servo angles have no validity field: 0 until the arbiter first moves the servo
     if (telemetry_getRudder(telemetry_rudder) == TELEMETRY_OK) {
@@ -235,7 +236,9 @@ static bool telemetry_pack(
 
     telemetry->mode = commander_getMode();
 
-    // Heading the PID is holding until LTP exists. 0xFFFF = no target yet (0 is a real heading, north)
+    // The heading the PID is steering to: LTP's in AUTO (to within NAV_HEADING_DEADBAND_DEG), the ground
+    // station's in semi-auto, and the last one held during an LTP fault. 0xFFFF = no target yet (0 is a
+    // real heading, north)
     #ifdef CM7_PID_HEADING_ENABLE
     int16_t target_heading = pidHeading_getTarget();
     telemetry->desired_heading = (target_heading < 0) ? 0xFFFFu : (uint16_t)target_heading;
@@ -243,9 +246,18 @@ static bool telemetry_pack(
     telemetry->desired_heading = 0xFFFFu;
     #endif
 
-    // TODO: The following values don't have fillers yet
-    telemetry->route_segment = 0;
-    telemetry->drift_distance = 0;
+    // From LTP. No leg (0xFF) and no drift when it has no route, is not in AUTO, or is not built in
+    TelemetryNavigation_t navigation;
+    if (navigationTask_getTelemetry(&navigation))
+    {
+        telemetry->route_segment = navigation.route_segment;
+        telemetry->drift_distance = navigation.drift_distance;
+    }
+    else
+    {
+        telemetry->route_segment = NAV_SEGMENT_NONE;
+        telemetry->drift_distance = 0;
+    }
     telemetry->last_cmd_seq = commander_getLastSeq();
     telemetry->last_cmd_result = commander_getLastResult();
     

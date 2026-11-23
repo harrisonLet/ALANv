@@ -52,7 +52,8 @@ The Bench tab has the same console box, and a checkbox that sends its servo slid
 
 | Tab | Shows |
 |---|---|
-| **Live** | 3D boat from your CAD, floating at its computed waterline, heeling with the wind; track, wind streaks, charts, firmware console |
+| **Live** | 3D boat from your CAD, floating at its computed waterline, heeling with the wind; track, wind streaks, charts, firmware console. The route your firmware is sailing is drawn on the water |
+| **Firmware route** | place waypoints on a map and send them to **your firmware** as ground-station commands; watch LTP sail them, with each leg's corridor, tack lines, warning band and arrival radius drawn (see below) |
 | **Bench** | the boat on its stand with a fan: set a sail angle and see the tail angle it needs (with the math), test each servo, move the wind vane, firmware console |
 | **Route** | click A and B, plan tacks/gybes inside a corridor, sail it with the sim autopilot in changing wind |
 | **Stability** | where it floats, centre of gravity vs buoyancy at any heel, righting moment curve, heel for a given wind, editable mass list |
@@ -61,6 +62,24 @@ The Bench tab has the same console box, and a checkbox that sends its servo slid
 
 The banner under the header always says who is steering: you (sliders) or your firmware, with the branch and commit
 it was built from (and whether it includes uncommitted edits).
+
+## Sail a route with your firmware (Firmware route tab)
+
+The CM4 and its radio are not emulated, so the dashboard plays the ground station and the CM4 together. **Send
+route + AUTO** builds the same commands the ground station will send (`COMMAND_NVS_LOAD_START`, one
+`COMMAND_NVS_LOAD` per waypoint, `COMMAND_NVS_LOAD_STOP` with the route CRC, then `COMMAND_MODE_AUTO`), and the plant
+bridge writes each one into the IPC command ring in SRAM4, exactly where the CM4 would. From there it is all your
+firmware: Commander pops them, the Route Manager checks the CRC, and LTP picks up the new route version.
+`sim/dashboard/fwlink.py` reads the ring layout from `Common/Inc/ipc.h`, so it follows changes to it.
+
+What the map draws is what LTP checks against: the corridor (± the margin of the leg that ends at each waypoint),
+the tack lines at `NAV_TACK_XTE_FRACTION` × margin, the warning band (margin + warning; past it LTP latches a fault and
+asks for SAFE) and the arrival circles. Leg 0 starts wherever the boat is when LTP takes the route. The status
+card shows LTP's state, leg, cross-track error, target heading and its wind estimate, parsed from its debug line,
+so the sim build turns on `CM7_NAVIGATION_DEBUG` and `CM7_COMMANDER_DEBUG` (`sim/renode/run.sh`).
+
+**Test box 80 × 60 m** puts the `NAV_TEST_ROUTE` box around the boat, so you can see it; the sim build no longer
+defines `NAV_TEST_ROUTE` itself.
 
 ## The boat model
 
@@ -96,6 +115,11 @@ Every run is logged to `sim/plant/logs/run-*.csv` (`latest.csv` points at the ne
 
 `sim/plant/alan_plant/boat.py` (`BoatParams`) holds the defaults; the CAD values override them at startup
 (`python3 sim/plant/cad_check.py` prints what was measured), and a scenario can override anything under `"boat": {...}`.
+
+The sensor models are mounted like the real ones, so the firmware's calibration applies unchanged:
+the BNO055 sits `MountOffset` (50°, `COMPASS_OFFSET` in `fusionOrientation.c`) off the centreline and its quaternion
+turns the opposite way to its compass heading; the AS5600 counts down as the wing swings to starboard. The firmware
+zeroes the encoder at boot, so the dashboard holds the boat at the dock with the wing centred for the first 12 s.
 
 Sign conventions: heading clockwise from true north; body x forward, y starboard; AWA positive = wind from
 starboard; wing angle positive = leading edge to starboard; AoA = AWA - wing angle. If the firmware's rudder

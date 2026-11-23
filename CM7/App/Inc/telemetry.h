@@ -17,10 +17,10 @@ _Static_assert(TELEMETRY_FREQUENCY > 0u && TELEMETRY_FREQUENCY <= SYSTEM_TICK_RA
 #endif
 
 #ifdef CM7_TELEMETRY_DEBUG
-#define TELEMETRY_TASK_HEAP 400
+#define TELEMETRY_TASK_HEAP (RTOS_MIN_STACK+256)
 #define telemetry_printf(fmt, ...) DEBUG_PRINTF(TELEMETRY_TASK, fmt, ##__VA_ARGS__)
 #else
-#define TELEMETRY_TASK_HEAP 260 // ~100B of extra
+#define TELEMETRY_TASK_HEAP (RTOS_MIN_STACK+128)
 #define telemetry_printf(fmt, ...) ((void)0)
 #endif
 

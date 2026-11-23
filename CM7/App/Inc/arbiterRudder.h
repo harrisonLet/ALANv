@@ -7,11 +7,12 @@
 
 #define ARBITER_RUDDER_TASK "[ARUDDER-]"
 #define ARBITER_RUDDER_TASK_PRIORITY osPriorityAboveNormal
-#define ARBITER_RUDDER_TASK_HEAP 300 // this is sized for printf's from servoSetRudder
 
 #ifdef CM7_ARBITER_RUDDER_DEBUG
+#define ARBITER_RUDDER_TASK_HEAP (RTOS_MIN_STACK+128)
 #define arbiterRudder_printf(fmt, ...) DEBUG_PRINTF(ARBITER_RUDDER_TASK, fmt, ##__VA_ARGS__)
 #else
+#define ARBITER_RUDDER_TASK_HEAP (RTOS_MIN_STACK+0)
 #define arbiterRudder_printf(...) ((void)0)
 #endif
 
@@ -35,5 +36,6 @@ void arbiterRudder_handler(void *argument);
 
 void arbiterRudder_request(ArbiterRudderSource_e source, int16_t turn);
 void arbiterRudder_setMode(ArbiterMode_e mode);
+ArbiterMode_e arbiterRudder_getMode(void);
 
 #endif // ARBITER_RUDDER_H

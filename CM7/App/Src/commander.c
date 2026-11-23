@@ -25,6 +25,8 @@ TaskHandle_t commander_task = NULL;
 
 static commander_state_t state;
 
+static volatile bool safe_requested; // set by commander_requestSafe from another task, cleared by the Commander
+
 // Converts a system mode into the mode each arbiter runs in. No default case, so the compiler flags a new system mode missing here.
 static bool arbiter_modes_for(system_mode_t mode, ArbiterMode_e *rudder, ArbiterMode_e *tail);
 
@@ -81,6 +83,13 @@ void commander_handler(void *argument) {
     for(;;) {
         // Sleep until cm4 notifies with new command or every couple ms in case of missed cmd
         ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(COMMANDER_POLL_MS));
+
+        // Checked first, so a command already queued behind it can still take the boat out of SAFE
+        if (safe_requested) {
+            safe_requested = false;
+            commander_printf("SAFE requested by another task, mode was %u", (unsigned)state.mode);
+            switch_mode(SYSTEM_MODE_SAFE);
+        }
 
         // Drain every queued command, pop returns EMPTY once the ring is drained
         while (ipc_cm7_pop_command(&state.current_cmd) == IPC_STATUS_OK) {
@@ -353,6 +362,10 @@ static bool mode_needs_lora(system_mode_t mode) {
     return false;
 }
 #endif
+
+void commander_requestSafe(void) {
+    safe_requested = true;
+}
 
 uint8_t commander_getMode(void) {
     return (uint8_t)state.mode;

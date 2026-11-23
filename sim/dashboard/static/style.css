@@ -127,3 +127,11 @@ button.toggle.on { border-color: var(--fw); color: var(--fw); }
 .fwout { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; height: 120px; margin: 4px 0 0; font-size: 11.5px; }
 .viewpane.route { display: grid; grid-template-columns: minmax(0, 1fr) 400px; overflow: hidden; }
 #route-map { width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: none; }
+#fwr-map { width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: none; }
+.fwr-list { max-height: 220px; overflow-y: auto; }
+.fwr-wp { display: grid; grid-template-columns: 22px 1fr auto auto; gap: 6px; align-items: center; padding: 2px 0; font-variant-numeric: tabular-nums; }
+.fwr-wp b { color: #fb923c; }
+.fwr-wp input { width: 54px; padding: 2px 4px; }
+.fwr-wp button { padding: 1px 7px; }
+.fwr-results { font-size: 12px; font-variant-numeric: tabular-nums; }
+.fwr-results .bad { color: var(--bad); }

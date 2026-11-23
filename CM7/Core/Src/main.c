@@ -88,6 +88,10 @@ int main(void)
   // Should already be in your STM32H7 HAL init but verify:
   SCB->CPACR |= ((3UL << 10*2) | (3UL << 11*2));  // enable FPU
 
+  // Separate Mem/Bus/Usage fault handlers (otherwise all escalate to HardFault) and trap integer divide by zero
+  SCB->SHCSR |= SCB_SHCSR_MEMFAULTENA_Msk | SCB_SHCSR_BUSFAULTENA_Msk | SCB_SHCSR_USGFAULTENA_Msk;
+  SCB->CCR   |= SCB_CCR_DIV_0_TRP_Msk;
+
   #if defined(CM7_ENABLE)
   hardware_init();
   #endif

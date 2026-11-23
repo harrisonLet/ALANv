@@ -4589,10 +4589,6 @@
 		(uuid "bee7705c-cc6d-4bfb-8cbd-14c252c36204")
 	)
 	(no_connect
-		(at 237.49 218.44)
-		(uuid "c047ddce-7826-42fe-b025-a3c664c3fb5c")
-	)
-	(no_connect
 		(at 323.85 208.28)
 		(uuid "c20e1b3b-3d11-4269-88c8-3e11004bf824")
 	)
@@ -5206,6 +5202,16 @@
 	)
 	(wire
 		(pts
+			(xy 218.44 218.44) (xy 237.49 218.44)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "98a0af87-1ed5-412a-bc36-0ca2bb0f86d0")
+	)
+	(wire
+		(pts
 			(xy 431.8 109.22) (xy 431.8 166.37)
 		)
 		(stroke
@@ -5653,6 +5659,16 @@
 			(justify left bottom)
 		)
 		(uuid "4f47bdf0-c65c-4487-8198-7043d2f57a9a")
+	)
+	(label "rudderServo"
+		(at 218.44 218.44 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "56b44fd9-857a-4c6c-833f-5b8d37f875c2")
 	)
 	(label "B3"
 		(at 457.2 96.52 0)

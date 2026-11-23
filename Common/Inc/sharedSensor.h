@@ -110,10 +110,18 @@ typedef struct {
     uint8_t minutes;   /**< Minutes part of the timestamp */
     uint8_t seconds;   /**< Seconds part of the timestamp */
 
+    /* Velocity, from RMC. Separate from valid and timestamp, which belong to GGA */
+    float sog_mps;          /**< Speed over ground, m/s */
+    uint16_t cog_deg;       /**< Course over ground, 0..359 deg true, METADATA_GPS_COG_NONE when the GPS gives none (stopped) */
+    uint8_t vel_valid;      /**< 1 if the last RMC had status 'A' and a speed */
+    uint32_t vel_timestamp; /**< When the last RMC was parsed, ms. Compare against it to know if velocity is fresh */
+
     uint32_t timestamp; /**< Timestamp for when the measurement was taken, measured in ms */
     uint8_t valid; /**< Indicates if the measurement is valid */
     uint8_t sequence; /**< Sequence number of the measurement, used to ensure a measurment is actually new */
 } MetadataGPS_t;
+
+#define METADATA_GPS_COG_NONE 0xFFFFu // cog_deg when RMC has no course
 
 #define METADATA_GPS_STR_SIZE 256u
 char *MetadataGPS_toString(const MetadataGPS_t *metadata, char buf[METADATA_GPS_STR_SIZE]);
