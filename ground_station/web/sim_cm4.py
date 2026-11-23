@@ -53,6 +53,8 @@ class Boat:
         self.rudder = self.sail = 0
         self.target = None              # heading PID target
         self.last_seq, self.last_result, self.result_t = 255, RESULT['NONE'], 0.0
+        self.last_real = None           # (seq, type, payload) of the last real command, to spot resends
+        self.last_real_result = RESULT['NONE']
         self.spare, self.rx_mask = {}, 0
         self.route, self.route_version = None, 0
         self.ltp_version = 0            # route version LTP has picked up
@@ -63,8 +65,16 @@ class Boat:
 
     # ── Commander ──────────────────────────────────────────────────────────
     def command(self, seq, ctype, payload):
+        # Like the Commander: a copy of the last real command (same seq, type, payload) is a ground station
+        # resend whose report was lost. Report the first result again instead of running it twice
+        key = (seq, ctype, payload.ljust(BL.PAYLOAD_MAX, b'\0'))
+        if ctype != BL.COMMAND_NONE and key == self.last_real:
+            self.last_seq, self.last_result, self.result_t = seq, self.last_real_result, time.time()
+            print(f'seq {seq:3d} type 0x{ctype:02X} -> {BL.RESULTS[self.last_result]} (resend, not run again)', flush=True)
+            return
         r = self.execute(ctype, payload)
         if ctype != BL.COMMAND_NONE:
+            self.last_real, self.last_real_result = key, r
             self.last_seq, self.last_result, self.result_t = seq, r, time.time()
         elif time.time() - self.result_t > HOLD_S:
             self.last_seq, self.last_result = seq, RESULT['NONE']

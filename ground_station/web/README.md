@@ -37,7 +37,9 @@ Every command is a real command packet (`boatlink.py`). The ground station sends
 right after a telemetry packet arrives, because that is when the boat's radio is listening. It resends a command
 with the same seq until the boat's telemetry reports that seq in `last_cmd_seq` (up to 5 tries), and shows the
 result (OK, WRONG_MODE, ...) in the Commands list. A route upload is start, one command per waypoint, commit (with a
-CRC), then AUTO if asked. If the commit fails it uploads the whole route again, up to 3 times.
+CRC), then AUTO if asked. If the boat was busy reading the route (NONE) only the commit is sent again; if the commit
+fails any other way the whole route is uploaded again, up to 3 times. The boat (ltp) reports a resent command with its
+first result instead of running it twice.
 
 The radio framing lives in `boatlink.build_packet()`, so error correction only needs to change that function.
 Command numbers come from `../terminal/commands.h` and the telemetry layout from `../terminal/telemetry.h`.

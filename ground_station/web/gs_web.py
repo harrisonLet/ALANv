@@ -280,8 +280,10 @@ def handle_packet(pkt):
         S.telem = telem
         S.raw = pkt.hex(' ')
         if S.tx_seq is None:
-            # Past whatever the boat executed last, so an old seq can't read as this session's ack
-            S.tx_seq = (telem['last_cmd_seq'] + 1) & 0xFF
+            # Past whatever the boat heard or executed last, so an old seq can't read as this session's ack
+            # and a new command can't look like a resend of an old one
+            heard = telem.get('rx_last_seq') if telem.get('rx_age_s', 255) != 255 else None
+            S.tx_seq = ((heard if heard is not None else telem['last_cmd_seq']) + 1) & 0xFF
         sample = {'t': now, 'heading': telem['heading'], 'desired_heading': telem['desired_heading'],
                   'ang_wind': telem['ang_wind'], 'roll': telem['roll'], 'pitch': telem['pitch'],
                   'battery_voltage': telem['battery_voltage'], 'sail_ang_forward': telem['sail_ang_forward'],
@@ -390,9 +392,19 @@ def finish(c, status, result=None):
     for q in [q for q in S.queue if q.route is up]:
         S.queue.remove(q)
         q.status = 'cancelled'
-    # The boat wipes the half-loaded route after any commit, so a failed commit means starting over.
-    # INCOMPLETE after a resent commit can also mean the first one worked and its report was lost.
-    retry = (c.type == BL.COMMAND_NVS_LOAD_STOP and result in ('INCOMPLETE', 'NONE')) or status == 'gave up'
+    # NONE: LTP was reading the route at that moment. The boat keeps the checked upload, so send the commit again
+    if c.type == BL.COMMAND_NVS_LOAD_STOP and result == 'NONE' and up['attempt'] < ROUTE_UPLOADS + 2:
+        up['attempt'] += 1
+        up['status'] = 'boat busy, committing again'
+        again = [Cmd(c.type, c.payload, c.label, route=up)]
+        if up['auto']:
+            again.append(Cmd(BL.MODE_COMMAND['AUTO'], b'', 'mode AUTO', route=up))
+        for q in again:
+            S.queue.append(q)
+            S.log.appendleft(q)
+        return
+    # Any other failed commit clears the half-loaded route on the boat, so start over
+    retry = (c.type == BL.COMMAND_NVS_LOAD_STOP and result == 'INCOMPLETE') or status == 'gave up'
     if retry and up['attempt'] < ROUTE_UPLOADS:
         up['attempt'] += 1
         up['done'] = 0
