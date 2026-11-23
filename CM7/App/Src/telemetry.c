@@ -14,6 +14,8 @@
 #include "sensorWind.h"
 #include "telemetry.h"
 
+#include <math.h>
+
 #include "queue.h"
 #include "ipc.h"
 #include "loraTelemetry.h"
@@ -175,9 +177,8 @@ static bool telemetry_pack(
     MetadataGPS_t metadata_gps;
     if (sensorGPS_getMetadata(&metadata_gps))
     {
-        telemetry->altitude = metadata_gps.altitude;
-        telemetry->satellites = metadata_gps.satellites;
-        telemetry->fix_valid = metadata_gps.fix_valid;
+        telemetry->altitude = (int16_t)lroundf(metadata_gps.altitude * LORA_GPS_ALT_SCALE);
+        telemetry->sats_fix = LORA_GPS_SATS_FIX(metadata_gps.satellites, metadata_gps.fix_valid);
         telemetry->utc_hours = metadata_gps.hours;
         telemetry->utc_minutes = metadata_gps.minutes;
         telemetry->utc_seconds = metadata_gps.seconds;
@@ -215,8 +216,9 @@ static bool telemetry_pack(
         telemetry->wind_valid |= LORA_TELEMETRY_TELEMETRY_VALID;
     }
     if (telemetry_getBoatGlobalOrientation(telemetry_boatGlobal) == TELEMETRY_OK) {
-        telemetry->latitude  = telemetry_boatGlobal->latitude;
-        telemetry->longitude = telemetry_boatGlobal->longitude;
+        // Rounded to 1e-7 deg only here, the CM7 keeps doubles for the fusion and navigation math
+        telemetry->latitude  = (int32_t)lround(telemetry_boatGlobal->latitude * LORA_GPS_DEG_SCALE);
+        telemetry->longitude = (int32_t)lround(telemetry_boatGlobal->longitude * LORA_GPS_DEG_SCALE);
         telemetry->heading   = telemetry_boatGlobal->angP_heading;
         telemetry->roll      = telemetry_boatGlobal->angP_roll;
         telemetry->pitch     = telemetry_boatGlobal->angP_pitch;
