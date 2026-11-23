@@ -15,6 +15,7 @@ typedef struct {
     int16_t  noise;          // dBm, channel RSSI while listening, sampled by LoRa_GetRxStats
     uint16_t ok;             // packets with a good CRC, wraps
     uint16_t crc_err;        // packets with a bad CRC, wraps
+    uint8_t  no_crc;         // packets sent without a CRC, dropped unread, wraps
 } LoRaRxStats_t;
 
 int     LoRa_init(void);
