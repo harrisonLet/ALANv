@@ -50,6 +50,10 @@ cmd_result_t execute_servo(ipc_cmd_t *cmd);
 cmd_result_t execute_pid(ipc_cmd_t *cmd);
 cmd_result_t navigation_cmd(ipc_cmd_t *cmd);
 
+// Applies a COMMAND_STATE (ipc_cmd_state_t in ipc.h): the mode once per mode request number, then the
+// setpoints the resulting mode uses. Everything is checked first, so a rejected packet changes nothing.
+cmd_result_t apply_state(const ipc_cmd_t *cmd);
+
 // Asks the Commander to switch to SAFE on its next cycle. Safe to call from any task: only the
 // Commander's own task ever changes the mode.
 void commander_requestSafe(void);
