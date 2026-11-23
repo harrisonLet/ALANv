@@ -13,7 +13,7 @@ typedef enum {
 
 /*
  * Telemetry record sent from the boat to the ground station over LoRa.
- * Packed so the layout on the wire matches the struct exactly (80 bytes).
+ * Packed so the layout on the wire matches the struct exactly (76 bytes).
  */
 typedef struct __attribute__((packed)) {
 
@@ -41,10 +41,6 @@ typedef struct __attribute__((packed)) {
     uint8_t  utc_minutes;
     uint8_t  utc_seconds;
     uint8_t  gps_valid;              /* Validity_e */
-
-    /* GPS velocity, from the RMC sentence (Doppler, not differenced positions). Over ground, not through the water */
-    uint16_t sog;                    /* speed over ground, cm/s (LORA_GPS_SOG_SCALE), LORA_GPS_VEL_NONE = no valid RMC in SENSOR_GPS_STALE */
-    uint16_t cog;                    /* course over ground, 0..359 deg true, LORA_GPS_VEL_NONE = none (the GPS gives none when stopped) */
 
     /* IMU (BNO055) */
     uint8_t  imu_cal;                /* calibration: sys/gyro/acc/mag, 2 bits each */
@@ -85,7 +81,7 @@ typedef struct __attribute__((packed)) {
 } LoRaTelemetry_t;
 
 /* The ground station decodes this exact layout, so a size change has to go out on both sides */
-_Static_assert(sizeof(LoRaTelemetry_t) == 80, "LoRaTelemetry_t must be 80 bytes, update the ground station with it");
+_Static_assert(sizeof(LoRaTelemetry_t) == 76, "LoRaTelemetry_t must be 76 bytes, update the ground station with it");
 
 /* LoRa receive stats encoding */
 #define LORA_RX_SNR_SCALE  4.0          /* rx_last_snr: dB * 4, as the radio reports it */
@@ -97,7 +93,5 @@ _Static_assert(sizeof(LoRaTelemetry_t) == 80, "LoRaTelemetry_t must be 80 bytes,
 #define LORA_GPS_SATS_FIX(sats, fix) ((uint8_t)((((fix) > 7U ? 7U : (fix)) << 5) | ((sats) > 31U ? 31U : (sats))))
 #define LORA_GPS_SATS(sats_fix)      ((uint8_t)((sats_fix) & 0x1FU))
 #define LORA_GPS_FIX(sats_fix)       ((uint8_t)((sats_fix) >> 5))
-#define LORA_GPS_SOG_SCALE 100.0        /* sog: m/s * 100 */
-#define LORA_GPS_VEL_NONE  0xFFFFU      /* sog or cog unknown */
 
 #endif

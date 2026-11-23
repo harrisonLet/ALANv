@@ -186,8 +186,6 @@ int main(void)
       .utc_minutes            = 34,
       .utc_seconds            = 56,
       .gps_valid              = LORA_TELEMETRY_ALL_VALID,
-      .sog                    = 123,          /* 1.23 m/s */
-      .cog                    = 270,
       .imu_cal                = 0xFF,
       .imu_temp               = 25,
       .imu_valid              = LORA_TELEMETRY_ALL_VALID,

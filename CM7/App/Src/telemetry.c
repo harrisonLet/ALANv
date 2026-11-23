@@ -174,22 +174,9 @@ static bool telemetry_pack(
         if (metadata_wind.valid != 0 && metadata_wind.valid < 0x10) { telemetry->wind_valid |= LORA_TELEMETRY_METADATA_VALID; }
     }
 
-    // 0 would read as stopped and as north, so velocity starts unknown
-    telemetry->sog = LORA_GPS_VEL_NONE;
-    telemetry->cog = LORA_GPS_VEL_NONE;
-
     MetadataGPS_t metadata_gps;
     if (sensorGPS_getMetadata(&metadata_gps))
     {
-        // RMC velocity has its own validity and timestamp, separate from GGA's. Signed age like navigationTask's recent()
-        bool vel_fresh = (int32_t)(HAL_GetTick() - metadata_gps.vel_timestamp) <= (int32_t)SENSOR_GPS_STALE;
-        if (metadata_gps.vel_valid && vel_fresh)
-        {
-            long sog = lroundf(metadata_gps.sog_mps * (float)LORA_GPS_SOG_SCALE);
-            telemetry->sog = (uint16_t)((sog < 0) ? 0 : (sog >= (long)LORA_GPS_VEL_NONE) ? (long)LORA_GPS_VEL_NONE - 1 : sog);
-            telemetry->cog = (metadata_gps.cog_deg < 360U) ? metadata_gps.cog_deg : LORA_GPS_VEL_NONE;
-        }
-
         telemetry->altitude = (int16_t)lroundf(metadata_gps.altitude * LORA_GPS_ALT_SCALE);
         telemetry->sats_fix = LORA_GPS_SATS_FIX(metadata_gps.satellites, metadata_gps.fix_valid);
         telemetry->utc_hours = metadata_gps.hours;
