@@ -235,6 +235,7 @@
 #define REG_FRF_MID              0x07
 #define REG_FRF_LSB              0x08
 #define REG_PA_CONFIG            0x09
+#define REG_LNA                  0x0C
 #define REG_FIFO_ADDR_PTR        0x0D
 #define REG_FIFO_TX_BASE_ADDR    0x0E
 #define REG_FIFO_RX_BASE_ADDR    0x0F
@@ -405,6 +406,12 @@ int LoRa_init(void){
     HAL_Delay(1);
 
     SPI_tx_byte(REG_MODEM_CFG_3, 0x04);
+    HAL_Delay(1);
+
+    // LNA: max gain (the AGC above overrides it) and LnaBoostHf on (150% LNA current), the setting
+    // Semtech recommends on the 915 MHz port. Reset leaves the boost off; the ground station bridge
+    // (arduino-LoRa) turns it on, so without this the boat was the less sensitive receiver
+    SPI_tx_byte(REG_LNA, 0x23);
     HAL_Delay(1);
 
     // setting base address
