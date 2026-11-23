@@ -13,7 +13,7 @@ typedef enum {
 
 /*
  * Telemetry record sent from the boat to the ground station over LoRa.
- * Packed so the layout on the wire matches the struct exactly (73 bytes).
+ * Packed so the layout on the wire matches the struct exactly (76 bytes).
  */
 typedef struct __attribute__((packed)) {
 
@@ -32,12 +32,11 @@ typedef struct __attribute__((packed)) {
     int16_t  ang_wind;               /* apparent wind vs bow, -180..180 deg, + = from starboard */
     uint8_t  wind_valid;             /* Validity_e */
 
-    /* GPS */
-    double   latitude;               /* degrees, + = north */
-    double   longitude;              /* degrees, + = east */
-    float    altitude;               /* m */
-    uint8_t  satellites;             /* satellites used in fix */
-    uint8_t  fix_valid;              /* GGA fix quality, 0 = no fix */
+    /* GPS. Sized to what the GGA sentence gives (lat/lon to 1.67e-6 deg, altitude to 0.1 m), so nothing is lost */
+    int32_t  latitude;               /* 1e-7 degrees (LORA_GPS_DEG_SCALE), + = north */
+    int32_t  longitude;              /* 1e-7 degrees (LORA_GPS_DEG_SCALE), + = east */
+    int16_t  altitude;               /* dm */
+    uint8_t  sats_fix;               /* LORA_GPS_SATS_FIX: bits 0-4 satellites used in fix, bits 5-7 GGA fix quality (0 = no fix) */
     uint8_t  utc_hours;
     uint8_t  utc_minutes;
     uint8_t  utc_seconds;
@@ -67,6 +66,32 @@ typedef struct __attribute__((packed)) {
     uint32_t uptime_ms;              /* board uptime */
     uint8_t  last_cmd_result;        /* cmd_result_t of the command in last_cmd_seq */
 
+    /* LoRa receive stats. The CM7 leaves these 0, the CM4 fills them in right before sending */
+    uint8_t  rx_last_seq;            /* seq of the last packet received, heartbeats included */
+    uint8_t  rx_last_type;           /* command type of that packet, 0x00 = heartbeat */
+    int16_t  rx_last_rssi;           /* dBm, signal strength of that packet */
+    int8_t   rx_last_snr;            /* quarter dB (LORA_RX_SNR_SCALE), SNR of that packet */
+    uint8_t  rx_age_s;               /* seconds since anything was received, 255 = 255+ or never */
+    int16_t  rx_noise;               /* dBm, channel RSSI with the radio listening, sampled right before this send */
+    uint16_t rx_ok;                  /* packets received with a good CRC, wraps */
+    uint16_t rx_crc_err;             /* packets received with a bad CRC, wraps */
+    uint8_t  rx_rejected;            /* good CRC but failed the header/address/length check, wraps */
+    uint8_t  rx_dropped;             /* valid command that could not be queued for the CM7, wraps */
+
 } LoRaTelemetry_t;
+
+/* The ground station decodes this exact layout, so a size change has to go out on both sides */
+_Static_assert(sizeof(LoRaTelemetry_t) == 76, "LoRaTelemetry_t must be 76 bytes, update the ground station with it");
+
+/* LoRa receive stats encoding */
+#define LORA_RX_SNR_SCALE  4.0          /* rx_last_snr: dB * 4, as the radio reports it */
+#define LORA_RX_AGE_NEVER  255U         /* rx_age_s when nothing has been received, or 255 s or more ago */
+
+/* GPS field encoding */
+#define LORA_GPS_DEG_SCALE 10000000.0   /* latitude/longitude: degrees * 1e7, about 1 cm */
+#define LORA_GPS_ALT_SCALE 10.0         /* altitude: metres * 10 */
+#define LORA_GPS_SATS_FIX(sats, fix) ((uint8_t)((((fix) > 7U ? 7U : (fix)) << 5) | ((sats) > 31U ? 31U : (sats))))
+#define LORA_GPS_SATS(sats_fix)      ((uint8_t)((sats_fix) & 0x1FU))
+#define LORA_GPS_FIX(sats_fix)       ((uint8_t)((sats_fix) >> 5))
 
 #endif
