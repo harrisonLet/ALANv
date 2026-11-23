@@ -74,7 +74,7 @@ typedef struct __attribute__((packed)) {
     uint8_t  rx_age_s;               /* seconds since anything was received, 255 = 255+ or never */
     int16_t  rx_noise;               /* dBm, channel RSSI with the radio listening, sampled right before this send */
     uint16_t rx_ok;                  /* packets received with a good CRC, wraps */
-    uint16_t rx_crc_err;             /* packets received with a bad CRC, wraps */
+    uint16_t rx_crc_err;             /* packets received with a bad or missing CRC (dropped), wraps */
     uint8_t  rx_rejected;            /* good CRC but failed the header/address/length check, wraps */
     uint8_t  rx_dropped;             /* valid command that could not be queued for the CM7, wraps */
 

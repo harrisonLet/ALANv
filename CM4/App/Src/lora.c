@@ -265,6 +265,8 @@
 #define REG_PKT_RSSI_VALUE       0x1A   /* RSSI of last packet, dBm = RSSI_OFFSET_HF + value */
 #define REG_RSSI_VALUE           0x1B   /* current channel RSSI, dBm = RSSI_OFFSET_HF + value */
 #define REG_DIO_MAPPING_1        0x40   /* DIO0 mapping: 0x00=RxDone, 0x40=TxDone */
+#define REG_HOP_CHANNEL          0x1C   /* bit 6 CrcOnPayload: the last received header said a CRC follows */
+#define HOP_CHANNEL_CRC_ON       0x40
 
 #define RSSI_OFFSET_HF           (-157) /* RSSI register offset on the 862-1020 MHz port (SX1276 datasheet 5.5.5) */
 
@@ -397,10 +399,14 @@ int LoRa_init(void){
 
     // writing important transmit configuraations
     // REGMODEM CONFIG 1 IS 0X1D
-    SPI_tx_byte(REG_MODEM_CFG_1, 0x82); // BW 250 kHz, CR 4/5, explicit header (0x72 was 125 kHz)
+    // BW 250 kHz, CR 4/7, explicit header. CR 4/7 is a Hamming code that corrects one bad bit in every
+    // 4-bit chunk, and the interleaver spreads each symbol over different chunks, so one bad symbol per
+    // block of 7 is corrected. It only sets what the boat sends with: in explicit header mode each
+    // packet's header carries its coding rate, and the receiver follows it.
+    SPI_tx_byte(REG_MODEM_CFG_1, 0x86);
     HAL_Delay(1);
 
-    SPI_tx_byte(REG_MODEM_CFG_2, 0x84); // sf 8, crc on
+    SPI_tx_byte(REG_MODEM_CFG_2, 0x84); // sf 8, crc on: the radio adds and checks a CRC-16 after the 4/7 correction
     HAL_Delay(1);
 
     SPI_tx_byte(REG_MODEM_CFG_3, 0x04);
@@ -527,6 +533,14 @@ void LoRa_ProcessDIO0(void)
    The chip writes each packet at a variable offset, RegFifoRxCurrentAddr says where. */
 static void read_rx_packet(void)
 {
+    // The radio only checks a CRC the sender included (the header says whether there is one), so a
+    // packet sent without one would reach the CM7 unchecked. Drop it, counted with the bad CRCs.
+    // The ground station bridge must send with CRC on.
+    if (!(SPI_rx_byte(REG_HOP_CHANNEL) & HOP_CHANNEL_CRC_ON)) {
+        s_rx_stats.crc_err++;
+        return;
+    }
+
     uint8_t pkt_addr = SPI_rx_byte(REG_FIFO_RX_CURRENT_ADDR);
     uint8_t pkt_len  = SPI_rx_byte(REG_RX_NB_BYTES);
     if (pkt_len > sizeof(s_rx_buf)) pkt_len = sizeof(s_rx_buf);
