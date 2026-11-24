@@ -57,6 +57,7 @@ TILE_MAX_ZOOM = 19
 ADDR_GROUND = BL.ADDR_GROUND
 ADDR_BOAT   = BL.ADDR_BOAT
 HDR_LEN     = 5        # dest, src, seq, len, flags
+FLAG_RADIO_REINIT = 0x08   # header flags bit 3 (CM4 telemetryReceive.h): the boat's radio reset and was set up again
 HISTORY_LEN = 600      # samples kept for charts and track (~10 min at 1 Hz)
 
 # Commands
@@ -184,6 +185,9 @@ class State:
         self.seq = None
         self.pkts = self.lost = self.junk = 0
         self.rx_time = None
+        self.radio_resets = 0           # FLAG_RADIO_REINIT going 0 -> 1 (the boat holds it for a few packets)
+        self.radio_reset_t = None
+        self.reinit_flag = False
         self.history = collections.deque(maxlen=HISTORY_LEN)
         self.clients = []
         # commands
@@ -202,7 +206,7 @@ class State:
         return {'port': self.port, 'connected': self.fd is not None, 'error': self.error,
                 'pkts': self.pkts, 'lost': self.lost, 'junk': self.junk, 'seq': self.seq,
                 'rx_time': self.rx_time, 'cmds_sent': self.cmds_sent, 'hbs_sent': self.hbs_sent,
-                'heartbeat': self.heartbeat}
+                'heartbeat': self.heartbeat, 'radio_resets': self.radio_resets, 'radio_reset_t': self.radio_reset_t}
 
     def cmd_view(self):
         route = {k: ({kk: vv for kk, vv in v.items() if not kk.startswith('_')} if v else v)
@@ -286,6 +290,11 @@ def handle_packet(pkt):
         S.seq = seq
         S.pkts += 1
         S.rx_time = now
+        reinit = bool(pkt[4] & FLAG_RADIO_REINIT)
+        if reinit and not S.reinit_flag:
+            S.radio_resets += 1
+            S.radio_reset_t = now
+        S.reinit_flag = reinit
         S.telem = telem
         S.raw = pkt.hex(' ')
         if S.tx_seq is None:

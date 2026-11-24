@@ -156,6 +156,7 @@ button.primary { background: #2d1f4d; border-color: var(--desired); }
     <span>pkts <b id="st-pkts">0</b></span>
     <span>lost <b id="st-lost">0</b></span>
     <span>junk <b id="st-junk">0</b></span>
+    <span title="Times the boat found its LoRa radio reset (power dip) and set it up again">radio resets <b id="st-resets">0</b></span>
     <span>seq <b id="st-seq">–</b></span>
     <span>uptime <b id="st-up">–</b></span>
   </div>
@@ -706,6 +707,10 @@ function renderLink() {
   $('st-pkts').textContent = link.pkts;
   $('st-lost').textContent = link.lost;
   $('st-junk').textContent = link.junk;
+  const resets = $('st-resets');
+  resets.textContent = link.radio_resets
+    ? `${link.radio_resets} (last ${new Date(link.radio_reset_t * 1000).toLocaleTimeString()})` : 0;
+  resets.style.color = link.radio_resets ? 'var(--warn)' : '';
   $('st-seq').textContent = link.seq ?? '–';
   $('conn-btn').textContent = link.connected ? 'Disconnect' : 'Connect';
   tick();
