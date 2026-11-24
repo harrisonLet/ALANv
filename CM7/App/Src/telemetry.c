@@ -252,11 +252,15 @@ static bool telemetry_pack(
     {
         telemetry->route_segment = navigation.route_segment;
         telemetry->drift_distance = navigation.drift_distance;
+        telemetry->nav_info = (uint8_t)((navigation.nav_state & 0x0Fu) |
+            ((navigation.flags & NAV_FLAG_TACK_SLOW) ? LORA_NAV_TACK_SLOW : 0u) |
+            ((navigation.flags & NAV_FLAG_CORRIDOR) ? LORA_NAV_CORRIDOR : 0u));
     }
     else
     {
         telemetry->route_segment = NAV_SEGMENT_NONE;
         telemetry->drift_distance = 0;
+        telemetry->nav_info = LORA_NAV_NONE;
     }
     telemetry->last_cmd_seq = commander_getLastSeq();
     telemetry->last_cmd_result = commander_getLastResult();

@@ -62,7 +62,8 @@ typedef struct __attribute__((packed)) {
     uint16_t desired_heading;        /* 0..359 deg, heading PID target (set by LTP in AUTO), 0xFFFF = no target */
     uint8_t  route_segment;          /* leg LTP is sailing, 0 = to the first waypoint, 0xFF = none */
     int16_t  drift_distance;         /* cross-track distance from the segment, m, + = starboard of path */
-    uint16_t last_cmd_seq;           /* sequence number of the last command received */
+    uint8_t  last_cmd_seq;           /* sequence number of the last command received */
+    uint8_t  nav_info;               /* LTP: bits 0-3 NavState_e (0x0F = no LTP), bit 6 tack slow, bit 7 left the corridor */
     uint32_t uptime_ms;              /* board uptime */
     uint8_t  last_cmd_result;        /* cmd_result_t of the command in last_cmd_seq */
 
@@ -86,6 +87,12 @@ _Static_assert(sizeof(LoRaTelemetry_t) == 76, "LoRaTelemetry_t must be 76 bytes,
 /* LoRa receive stats encoding */
 #define LORA_RX_SNR_SCALE  4.0          /* rx_last_snr: dB * 4, as the radio reports it */
 #define LORA_RX_AGE_NEVER  255U         /* rx_age_s when nothing has been received, or 255 s or more ago */
+
+/* nav_info encoding. Was the high byte of a 16-bit last_cmd_seq, so an old ground station still reads the seq from the low byte */
+#define LORA_NAV_NONE          0x0FU  /* bits 0-3 when LTP is not built in or has not run */
+#define LORA_NAV_STATE(info)   ((uint8_t)((info) & 0x0FU))
+#define LORA_NAV_TACK_SLOW     0x40U
+#define LORA_NAV_CORRIDOR      0x80U
 
 /* GPS field encoding */
 #define LORA_GPS_DEG_SCALE 10000000.0   /* latitude/longitude: degrees * 1e7, about 1 cm */

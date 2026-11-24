@@ -8,7 +8,8 @@
 TaskHandle_t processLSP_task;
 
 static int16_t aoa_zone(int16_t wind_abs);
-static int16_t sail_target(int16_t wind);
+static int16_t sail_target(int16_t wind, bool ease);
+static bool bearing_away(int16_t wind, bool easing);
 
 HardwareInit_e processLSP_hardwareInit(void)
 {
@@ -59,7 +60,9 @@ void processLSP_handler(void *argument){
             continue;
         }
 
-        int16_t target = sail_target(wind.ang_wind);
+        static bool easing = false;
+        easing = bearing_away(wind.ang_wind, easing);
+        int16_t target = sail_target(wind.ang_wind, easing);
 
         // Only send a new target when it moved more than the deadband, or when switching back to auto_mode
         if (!have_target || abs(ANG_WRAP_180(target - last_target)) > PROCESS_LSP_DEADBAND) {
@@ -88,13 +91,22 @@ static int16_t aoa_zone(int16_t off_bow)
 }
 
 // Point the sail at the wind, then move it back toward the bow by the zone's AoA
-static int16_t sail_target(int16_t wind)
+static int16_t sail_target(int16_t wind, bool ease)
 {
-int16_t aoa = aoa_zone(abs(wind));
-bool starboard_wind = (wind >= 0);
-
-if (starboard_wind) {
-    return ANG_WRAP_180(wind - aoa); // smaller angle isc loser to the bow
+    int16_t aoa = ease ? 0 : aoa_zone(abs(wind));
+    if (wind >= 0) { return ANG_WRAP_180(wind - aoa); } // smaller angle is closer to the bow
+    return ANG_WRAP_180(wind + aoa);                    // wind from port so the AoA moves the sail to the bow
 }
-return ANG_WRAP_180(wind + aoa);    // wind from port side so the AoA moves sail to the bow
+
+ // True while the rudder is turning the bow away from the wind hard enough that the sail should be eased
+static bool bearing_away(int16_t wind, bool easing)
+{
+    TelemetryRudder_t rudder;
+    if (telemetry_getRudder(&rudder) != TELEMETRY_OK) { return false; }
+    if (abs(wind) >= PROCESS_LSP_BEARAWAY_MAX_WIND)   { return false; }
+
+    // away from the wind = rudder turn has the opposite sign to the wind side
+    int16_t away = (wind >= 0) ? -rudder.ang_turn : rudder.ang_turn;
+    int16_t threshold = easing ? PROCESS_LSP_BEARAWAY_OFF : PROCESS_LSP_BEARAWAY_ON;
+    return away > threshold;
 }

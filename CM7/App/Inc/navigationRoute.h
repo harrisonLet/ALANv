@@ -60,8 +60,10 @@ cmd_result_t navigationRoute_addWaypoint(const ipc_cmd_waypoint_t *wp);
   * @retval CMD_RESULT_TOO_MANY    Count is 0 or more than NAV_ROUTE_MAX_WAYPOINTS.
   * @retval CMD_RESULT_INCOMPLETE  A waypoint between 0 and count-1 never arrived.
   * @retval CMD_RESULT_BAD_CRC     The checksum does not match.
-  * @retval CMD_RESULT_NONE        The tack planner held the route lock for 10 ms. Not committed, ground station resends.
-  * @note   Clears the spare buffer and the received mask whatever the result. On failure the active route is untouched.
+  * @retval CMD_RESULT_NONE        The tack planner held the route lock for 10 ms. Not committed; the upload is kept,
+  *                                so resending the commit alone is enough.
+  * @note   Clears the spare buffer and the received mask on every result except CMD_RESULT_NONE. On failure the active
+  *         route is untouched.
   */
 cmd_result_t navigationRoute_commit(const ipc_cmd_route_commit_t *commit);
 

@@ -67,6 +67,8 @@ NAV_TACK_HELPER bool inputs_ok(const NavTackInput_t *in)
 {
     bool gps_valid = (in->gps_valid == VALIDITY_VALID || in->gps_valid == VALIDITY_VALID_PARTIAL_DATA);
     if (!gps_valid || in->imu_valid != VALIDITY_VALID || in->wind_valid != VALIDITY_VALID) { return false; }
+    // Fusion reports 0, 0 until its first position, even with the GPS already valid
+    if (in->lat == 0.0 && in->lon == 0.0) { return false; }
 
     return fresh(in->now_ms, in->gps_timestamp, NAV_GPS_STALE_MS) &&
            fresh(in->now_ms, in->imu_timestamp, NAV_IMU_STALE_MS) &&
@@ -335,4 +337,5 @@ void navTack_step(const NavTackInput_t *in, NavTackState_t *state, TelemetryNavi
 
     out->nav_state = state->nav_state;
     out->tack_side = state->tack_side;
+    if (state->corridor_fault) { out->flags |= NAV_FLAG_CORRIDOR; }
 }

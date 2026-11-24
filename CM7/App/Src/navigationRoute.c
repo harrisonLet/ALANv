@@ -24,7 +24,8 @@ static SemaphoreHandle_t route_mutex;
 #define ROUTE_LOCK()   (xSemaphoreTake(route_mutex, pdMS_TO_TICKS(10)) == pdTRUE)
 #define ROUTE_UNLOCK() xSemaphoreGive(route_mutex)
 #else
-#define ROUTE_LOCK()   true
+bool nav_test_route_busy; // host tests: true makes the lock fail, as if LTP held it
+#define ROUTE_LOCK()   (!nav_test_route_busy)
 #define ROUTE_UNLOCK() ((void)0)
 #endif
 
@@ -90,7 +91,12 @@ cmd_result_t navigationRoute_commit(const ipc_cmd_route_commit_t *commit)
     if (count == 0 || count > NAV_ROUTE_MAX_WAYPOINTS) { result = CMD_RESULT_TOO_MANY; }
     else if ((rx_mask & required) != required) { result = CMD_RESULT_INCOMPLETE; }
     else if (crc16_ccitt((const uint8_t *)spare, count * sizeof(ipc_cmd_waypoint_t)) != commit->crc16) { result = CMD_RESULT_BAD_CRC; }
-    else if (!ROUTE_LOCK()) { result = CMD_RESULT_NONE; } // LTP held the route for 10 ms; not OK, so the ground station resends
+    else if (!ROUTE_LOCK())
+    {
+        // LTP held the route for 10 ms. The upload is complete and checked, so keep it:
+        // the ground station only has to resend the commit
+        return CMD_RESULT_NONE;
+    }
     else
     {
         active.count = (uint8_t)count;
@@ -107,7 +113,7 @@ cmd_result_t navigationRoute_commit(const ipc_cmd_route_commit_t *commit)
         result = CMD_RESULT_OK;
     }
 
-    // Every path: the next upload starts from an empty spare buffer
+    // Every other path: the next upload starts from an empty spare buffer
     memset(spare, 0, sizeof(spare));
     rx_mask = 0;
     return result;

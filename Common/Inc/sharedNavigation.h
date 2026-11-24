@@ -144,7 +144,7 @@ typedef struct {
     uint8_t  route_segment;    // current leg index, 0xFF = no route
     int16_t  drift_distance;   // cross-track error, m, + = starboard of the path
     int8_t   tack_side;        // -1 = wind from port, +1 = wind from starboard, 0 = not upwind
-    uint8_t  flags;            // bit 0: NAV_FLAG_TACK_SLOW
+    uint8_t  flags;            // bit 0: NAV_FLAG_TACK_SLOW, bit 1: NAV_FLAG_CORRIDOR
     uint32_t timestamp;        // ms
     uint8_t  valid;            // Validity_e
 } TelemetryNavigation_t;
@@ -152,3 +152,4 @@ typedef struct {
 #define NAV_HEADING_NONE            0xFFFFu // desired_heading when no heading is published
 #define NAV_SEGMENT_NONE            0xFFu   // route_segment when no route is loaded
 #define NAV_FLAG_TACK_SLOW          0x01u   // flags bit 0: tack taking too long
+#define NAV_FLAG_CORRIDOR           0x02u   // flags bit 1: left the corridor (margin + warning), held until a new route
