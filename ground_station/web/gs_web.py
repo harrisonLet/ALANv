@@ -57,6 +57,7 @@ TILE_MAX_ZOOM = 19
 ADDR_GROUND = BL.ADDR_GROUND
 ADDR_BOAT   = BL.ADDR_BOAT
 HDR_LEN     = 5        # dest, src, seq, len, flags
+FLAG_RADIO_RESET = 0x08  # header flags bit 3: the boat reset its LoRa radio since the last packet
 HISTORY_LEN = 600      # samples kept for charts and track (~10 min at 1 Hz)
 
 # Commands
@@ -183,6 +184,7 @@ class State:
         self.raw = ''
         self.seq = None
         self.pkts = self.lost = self.junk = 0
+        self.radio_resets = 0           # boat packets with FLAG_RADIO_RESET
         self.rx_time = None
         self.history = collections.deque(maxlen=HISTORY_LEN)
         self.clients = []
@@ -203,7 +205,7 @@ class State:
         return {'port': self.port, 'connected': self.fd is not None, 'error': self.error,
                 'pkts': self.pkts, 'lost': self.lost, 'junk': self.junk, 'seq': self.seq,
                 'rx_time': self.rx_time, 'cmds_sent': self.cmds_sent, 'hbs_sent': self.hbs_sent,
-                'heartbeat': self.heartbeat}
+                'heartbeat': self.heartbeat, 'radio_resets': self.radio_resets}
 
     def cmd_view(self):
         route = {k: ({kk: vv for kk, vv in v.items() if not kk.startswith('_')} if v else v)
@@ -289,7 +291,7 @@ def connect(path):
         return False
     with S.lock:
         S.port, S.fd, S.error = path, fd, None
-        S.pkts = S.lost = S.junk = 0
+        S.pkts = S.lost = S.junk = S.radio_resets = 0
         S.seq = None
     log_line(f'OPEN    {path}')
     threading.Thread(target=reader, args=(fd,), daemon=True).start()
@@ -330,6 +332,9 @@ def handle_packet(pkt):
             S.lost += (seq - S.seq - 1) & 0xFF
         S.seq = seq
         S.pkts += 1
+        if pkt[4] & FLAG_RADIO_RESET:
+            S.radio_resets += 1
+            log_line('BOAT    radio reset')
         S.rx_time = now
         S.telem = telem
         S.raw = pkt.hex(' ')
