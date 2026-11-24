@@ -583,9 +583,3 @@ uint8_t LoRa_GetCmd(uint8_t *buf)
     for (uint8_t i = 0; i < s_rx_len; i++) buf[i] = s_rx_buf[i];
     return s_rx_len;
 }
-
-/* True while a transmission is in flight, when LoRa_Send would drop a new packet */
-bool LoRa_TxBusy(void)
-{
-    return s_state == LORA_STATE_TX;
-}

@@ -48,12 +48,6 @@ typedef enum {
     COMMAND_NVS_LOAD          = 0x32, /**< */
     COMMAND_NVS_LOAD_STOP     = 0x33, /**< */
 
-//  COMMAND_STATE             = 0x40
-//  raw = ipc_cmd_state_t (ipc.h). The ground station's desired mode and setpoints, resent every second and
-//  on every change. Replaces the one-shot mode and setpoint commands above for the ground station; those
-//  still work for the selftest, fake commands and bench use.
-    COMMAND_STATE             = 0x40, /**< Desired state, see ipc_cmd_state_t. With IPC_STATE_FLAG_POLL the CM4 replies with telemetry. */
-
 
 
 /* Ship to Shore Commands, 0x80 to 0xFF */

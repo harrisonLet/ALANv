@@ -25,10 +25,8 @@
 #include "loraTelemetry.h"
 #include "telemetryReceive.h"
 #include "fakeCommands.h"
-#include "sharedCommand.h"
 #include <stdint.h>
 #include <string.h>
-#include <stddef.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -48,11 +46,6 @@
 #define HSEM_ID_0 (0U) /* HW semaphore 0*/
 #endif
 #endif
-
-/* The ground station polls (COMMAND_STATE with IPC_STATE_FLAG_POLL) about once a second and each poll is
-   answered with telemetry straight away, so the two radios never send at once. With no poll for this
-   long, telemetry goes out on the TIM6 1 s timer instead (FLAG_UNSOLICITED), so the boat is still seen. */
-#define LORA_POLL_TIMEOUT_MS (3000U)
 
 /* USER CODE END PD */
 
@@ -78,11 +71,6 @@ static uint8_t rx_last_seq  = 0;
 static uint8_t rx_last_type = 0;
 static uint8_t rx_rejected  = 0;  /* wraps */
 static uint8_t rx_dropped   = 0;  /* wraps */
-
-/* Poll/reply (LORA_POLL_TIMEOUT_MS): set by handle_rx_packet, used by the main loop */
-static uint8_t  reply_pending  = 0;   /* a poll arrived, telemetry goes out as soon as it can */
-static uint8_t  polled         = 0;   /* any poll since boot */
-static uint32_t last_poll_tick = 0;   /* HAL tick of the last poll */
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -241,15 +229,9 @@ int main(void)
       }
       #endif
 
-      // Telemetry goes out as the reply to a ground station poll. The 1 s TIM6 tick only sends while the
-      // ground station is not polling (LORA_POLL_TIMEOUT_MS), and is dropped while it is.
-      // Either way, if the CM7 is mid-write or a send is still in flight, the request stays set and is
-      // retried on the next wake (~1 ms)
-      bool polling = polled && (HAL_GetTick() - last_poll_tick) < LORA_POLL_TIMEOUT_MS;
-      if (tx_flag && polling) {
-        tx_flag = 0;
-      }
-      if ((reply_pending || tx_flag) && !LoRa_TxBusy()) {
+      // Every 1 s (TIM6): read the latest telemetry from SRAM4 and send it over LoRa.
+      // If the CM7 is mid-write, tx_flag stays set and the read retries on the next wake (~1 ms)
+      if (tx_flag) {
         uint8_t telem_status_flags = 0;
         #if defined(CM4_LORA_DUMMY_TELEMETRY)
         // Test mode: skip SRAM4, send the fixed packet with a live uptime
@@ -260,10 +242,6 @@ int main(void)
         bool telem_ready = telemetryRec_read(&telem_status_flags, &telemetryPacket);
         #endif
         if (telem_ready) {
-          if (!reply_pending) {
-            telem_status_flags |= FLAG_UNSOLICITED;
-          }
-          reply_pending = 0;
           tx_flag = 0;
           fill_rx_stats(&telemetryPacket);   // last, so the noise sample is right before the send
           LoRaTelemetry_t *payload = &telemetryPacket;
@@ -309,7 +287,7 @@ int main(void)
    Check one ground station packet and queue its command for the CM7.
    Wire format: dest, src, seq, len, type, payload. len counts the type byte plus the payload,
    which is 0 to IPC_CMD_DATA_SIZE bytes: none for heartbeat and mode commands, an int16 for angles,
-   10 for the ground station's state (ipc_cmd_state_t), up to 16 for route waypoints. So a packet is 5 to 21 bytes.
+   up to 16 for route waypoints. So a packet is 5 to 21 bytes.
    len == 0 means nothing arrived.
 */
 static void handle_rx_packet(const uint8_t *cmd, uint8_t len, bool ipc_attached)
@@ -325,13 +303,6 @@ static void handle_rx_packet(const uint8_t *cmd, uint8_t len, bool ipc_attached)
         memcpy(c.raw, &cmd[LORA_HDR_LEN_BYTES], body - 1U);
         rx_last_seq  = c.seq;
         rx_last_type = c.type;
-        // A poll is answered even if the command cannot be queued, so the drop shows in the reply
-        if (c.type == COMMAND_STATE && (c.raw[offsetof(ipc_cmd_state_t, flags)] & IPC_STATE_FLAG_POLL))
-        {
-            reply_pending  = 1;
-            polled         = 1;
-            last_poll_tick = HAL_GetTick();
-        }
         // Without a successful attach the CM7 may not be using SRAM4, or may lay it out differently
         if (!ipc_attached)
         {
