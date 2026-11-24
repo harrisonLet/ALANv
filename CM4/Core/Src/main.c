@@ -243,6 +243,7 @@ int main(void)
         #endif
         if (telem_ready) {
           tx_flag = 0;
+          if (LoRa_TakeRadioReset()) { telem_status_flags |= FLAG_RADIO_RESET; }   // shows the ground a reset happened
           fill_rx_stats(&telemetryPacket);   // last, so the noise sample is right before the send
           LoRaTelemetry_t *payload = &telemetryPacket;
           uint8_t plen = sizeof(LoRaTelemetry_t);

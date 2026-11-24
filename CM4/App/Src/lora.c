@@ -292,6 +292,7 @@ static uint8_t          s_rx_len;
 static volatile uint8_t s_rx_ready;
 static LoRaRxStats_t    s_rx_stats;
 static uint32_t         s_tx_tick;      /* when the current TX started */
+static uint8_t          s_radio_reset;  /* set when LoRa_Send reset the radio, read by LoRa_TakeRadioReset */
 
 static void read_rx_packet(void);
 
@@ -425,6 +426,7 @@ void LoRa_Send(uint8_t *data, uint8_t len){
            or the radio hung: reset it, or no packet would ever be sent again */
         if (HAL_GetTick() - s_tx_tick < 500) return;   /* previous TX still in flight */
         LoRa_init();
+        s_radio_reset = 1;
         s_state = LORA_STATE_IDLE;
     }
 
@@ -522,6 +524,14 @@ void LoRa_ProcessDIO0(void)
         }
         LoRa_StartRX();
     }
+}
+
+/* 1 once after LoRa_Send had to reset the radio, for the telemetry flags */
+uint8_t LoRa_TakeRadioReset(void)
+{
+    uint8_t r = s_radio_reset;
+    s_radio_reset = 0;
+    return r;
 }
 
 /* Copy the packet the radio just received out of its FIFO into s_rx_buf.

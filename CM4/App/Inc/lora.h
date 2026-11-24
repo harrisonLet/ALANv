@@ -23,6 +23,7 @@ void    LoRa_StartRX(void);
 void    LoRa_ProcessDIO0(void);
 uint8_t LoRa_GetCmd(uint8_t *buf);
 void    LoRa_GetRxStats(LoRaRxStats_t *stats);
+uint8_t LoRa_TakeRadioReset(void);
 
 
 #endif

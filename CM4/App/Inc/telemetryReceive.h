@@ -10,6 +10,7 @@
 #define FLAG_STALE          (1u << 0) // bit 0
 #define FLAG_BUSY_FALLBACK  (1u << 1) // bit 1
 #define FLAG_NO_IPC         (1u << 2) // bit 2
+#define FLAG_RADIO_RESET    (1u << 3) // bit 3: the CM4 reset the LoRa radio since the last packet
 #define FLAG_MASK           (FLAG_STALE | FLAG_BUSY_FALLBACK | FLAG_NO_IPC)
 
 void telemetryRec_init(bool ipc_attached);
