@@ -291,6 +291,7 @@ static uint8_t          s_rx_buf[64];
 static uint8_t          s_rx_len;
 static volatile uint8_t s_rx_ready;
 static LoRaRxStats_t    s_rx_stats;
+static uint32_t         s_tx_tick;      /* when the current TX started */
 
 static void read_rx_packet(void);
 
@@ -419,7 +420,13 @@ int LoRa_init(void){
 }
 
 void LoRa_Send(uint8_t *data, uint8_t len){
-    if (s_state == LORA_STATE_TX) return;   /* previous TX still in flight */
+    if (s_state == LORA_STATE_TX) {
+        /* Normally TxDone ends TX in ~130 ms. Still in TX after 500 ms means TxDone was missed
+           or the radio hung: reset it, or no packet would ever be sent again */
+        if (HAL_GetTick() - s_tx_tick < 500) return;   /* previous TX still in flight */
+        LoRa_init();
+        s_state = LORA_STATE_IDLE;
+    }
 
     /* Packet might have arrived during send handling finish reading packet before 
         wiping receive buffer on transmit*/
@@ -442,6 +449,7 @@ void LoRa_Send(uint8_t *data, uint8_t len){
     SPI_tx_byte(REG_DIO_MAPPING_1, 0x40);   /* DIO0 = TxDone */
 
     s_state = LORA_STATE_TX;
+    s_tx_tick = HAL_GetTick();
     SPI_tx_byte(REG_OP_MODE, 0x83);         /* TX — returns immediately, DIO0 fires when done */
 }
 
