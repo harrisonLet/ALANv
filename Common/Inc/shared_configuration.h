@@ -59,7 +59,7 @@
 
 
 #ifdef CM7_ENABLE
-#define CM7_DEBUG
+// #define CM7_DEBUG
 #endif
 
 #ifdef CM7_LIVE_ENABLE
@@ -69,10 +69,12 @@
 #endif
 
 #ifdef CM7_COMMANDER_ENABLE
-#define CM7_COMMANDER_DEBUG
+// #define CM7_COMMANDER_DEBUG
+
+#ifndef RENODE_SIM
 // Manual/semi modes drop to SAFE after COMMANDER_LINK_TIMEOUT_MS with no command (heartbeats count). Off: the boat keeps its
 // last command forever if the link is lost. Off in the Renode sim, whose dashboard sends no heartbeats
-#ifndef RENODE_SIM
+
 #define COMMANDER_LINK_TIMEOUT_ENABLE
 #endif
 // #define COMMANDER_SELFTEST // Bench test: runs a scripted command list at boot. Needs CM7_COMMANDER_DEBUG to print. Leave CM7_CONSOLE_ENABLE off
@@ -82,14 +84,12 @@
 // #define CM7_TELEMETRY_DEBUG
 #endif
 
-
-
 #ifdef CM7_SENSOR_BATTERY_ENABLE
 // #define CM7_SENSOR_BATTERY_DEBUG
 #endif
 
 #ifdef CM7_SENSOR_ENCODER_ENABLE
-#define CM7_SENSOR_ENCODER_DEBUG
+// #define CM7_SENSOR_ENCODER_DEBUG
 #endif
 
 #ifdef CM7_SENSOR_GPS_ENABLE

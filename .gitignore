@@ -10,7 +10,11 @@ CM7/compile_commands.json
 build/
 .cache/
 .vscode/c_cpp_properties.json
+.vscode/settings.json
 .clangd
+
+# graphify
+graphify-out/
 
 ~*
 
