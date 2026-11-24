@@ -275,6 +275,11 @@
 #define IRQ_PAYLOAD_CRC_ERROR    0x20
 #define IRQ_TX_DONE              0x08
 
+#define OP_MODE_LONG_RANGE       0x80   /* RegOpMode bit 7, LoRa mode. A power-on reset clears it (RegOpMode 0x09, FSK) */
+/* A telemetry packet is ~170 ms on air at SF8/250 kHz, so a TX still running after this never finishes.
+Recalculate if LoRa settings are changed!! */
+#define LORA_TX_TIMEOUT_MS       500U
+
 /* Helper functions */
 
 #define CS_LOW()   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_RESET)
@@ -289,6 +294,7 @@ extern SPI_HandleTypeDef hspi1;
 /* ─── State machine ──────────────────────────────────────────────── */
 typedef enum { LORA_STATE_IDLE, LORA_STATE_TX, LORA_STATE_RX } LoRaState_t;
 static volatile LoRaState_t s_state = LORA_STATE_IDLE;
+static uint32_t             s_tx_start;   /* HAL tick when the current LoRa's TX started */
 
 static uint8_t          s_rx_buf[64];
 static uint8_t          s_rx_len;
@@ -432,7 +438,16 @@ int LoRa_init(void){
 }
 
 void LoRa_Send(uint8_t *data, uint8_t len){
-    if (s_state == LORA_STATE_TX) return;   /* previous TX still in flight */
+    // Check if radio is still sending after 500ms (telemetry shoudl only take 170ms)
+    if (s_state == LORA_STATE_TX && HAL_GetTick() - s_tx_start < LORA_TX_TIMEOUT_MS) return;   /* previous TX still in flight */
+
+    /* If radio resets itself, it boots with default settings and never raises TxDone so boat goes silent.
+       In this case completetly reinint LoRa with CM4's settings */
+    if (s_state == LORA_STATE_TX || !(SPI_rx_byte(REG_OP_MODE) & OP_MODE_LONG_RANGE)) {
+        printf("LoRa: radio lost its setup (state %u), re-init\r\n", (unsigned)s_state);
+        s_state = LORA_STATE_IDLE;
+        if (LoRa_init() != 0) return;   /* radio not answering: try again on the next send */
+    }
 
     /* Packet might have arrived during send handling finish reading packet before 
         wiping receive buffer on transmit*/
@@ -454,6 +469,7 @@ void LoRa_Send(uint8_t *data, uint8_t len){
     SPI_tx_byte(REG_IRQ_FLAGS, 0xFF);        /* clear stale flags */
     SPI_tx_byte(REG_DIO_MAPPING_1, 0x40);   /* DIO0 = TxDone */
 
+    s_tx_start = HAL_GetTick();
     s_state = LORA_STATE_TX;
     SPI_tx_byte(REG_OP_MODE, 0x83);         /* TX — returns immediately, DIO0 fires when done */
 }
