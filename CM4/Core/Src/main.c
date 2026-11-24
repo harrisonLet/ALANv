@@ -78,7 +78,7 @@ static uint8_t rx_dropped   = 0;  /* wraps */
 #if defined(CM4_LORA_COMMANDS_ENABLE) || defined(CM4_FAKE_COMMANDS)
 static void handle_rx_packet(const uint8_t *cmd, uint8_t len, bool ipc_attached);
 #endif
-static void fill_rx_stats(LoRaTelemetry_t *telem);
+static uint8_t fill_rx_stats(LoRaTelemetry_t *telem);
 static void MX_SPI1_Init(void);
 static void MX_TIM6_Init(void);
 static void MX_StatusLED_Init(void);
@@ -243,7 +243,7 @@ int main(void)
         #endif
         if (telem_ready) {
           tx_flag = 0;
-          fill_rx_stats(&telemetryPacket);   // last, so the noise sample is right before the send
+          telem_status_flags |= fill_rx_stats(&telemetryPacket);   // last, so the noise sample is right before the send
           LoRaTelemetry_t *payload = &telemetryPacket;
           uint8_t plen = sizeof(LoRaTelemetry_t);
           uint8_t pkt[LORA_HDR_LEN_BYTES + plen];
@@ -325,8 +325,10 @@ static void handle_rx_packet(const uint8_t *cmd, uint8_t len, bool ipc_attached)
 /*
    Overwrite the receive stats in the telemetry with the CM4's own (the CM7 leaves them 0).
    Samples the channel noise, so call it right before LoRa_Send.
+   Returns the header flags it owns: FLAG_RADIO_REINIT for LORA_REINIT_FLAG_MS after a radio re-init.
 */
-static void fill_rx_stats(LoRaTelemetry_t *telem)
+#define LORA_REINIT_FLAG_MS (5000U)   /* ~5 packets at 1 Hz */
+static uint8_t fill_rx_stats(LoRaTelemetry_t *telem)
 {
     LoRaRxStats_t radio;
     LoRa_GetRxStats(&radio);
@@ -343,6 +345,8 @@ static void fill_rx_stats(LoRaTelemetry_t *telem)
     telem->rx_crc_err   = radio.crc_err;
     telem->rx_rejected  = rx_rejected;
     telem->rx_dropped   = rx_dropped;
+    return (radio.last_reinit_tick != 0U && HAL_GetTick() - radio.last_reinit_tick < LORA_REINIT_FLAG_MS)
+           ? FLAG_RADIO_REINIT : 0U;
 }
 
 static void MX_SPI1_Init(void)

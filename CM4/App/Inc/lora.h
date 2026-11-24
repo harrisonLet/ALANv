@@ -15,6 +15,7 @@ typedef struct {
     int16_t  noise;          // dBm, channel RSSI while listening, sampled by LoRa_GetRxStats
     uint16_t ok;             // packets with a good CRC, wraps
     uint16_t crc_err;        // packets with a bad or missing CRC, dropped, wraps
+    uint32_t last_reinit_tick; // HAL tick LoRa_Send last found the radio reset and set it up again, 0 = never
 } LoRaRxStats_t;
 
 int     LoRa_init(void);

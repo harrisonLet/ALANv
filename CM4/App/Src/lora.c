@@ -445,6 +445,7 @@ void LoRa_Send(uint8_t *data, uint8_t len){
        In this case completetly reinint LoRa with CM4's settings */
     if (s_state == LORA_STATE_TX || !(SPI_rx_byte(REG_OP_MODE) & OP_MODE_LONG_RANGE)) {
         printf("LoRa: radio lost its setup (state %u), re-init\r\n", (unsigned)s_state);
+        s_rx_stats.last_reinit_tick = HAL_GetTick();   /* reported to the ground station as FLAG_RADIO_REINIT */
         s_state = LORA_STATE_IDLE;
         if (LoRa_init() != 0) return;   /* radio not answering: try again on the next send */
     }
