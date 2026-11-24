@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <LoRa.h>
+#include <Adafruit_SleepyDog.h>
 
 #define RFM95_CS   12
 #define RFM95_RST   7
@@ -14,6 +15,20 @@
 static uint8_t txBuf[MAX_PKT_SIZE];
 static uint8_t txLen = 0;
 static uint32_t lastByteTime = 0;
+
+// Filled by onRx (radio interrupt), emptied by loop()
+static volatile uint8_t rxBuf[255];
+static volatile uint8_t rxLen = 0;
+static volatile bool    rxReady = false;
+
+// Radio interrupt: a packet arrived. Copy it out; loop() sends it over USB
+static void onRx(int size) {
+  for (int i = 0; i < size; i++) {
+    rxBuf[i] = (uint8_t)LoRa.read();
+  }
+  rxLen = (uint8_t)size;
+  rxReady = true;
+}
 
 void setup() {
   SerialUSB.begin(115200);
@@ -32,17 +47,28 @@ void setup() {
   LoRa.setCodingRate4(5);          // 4/5 coding rate
   LoRa.enableCrc();                // boat checks the payload CRC, so a corrupted command is dropped, not run
   LoRa.setTxPower(17);             // dBm, 2–20 valid
+
+  // Listen all the time. parsePacket() only listened ~100 ms at a time and missed
+  // packets that arrived while it restarted
+  LoRa.onReceive(onRx);
+  LoRa.receive();
+
+  Watchdog.enable(4000);           // reboot if loop() stops running for 4 s
 }
 
 static void flushTx() {
   if (txLen == 0) return;
+  LoRa.idle();                     // stop listening while we send
   LoRa.beginPacket();
   LoRa.write(txBuf, txLen);
   LoRa.endPacket();
   txLen = 0;
+  LoRa.receive();                  // back to listening
 }
 
 void loop() {
+  Watchdog.reset();                // still running
+
   // USB → LoRa: buffer bytes, flush on timeout or full buffer
   while (SerialUSB.available()) {
     txBuf[txLen++] = (uint8_t)SerialUSB.read();
@@ -58,10 +84,13 @@ void loop() {
   }
 
   // LoRa → USB
-  int pktSize = LoRa.parsePacket();
-  if (pktSize > 0) {
-    while (LoRa.available()) {
-      SerialUSB.write((uint8_t)LoRa.read());
-    }
+  if (rxReady) {
+    uint8_t pkt[255];
+    noInterrupts();                // so a new packet can't overwrite rxBuf mid-copy
+    uint8_t n = rxLen;
+    for (uint8_t i = 0; i < n; i++) pkt[i] = rxBuf[i];
+    rxReady = false;
+    interrupts();
+    SerialUSB.write(pkt, n);
   }
 }

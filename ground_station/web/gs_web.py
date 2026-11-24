@@ -190,6 +190,7 @@ class State:
         self.reinit_flag = False
         self.history = collections.deque(maxlen=HISTORY_LEN)
         self.clients = []
+        self.want_port = None           # the port to keep open; keeper() reopens it if it drops
         # commands
         self.tx_seq = None              # picked after the first telemetry, past the boat's last_cmd_seq
         self.queue = collections.deque()
@@ -232,6 +233,35 @@ class State:
 
 S = State()
 
+# ─── Log file ────────────────────────────────────────────────────────────────
+# Every byte in and out, plus OPEN / LOST / REOPEN lines. Same format as gs_term's log
+
+LOG_DIR = os.path.join(HERE, 'log')
+LOG_LOCK = threading.Lock()     # the serial, sender and web threads all write to it
+log_file = None
+
+
+def log_open(path=None):
+    global log_file
+    if path is None:
+        os.makedirs(LOG_DIR, exist_ok=True)
+        path = os.path.join(LOG_DIR, time.strftime('gs_log_%Y%m%d_%H%M%S.txt'))
+    log_file = open(path, 'a', buffering=1)     # line buffered: Ctrl-C loses nothing
+    print(f'log: {path}')
+
+
+def log_line(text):
+    if log_file is None:
+        return
+    t = time.time()
+    stamp = time.strftime('%H:%M:%S', time.localtime(t)) + f'.{int(t * 1000) % 1000:03d}'
+    with LOG_LOCK:
+        log_file.write(f'{stamp}  {text}\n')
+
+
+def log_bytes(direction, data):
+    log_line(f'{direction:<7} n={len(data):<4}' + ''.join(f' {b:02X}' for b in data))
+
 
 def broadcast_cmds():
     with S.lock:
@@ -253,6 +283,7 @@ def open_serial(path):
 
 def connect(path):
     disconnect()
+    S.want_port = path
     try:
         fd = open_serial(path)
     except OSError as e:
@@ -262,8 +293,10 @@ def connect(path):
         return False
     with S.lock:
         S.port, S.fd, S.error = path, fd, None
-        S.pkts = S.lost = S.junk = 0
+        S.pkts = S.lost = S.junk = S.radio_resets = 0
+        S.reinit_flag = False
         S.seq = None
+    log_line(f'OPEN    {path}')
     threading.Thread(target=reader, args=(fd,), daemon=True).start()
     S.broadcast('link', S.link())
     return True
@@ -280,6 +313,19 @@ def disconnect():
         S.broadcast('link', S.link())
 
 
+def keeper():
+    """Reopen the bridge if it drops (USB glitch, or the ProRF rebooted).
+    Same port name if it is back, otherwise the first bridge found (macOS can rename it)."""
+    while True:
+        time.sleep(1.0)
+        if S.want_port is None or S.fd is not None:
+            continue
+        path = S.want_port if os.path.exists(S.want_port) else next(iter(list_ports()), None)
+        if path and connect(path):
+            print(f'serial: reopened {path}')
+            log_line(f'REOPEN  {path}')
+
+
 def handle_packet(pkt):
     telem = unpack(pkt[HDR_LEN:])
     seq = pkt[2]
@@ -294,6 +340,7 @@ def handle_packet(pkt):
         if reinit and not S.reinit_flag:
             S.radio_resets += 1
             S.radio_reset_t = now
+            log_line('BOAT    radio reset')
         S.reinit_flag = reinit
         S.telem = telem
         S.raw = pkt.hex(' ')
@@ -323,13 +370,21 @@ def reader(fd):
             if not r:
                 continue
             data = os.read(fd, 1024)
+            err = 'port closed'         # readable but empty: the device is gone
+        except BlockingIOError:
+            continue
         except OSError as e:
+            data, err = b'', str(e)
+        if not data:
+            # The port went away (unplugged, or the ProRF rebooted): keeper() reopens it
+            if S.fd != fd:
+                return                  # closed on purpose, not lost
             with S.lock:
-                S.error = str(e)
+                S.error = err
+            log_line(f'LOST    {err}')
             disconnect()
             return
-        if not data:
-            continue
+        log_bytes('RX-RAW', data)
         buf += data
         i = 0
         while len(buf) - i >= PKT_LEN:
@@ -366,6 +421,7 @@ def write_packet(pkt):
         os.write(S.fd, pkt)
     except OSError as e:
         return str(e)
+    log_bytes('TX-RAW', pkt)
     S.last_send = time.time()
     return None
 
@@ -707,6 +763,7 @@ class Handler(BaseHTTPRequestHandler):
                 ok = connect(str(req.get('port', '')))
                 err = None if ok else (S.error or 'could not open port')
             elif self.path == '/disconnect':
+                S.want_port = None      # closed from the page: don't reopen it
                 disconnect()
             else:
                 return self.send_error(404)
@@ -747,11 +804,16 @@ def main():
     ap.add_argument('--no-browser', action='store_true')
     ap.add_argument('--prefetch', metavar='LAT,LON[,RADIUS_M]',
                     help='download map tiles around a place for offline use, then exit')
+    ap.add_argument('--log', help='log file (default: log/gs_log_<date>_<time>.txt next to this script)')
+    ap.add_argument('--no-log', action='store_true', help='do not write a log file')
     args = ap.parse_args()
 
     if args.prefetch:
         prefetch(args.prefetch)
         return
+
+    if not args.no_log:
+        log_open(args.log)
 
     port = args.port or next(iter(list_ports()), None)
     if port:
@@ -759,6 +821,7 @@ def main():
     else:
         print('serial: no port found, pick one in the page')
     threading.Thread(target=sender, daemon=True).start()
+    threading.Thread(target=keeper, daemon=True).start()
 
     httpd = ThreadingHTTPServer(('127.0.0.1', args.http_port), Handler)
     httpd.daemon_threads = True
@@ -771,7 +834,11 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
+        S.want_port = None
         disconnect()
+        log_line('CLOSE   quit')
+        if log_file:
+            log_file.close()
 
 
 if __name__ == '__main__':
