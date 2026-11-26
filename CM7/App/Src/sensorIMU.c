@@ -270,8 +270,8 @@ HardwareInit_e sensorIMU_hardwareInit(void)
     }
     sensorIMU_printf("        - wrote BNO055 calibration offsets");
     #endif
-    if ((result = BNO055_writeOprMode(BNO055_OPR_MODE_NDOF)) != HAL_OK) {
-        sensorIMU_printf("ERROR: Failed to set BNO055 to NDOF mode: %d", result);
+    if ((result = BNO055_writeOprMode(BNO055_OPR_MODE_NDOF_FMC_OFF)) != HAL_OK) {
+        sensorIMU_printf("ERROR: Failed to set BNO055 to NDOF FMC Off mode: %d", result);
         return HARDWARE_INIT_FAIL;
     }
     HAL_Delay(25); // Delay for the BNO055 to switch to NDOF mode
